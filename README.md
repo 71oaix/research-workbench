@@ -30,3 +30,4 @@
 - [文档索引](docs/INDEX.md)
 - [00 · 项目定义](docs/architecture/00-project-definition.md) — 目标、约束、功能、技术栈
 - [01 · 开发流程规范](docs/guide/01-development-workflow.md) — issue / PR / 提交规范
+- [01 · 竞赛叙事与答辩预设](docs/architecture/01-competition-story.md) — 作品故事 / 演示脚本 / 答辩 Q&A
