@@ -27,5 +27,6 @@
 
 ## 文档
 
-- [00 · 项目定义（草稿）](docs/00-project-definition.md) — 目标、约束、功能、复用盘点
-- [01 · 开发流程规范](docs/01-development-workflow.md) — issue / PR / 提交规范
+- [文档索引](docs/INDEX.md)
+- [00 · 项目定义](docs/architecture/00-project-definition.md) — 目标、约束、功能、技术栈
+- [01 · 开发流程规范](docs/guide/01-development-workflow.md) — issue / PR / 提交规范
