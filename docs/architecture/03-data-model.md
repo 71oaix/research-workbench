@@ -26,3 +26,9 @@ updated: 2026-08-14
 - artifact 按 `(workflow_id, name)` 递增 version，支持审批 diff
 - papers 用 `UNIQUE(source, external_id)` 做幂等 upsert
 - 所有时间戳为 ISO 字符串；JSON 字段（authors / input_artifacts）存 TEXT
+
+## papers 落库策略（M2-3）
+
+- 每个检索源各自按 `(source, external_id)` 落库（S2 用 paperId，OpenAlex 用 work ID），重复检索不产生重复行
+- 新增 `arxiv_id` 列（可空），用于跨源去重的中间键：DOI → arXiv ID → 归一化标题
+- 跨源合并结果只存在内存与 `research-cards.md` artifact 中，不落库，保留每个源的 provenance

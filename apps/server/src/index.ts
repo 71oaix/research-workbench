@@ -10,6 +10,11 @@ import type { StepRunner } from './engine/StepRunner'
 import { PiRuntimeProvider } from './runtime/PiRuntimeProvider'
 import { PiStepRunner } from './runtime/PiStepRunner'
 import { PiConfigError, loadPiConfig } from './runtime/piConfig'
+import { AcademicSearchService } from './search/AcademicSearchService'
+import { loadSearchConfig } from './search/config'
+import { OpenAlexClient } from './search/openAlex'
+import { ResearcherStepServiceImpl } from './search/researcherStep'
+import { SemanticScholarClient } from './search/semanticScholar'
 import { wsRoutes } from './ws'
 
 const ROLES: Role[] = ['planner', 'researcher', 'writer', 'reviewer']
@@ -101,10 +106,29 @@ function createDefaultStepRunner(
 ): StepRunner {
   const config = loadPiConfig()
   const provider = new PiRuntimeProvider(config)
-  return new PiStepRunner(provider, (usage) => {
-    const record = repos.usage.record(usage)
-    bus.emit({ type: 'usage.recorded', usage: record })
-  })
+  const searchConfig = loadSearchConfig()
+  const searchService = new AcademicSearchService(
+    [
+      new SemanticScholarClient({
+        apiKey: searchConfig.semanticScholarApiKey,
+        timeoutMs: searchConfig.timeoutMs,
+      }),
+      new OpenAlexClient({
+        mailto: searchConfig.openAlexMailto,
+        timeoutMs: searchConfig.timeoutMs,
+      }),
+    ],
+    searchConfig
+  )
+  const researcher = new ResearcherStepServiceImpl(searchService, repos, bus)
+  return new PiStepRunner(
+    provider,
+    (usage) => {
+      const record = repos.usage.record(usage)
+      bus.emit({ type: 'usage.recorded', usage: record })
+    },
+    researcher
+  )
 }
 
 function handleError(c: Context, e: unknown) {

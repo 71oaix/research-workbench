@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS papers (
   authors TEXT NOT NULL DEFAULT '[]',
   year INTEGER,
   doi TEXT,
+  arxiv_id TEXT,
   url TEXT,
   citation_count INTEGER,
   raw TEXT,
@@ -99,5 +100,11 @@ function migrate(db: Db): void {
   }
   if (!stepCols.has('requires_approval')) {
     db.exec('ALTER TABLE steps ADD COLUMN requires_approval INTEGER NOT NULL DEFAULT 0')
+  }
+  const paperCols = new Set(
+    (db.prepare('PRAGMA table_info(papers)').all() as { name: string }[]).map((c) => c.name)
+  )
+  if (!paperCols.has('arxiv_id')) {
+    db.exec('ALTER TABLE papers ADD COLUMN arxiv_id TEXT')
   }
 }
