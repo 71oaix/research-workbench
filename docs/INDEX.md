@@ -23,5 +23,7 @@ updated: 2026-08-05
 | Issue: SDD 工作流 | archived | issues/close/2026-08-06-sdd-workflow.md | 已归档：流程建立 + 首个循环跑通 |
 | Issue: M1 项目骨架初始化 | archived | issues/close/2026-08-14-m1-project-skeleton.md | 已归档：骨架可运行 |
 | Plan: M1 项目骨架初始化 | archived | plans/close/2026-08-14-m1-project-skeleton.md | 已归档：实现完成 |
-| Issue: M2-1 WorkflowEngine | active | issues/open/2026-08-14-m2-1-workflow-engine.md | 状态机 + artifact 交接 + 审批点 |
-| Plan: M2-1 WorkflowEngine | active | plans/open/2026-08-14-m2-1-workflow-engine.md | 实现方案：引擎 + 接口 + 测试 |
+| Issue: M2-1 WorkflowEngine | archived | issues/close/2026-08-14-m2-1-workflow-engine.md | 已归档：引擎实现完成并合并 |
+| Plan: M2-1 WorkflowEngine | archived | plans/close/2026-08-14-m2-1-workflow-engine.md | 已归档：实现完成 |
+| Issue: M2-2 角色运行时 | active | issues/open/2026-08-14-m2-2-pi-runtime.md | pi SDK 接入，真实 Planner 出计划 |
+| Plan: M2-2 角色运行时 | active | plans/open/2026-08-14-m2-2-pi-runtime.md | 实现方案：provider + runner + 配置 |

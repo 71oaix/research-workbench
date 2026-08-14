@@ -1,6 +1,6 @@
 ---
 title: M2-1 WorkflowEngine 核心（状态机 + artifact 交接 + 审批点）
-status: active
+status: archived
 created: 2026-08-14
 updated: 2026-08-14
 kind: feature

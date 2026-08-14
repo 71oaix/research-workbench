@@ -101,12 +101,20 @@ export class WorkflowEngine {
   }
 
   private async runPendingSteps(workflowId: string): Promise<void> {
+    const workflow = this.requireWorkflow(workflowId)
     for (const step of this.stepsSorted(workflowId)) {
       if (step.status !== 'pending') continue
 
       this.setStepStatus(step.id, 'running')
       const inputArtifacts = this.repos.artifacts.listByWorkflow(workflowId)
-      const result = await this.runner.run({ step, inputArtifacts })
+      let result: Awaited<ReturnType<StepRunner['run']>>
+      try {
+        result = await this.runner.run({ step, goal: workflow.goal, inputArtifacts })
+      } catch (e) {
+        this.setStepStatus(step.id, 'failed')
+        this.setWorkflowStatus(workflowId, 'failed')
+        throw e
+      }
       const artifact = this.repos.artifacts.create({
         workflowId,
         stepId: step.id,

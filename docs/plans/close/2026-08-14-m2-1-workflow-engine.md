@@ -1,6 +1,6 @@
 ---
 title: M2-1 WorkflowEngine 核心（plan）
-status: active
+status: archived
 created: 2026-08-14
 updated: 2026-08-14
 issue: 2026-08-14-m2-1-workflow-engine

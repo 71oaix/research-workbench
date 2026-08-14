@@ -59,6 +59,29 @@ curl -X POST http://localhost:3000/workflows/<id>/steps/<stepId>/decision \
 curl http://localhost:3000/workflows/<id>
 ```
 
+## M2-2 模型配置与验证
+
+环境变量（key 绝不写入仓库）：
+
+```bash
+OPENCODE_GO_API_KEY=sk-...   # 必填，opencode go 订阅 key
+PI_PROVIDER=opencode-go      # 可选，默认 opencode-go
+PI_DEFAULT_MODEL=deepseek-v4-flash  # 可选，默认值
+PI_MODEL_PLANNER=...         # 可选，每角色覆盖（仅模型 ID）
+PI_MODEL_RESEARCHER=...
+PI_MODEL_WRITER=...
+PI_MODEL_REVIEWER=...
+```
+
+真实调用验证（服务已启动且进程带 key）：
+
+```bash
+node scripts/verify-m2-2.mjs
+```
+
+> 说明：角色 system prompt 通过 pi SDK 的 `resourceLoaderOptions.systemPromptOverride`
+> 注入（0.80.3 直接改 `agent.state.systemPrompt` 会被覆盖）；运行时禁用编码工具（`noTools: 'all'`）。
+
 ## 常见问题
 
 - 端口被占用：设置环境变量 `PORT`（server）或修改

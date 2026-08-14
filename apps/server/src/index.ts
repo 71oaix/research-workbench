@@ -6,14 +6,22 @@ import type { Role, StepSpec } from '@research-workbench/shared'
 import { createEventBus } from './engine/eventBus'
 import { EngineError, WorkflowEngine } from './engine/WorkflowEngine'
 import { FakeStepRunner } from './engine/StepRunner'
+import type { StepRunner } from './engine/StepRunner'
+import { PiRuntimeProvider } from './runtime/PiRuntimeProvider'
+import { PiStepRunner } from './runtime/PiStepRunner'
+import { PiConfigError, loadPiConfig } from './runtime/piConfig'
 import { wsRoutes } from './ws'
 
 const ROLES: Role[] = ['planner', 'researcher', 'writer', 'reviewer']
 
-export function createApp(db: ReturnType<typeof createDb> = createDb()) {
+export function createApp(
+  db: ReturnType<typeof createDb> = createDb(),
+  stepRunner?: StepRunner
+) {
   const repos = createRepositories(db)
   const bus = createEventBus()
-  const engine = new WorkflowEngine(repos, new FakeStepRunner(), bus)
+  const runner = stepRunner ?? createDefaultStepRunner(repos, bus)
+  const engine = new WorkflowEngine(repos, runner, bus)
   const app = new Hono()
 
   app.get('/health', (c) => {
@@ -87,9 +95,24 @@ export function createApp(db: ReturnType<typeof createDb> = createDb()) {
   return app
 }
 
+function createDefaultStepRunner(
+  repos: ReturnType<typeof createRepositories>,
+  bus: ReturnType<typeof createEventBus>
+): StepRunner {
+  const config = loadPiConfig()
+  const provider = new PiRuntimeProvider(config)
+  return new PiStepRunner(provider, (usage) => {
+    const record = repos.usage.record(usage)
+    bus.emit({ type: 'usage.recorded', usage: record })
+  })
+}
+
 function handleError(c: Context, e: unknown) {
+  if (e instanceof PiConfigError) {
+    return c.json({ error: e.message }, 500)
+  }
   if (e instanceof EngineError) {
-    return c.json({ error: e.message }, e.status as 400 | 404 | 409)
+    return c.json({ error: e.message }, e.status as 400 | 404 | 409 | 500 | 503)
   }
   console.error(e)
   return c.json({ error: 'internal_error' }, 500)

@@ -25,6 +25,9 @@ data/*.db-shm
 data/*.db-wal
 data/*.db-journal
 
+# pi 运行时会话
+.pi/
+
 # 测试产物
 test-results/
 playwright-report/
