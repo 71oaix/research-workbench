@@ -125,6 +125,7 @@ function mapPaper(row: Record<string, unknown>): Paper {
     authors: JSON.parse(String(row.authors ?? '[]')) as string[],
     year: row.year === null || row.year === undefined ? null : Number(row.year),
     doi: row.doi ? String(row.doi) : null,
+    arxivId: row.arxiv_id ? String(row.arxiv_id) : null,
     url: row.url ? String(row.url) : null,
     citationCount:
       row.citation_count === null || row.citation_count === undefined
@@ -283,14 +284,15 @@ export function createRepositories(db: Db): Repositories {
         db.prepare(
           `INSERT INTO papers
            (id, source, external_id, title, abstract, authors, year, doi, url,
-            citation_count, raw, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            arxiv_id, citation_count, raw, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(source, external_id) DO UPDATE SET
              title = excluded.title,
              abstract = excluded.abstract,
              authors = excluded.authors,
              year = excluded.year,
              doi = excluded.doi,
+             arxiv_id = excluded.arxiv_id,
              url = excluded.url,
              citation_count = excluded.citation_count,
              raw = excluded.raw`
@@ -304,6 +306,7 @@ export function createRepositories(db: Db): Repositories {
           input.year,
           input.doi,
           input.url,
+          input.arxivId,
           input.citationCount,
           input.raw,
           ts

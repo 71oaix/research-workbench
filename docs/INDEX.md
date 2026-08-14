@@ -25,5 +25,8 @@ updated: 2026-08-05
 | Plan: M1 项目骨架初始化 | archived | plans/close/2026-08-14-m1-project-skeleton.md | 已归档：实现完成 |
 | Issue: M2-1 WorkflowEngine | archived | issues/close/2026-08-14-m2-1-workflow-engine.md | 已归档：引擎实现完成并合并 |
 | Plan: M2-1 WorkflowEngine | archived | plans/close/2026-08-14-m2-1-workflow-engine.md | 已归档：实现完成 |
-| Issue: M2-2 角色运行时 | active | issues/open/2026-08-14-m2-2-pi-runtime.md | pi SDK 接入，真实 Planner 出计划 |
-| Plan: M2-2 角色运行时 | active | plans/open/2026-08-14-m2-2-pi-runtime.md | 实现方案：provider + runner + 配置 |
+| Issue: M2-2 角色运行时 | archived | issues/close/2026-08-14-m2-2-pi-runtime.md | 已归档：真实 Planner 跑通 |
+| Plan: M2-2 角色运行时 | archived | plans/close/2026-08-14-m2-2-pi-runtime.md | 已归档：实现完成 |
+| Issue: M2-3 学术检索 | active | issues/open/2026-08-14-m2-3-academic-search.md | Semantic Scholar / OpenAlex 真实论文卡片 |
+| 调研：学术检索最佳实践 | active | research/2026-08-14-academic-search-best-practices.md | M2-3 方案定稿依据 |
+| Plan: M2-3 学术检索 | active | plans/open/2026-08-14-m2-3-academic-search.md | 待用户确认后实现 |

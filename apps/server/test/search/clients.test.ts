@@ -1,0 +1,139 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { OpenAlexClient } from '../../src/search/openAlex'
+import { SemanticScholarClient } from '../../src/search/semanticScholar'
+
+function jsonResponse(body: unknown, status = 200, headers: Record<string, string> = {}) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    headers: { get: (name: string) => headers[name] ?? null },
+    text: async () => (typeof body === 'string' ? body : JSON.stringify(body)),
+  } as unknown as Response
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
+describe('SemanticScholarClient', () => {
+  it('normalizes fields and sends the API key header', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        data: [
+          {
+            paperId: 'abc123',
+            title: 'Attention Is All You Need',
+            abstract: 'We propose a new architecture.',
+            year: 2017,
+            authors: [{ name: 'Ashish Vaswani' }],
+            externalIds: {
+              DOI: 'https://doi.org/10.48550/ARXIV.1706.03762',
+              ArXiv: '1706.03762v7',
+            },
+            citationCount: 100000,
+            url: 'https://www.semanticscholar.org/paper/abc123',
+            openAccessPdf: { url: 'https://arxiv.org/pdf/1706.03762' },
+          },
+        ],
+      })
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const client = new SemanticScholarClient({ apiKey: 'sk-test', retryDelayMs: () => 0 })
+    const papers = await client.search('attention is all you need', 10)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/paper/search')
+    expect(url).toContain('limit=10')
+    expect((init.headers as Record<string, string>)['x-api-key']).toBe('sk-test')
+    expect(papers[0]).toMatchObject({
+      source: 'semantic-scholar',
+      externalId: 'abc123',
+      title: 'Attention Is All You Need',
+      year: 2017,
+      authors: ['Ashish Vaswani'],
+      doi: '10.48550/arxiv.1706.03762',
+      arxivId: '1706.03762',
+      url: 'https://arxiv.org/pdf/1706.03762',
+      citationCount: 100000,
+    })
+  })
+
+  it('retries once on 429 and succeeds on the next attempt', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse('rate limited', 429, { 'retry-after': '0' }))
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const client = new SemanticScholarClient({ retryDelayMs: () => 0 })
+    await expect(client.search('query', 5)).resolves.toEqual([])
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('throws after retries are exhausted on persistent 429', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse('rate limited', 429))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const client = new SemanticScholarClient({ maxRetries: 1, retryDelayMs: () => 0 })
+    await expect(client.search('query', 5)).rejects.toMatchObject({ status: 429 })
+  })
+})
+
+describe('OpenAlexClient', () => {
+  it('reconstructs abstracts, normalizes works and includes mailto', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        results: [
+          {
+            id: 'https://openalex.org/W123',
+            doi: 'https://doi.org/10.1000/xyz',
+            title: 'A Test Paper',
+            publication_year: 2021,
+            authorships: [
+              { author: { display_name: 'Alice' } },
+              { author: { display_name: 'Bob' } },
+            ],
+            abstract_inverted_index: { Hello: [0], world: [1] },
+            cited_by_count: 42,
+            primary_location: { landing_page_url: 'https://journal.example/1' },
+            ids: { arxiv: 'arXiv:2101.12345' },
+          },
+        ],
+      })
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const client = new OpenAlexClient({ mailto: 'me@example.com', retryDelayMs: () => 0 })
+    const papers = await client.search('test', 20)
+
+    const [url] = fetchMock.mock.calls[0] as [string]
+    expect(url).toContain('mailto=me%40example.com')
+    expect(url).toContain('per-page=20')
+    expect(papers[0]).toMatchObject({
+      source: 'openalex',
+      externalId: 'W123',
+      title: 'A Test Paper',
+      year: 2021,
+      authors: ['Alice', 'Bob'],
+      abstract: 'Hello world',
+      doi: '10.1000/xyz',
+      arxivId: '2101.12345',
+      url: 'https://journal.example/1',
+      citationCount: 42,
+    })
+  })
+
+  it('retries on 429 with a short delay in tests', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse('too many', 429))
+      .mockResolvedValueOnce(jsonResponse({ results: [] }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const client = new OpenAlexClient({ retryDelayMs: () => 0 })
+    await expect(client.search('query', 5)).resolves.toEqual([])
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+})

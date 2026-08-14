@@ -68,10 +68,20 @@ export interface Paper {
   authors: string[]
   year: number | null
   doi: string | null
+  arxivId: string | null
   url: string | null
   citationCount: number | null
   raw: string | null
   createdAt: string
+}
+
+export interface SearchStats {
+  queryGroups: number
+  sources: string[]
+  totalHits: number
+  uniquePapers: number
+  failedSources: string[]
+  topN: number
 }
 
 export interface Decision {

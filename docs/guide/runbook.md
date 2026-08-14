@@ -82,6 +82,27 @@ node scripts/verify-m2-2.mjs
 > 说明：角色 system prompt 通过 pi SDK 的 `resourceLoaderOptions.systemPromptOverride`
 > 注入（0.80.3 直接改 `agent.state.systemPrompt` 会被覆盖）；运行时禁用编码工具（`noTools: 'all'`）。
 
+## M2-3 学术检索配置与验证
+
+环境变量（key 绝不写入仓库）：
+
+```bash
+SEMANTIC_SCHOLAR_API_KEY=...   # 可选，提升 Semantic Scholar 限流
+OPENALEX_MAILTO=you@example.com  # 可选，进入 OpenAlex polite pool
+SEARCH_TOP_N=15                # 可选，论文卡片数量，默认 15
+SEARCH_PER_QUERY=25            # 可选，每个查询每源取多少条，默认 25
+```
+
+两个源都不配 key 也能跑通；配 key / mailto 后速度更稳。
+
+真实端到端验证（服务已启动且进程带 OPENCODE_GO_API_KEY）：
+
+```bash
+node scripts/verify-m2-3.mjs
+```
+
+脚本会检查：`research-cards.md` 是否生成、`02-research.md` 是否含不少于 10 张论文卡片、是否包含检索概览与失败源说明，以及 papers 表行数变化。
+
 ## 常见问题
 
 - 端口被占用：设置环境变量 `PORT`（server）或修改

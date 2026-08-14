@@ -79,3 +79,12 @@ reject  → step rejected → workflow: cancelled（记录 decision）
 - web: http://localhost:5173（`/api/*` 代理到 3000）
 - server: http://localhost:3000
 - 两者均支持环境变量覆盖（`PORT`、Vite 配置）
+
+## 检索模块（M2-3）
+
+- 组件：`apps/server/src/search/` 下的 `AcademicSearchClient` 抽象、`SemanticScholarClient`、`OpenAlexClient`、`AcademicSearchService`（关键词解析 + 双源并行 + 合并排序）、`ResearcherStepServiceImpl`（落库 + 生成证据卡片 + 事件广播）
+- 流程：`01-plan.md` → 关键词提取（最多 3 组）→ 每组并行查询 Semantic Scholar / OpenAlex（每查询默认 25 条）→ DOI / arXiv / 标题去重合并 → 引用数排序取前 15 → 生成 `research-cards.md` → papers 表按 `(source, external_id)` 落库 → 模型精简为 `02-research.md`
+- 去重键优先级：DOI → arXiv ID（去版本号）→ 归一化标题；合并保留最长摘要、最大引用数、作者并集，并累计来源集合
+- 限流与容错：Semantic Scholar 进程内 1 req/s + 429 重试；OpenAlex 使用 `mailto` polite pool；单源失败降级到另一源并记录失败源
+- 事件：`search.completed`（查询组数、数据源、命中数、去重数、失败源）
+- 配置：`SEMANTIC_SCHOLAR_API_KEY`（可选）、`OPENALEX_MAILTO`（可选）、`SEARCH_TOP_N`（默认 15）、`SEARCH_PER_QUERY`（默认 25）

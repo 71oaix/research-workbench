@@ -54,6 +54,7 @@ describe('repositories', () => {
       authors: ['A'],
       year: 2024,
       doi: '10.1/abc',
+      arxivId: null,
       url: 'https://example.com/a',
       citationCount: 3,
       raw: null,
@@ -66,6 +67,7 @@ describe('repositories', () => {
       authors: ['A', 'B'],
       year: 2024,
       doi: '10.1/abc',
+      arxivId: '2401.12345v2',
       url: null,
       citationCount: 5,
       raw: null,
@@ -73,5 +75,6 @@ describe('repositories', () => {
     expect(second.id).toBe(first.id)
     expect(second.title).toBe('Paper A updated')
     expect(second.citationCount).toBe(5)
+    expect(second.arxivId).toBe('2401.12345v2')
   })
 })

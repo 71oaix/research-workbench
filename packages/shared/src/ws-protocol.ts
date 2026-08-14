@@ -2,6 +2,7 @@ import type {
   Artifact,
   Decision,
   Paper,
+  SearchStats,
   Step,
   UsageRecord,
   Workflow,
@@ -14,6 +15,7 @@ export type ServerEvent =
   | { type: 'step.updated'; step: Step }
   | { type: 'artifact.updated'; artifact: Artifact }
   | { type: 'paper.created'; paper: Paper }
+  | { type: 'search.completed'; workflowId: string; stepId: string; stats: SearchStats }
   | { type: 'decision.created'; decision: Decision }
   | { type: 'usage.recorded'; usage: UsageRecord }
   | { type: 'error'; message: string }
