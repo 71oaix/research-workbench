@@ -39,6 +39,26 @@ npm.cmd run build
 npm.cmd run test
 ```
 
+## M2-1 工作流接口示例
+
+```bash
+# 1. 创建工作流（planner 与 reviewer 是审批点）
+curl -X POST http://localhost:3000/workflows \
+  -H "Content-Type: application/json" \
+  -d '{"goal":"调研 LLM 测试","steps":[{"label":"生成计划","role":"planner","requiresApproval":true},{"label":"检索文献","role":"researcher","requiresApproval":false},{"label":"审查","role":"reviewer","requiresApproval":true}]}'
+
+# 2. 开始执行 → 停在第一个审批点
+curl -X POST http://localhost:3000/workflows/<id>/start
+
+# 3. 审批（approve / reject）
+curl -X POST http://localhost:3000/workflows/<id>/steps/<stepId>/decision \
+  -H "Content-Type: application/json" \
+  -d '{"type":"approve","note":"计划可行"}'
+
+# 4. 查看完整工作流（步骤 + artifact + 决策）
+curl http://localhost:3000/workflows/<id>
+```
+
 ## 常见问题
 
 - 端口被占用：设置环境变量 `PORT`（server）或修改

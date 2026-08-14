@@ -22,6 +22,8 @@ describe('repositories', () => {
       workflowId: workflow.id,
       label: '检索文献',
       role: 'researcher',
+      position: 0,
+      requiresApproval: false,
     })
     expect(step.status).toBe('pending')
 

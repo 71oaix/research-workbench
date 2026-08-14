@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS steps (
   label TEXT NOT NULL,
   role TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending',
+  position INTEGER NOT NULL DEFAULT 0,
+  requires_approval INTEGER NOT NULL DEFAULT 0,
   input_artifacts TEXT NOT NULL DEFAULT '[]',
   output_artifact TEXT,
   agent_runtime_id TEXT,
@@ -84,5 +86,18 @@ export function createDb(dbPath = ':memory:'): Db {
   db.pragma('journal_mode = WAL')
   db.pragma('foreign_keys = ON')
   db.exec(SCHEMA)
+  migrate(db)
   return db
+}
+
+function migrate(db: Db): void {
+  const stepCols = new Set(
+    (db.prepare('PRAGMA table_info(steps)').all() as { name: string }[]).map((c) => c.name)
+  )
+  if (!stepCols.has('position')) {
+    db.exec('ALTER TABLE steps ADD COLUMN position INTEGER NOT NULL DEFAULT 0')
+  }
+  if (!stepCols.has('requires_approval')) {
+    db.exec('ALTER TABLE steps ADD COLUMN requires_approval INTEGER NOT NULL DEFAULT 0')
+  }
 }
