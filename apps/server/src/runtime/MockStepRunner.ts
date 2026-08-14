@@ -9,18 +9,18 @@ export class MockStepRunner implements StepRunner {
     private readonly bus: WorkflowEventBus
   ) {}
 
-  async run({ step, goal }: StepRunInput): Promise<StepRunResult> {
+  async run({ step, goal, feedback }: StepRunInput): Promise<StepRunResult> {
     await sleep(350)
     const artifactName = ARTIFACT_NAMES[step.role]
     switch (step.role) {
       case 'planner':
-        return { artifactName, content: mockPlan(goal) }
+        return { artifactName, content: mockPlan(goal, feedback ?? null) }
       case 'researcher': {
         this.persist(step.workflowId, step.id, 'research-cards.md', mockCards())
         return { artifactName, content: mockResearch() }
       }
       case 'writer':
-        return { artifactName, content: mockDraft() }
+        return { artifactName, content: mockDraft(feedback ?? null) }
       case 'reviewer': {
         this.persist(step.workflowId, step.id, 'citation-lint.md', mockLint())
         return { artifactName, content: mockReview() }
@@ -34,8 +34,8 @@ export class MockStepRunner implements StepRunner {
   }
 }
 
-function mockPlan(goal: string): string {
-  return [
+function mockPlan(goal: string, feedback: string | null): string {
+  const lines = [
     '# 检索计划（演示）',
     '',
     '## 研究问题',
@@ -55,7 +55,11 @@ function mockPlan(goal: string): string {
     '- 引言',
     '- 方法',
     '- 结论',
-  ].join('\n')
+  ]
+  if (feedback) {
+    lines.splice(2, 0, '', '## 修改响应', `已按审批意见修订：${feedback}`)
+  }
+  return lines.join('\n')
 }
 
 function mockCards(): string {
@@ -100,8 +104,8 @@ function mockResearch(): string {
   ].join('\n')
 }
 
-function mockDraft(): string {
-  return [
+function mockDraft(feedback: string | null): string {
+  const lines = [
     '# 综述初稿（演示）',
     '',
     '## 引言',
@@ -122,7 +126,11 @@ function mockDraft(): string {
     '- [3] 演示论文 3（2024）DOI: 10.1000/demo.3',
     '- [4] 演示论文 4（2024）DOI: 10.1000/demo.4',
     '- [5] 演示论文 5（2024）DOI: 10.1000/demo.5',
-  ].join('\n')
+  ]
+  if (feedback) {
+    lines.splice(2, 0, '', '## 修改响应', `已按审批意见修订：${feedback}`)
+  }
+  return lines.join('\n')
 }
 
 function mockLint(): string {

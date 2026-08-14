@@ -32,3 +32,9 @@ updated: 2026-08-14
 - 每个检索源各自按 `(source, external_id)` 落库（S2 用 paperId，OpenAlex 用 work ID），重复检索不产生重复行
 - 新增 `arxiv_id` 列（可空），用于跨源去重的中间键：DOI → arXiv ID → 归一化标题
 - 跨源合并结果只存在内存与 `research-cards.md` artifact 中，不落库，保留每个源的 provenance
+
+## 审批与迭代（M2-6）
+
+- `steps` 表新增 `pending_feedback TEXT`：保存“打回修改”时用户填写的意见，步骤执行成功后清空
+- 状态流转补充：`awaiting_approval` 收到 `modify` 后，目标步骤及其后续步骤重置为 `pending` 重新执行；`reject` 仍进入 cancelled
+- 产物按 `(workflow_id, name)` 递增 version，迭代过程完整保留

@@ -32,6 +32,7 @@ export interface StepRepository {
   }): Step
   listByWorkflow(workflowId: string): Step[]
   updateStatus(id: string, status: StepStatus): Step | null
+  setPendingFeedback(id: string, feedback: string | null): Step | null
 }
 
 export interface ArtifactRepository {
@@ -95,6 +96,7 @@ function mapStep(row: Record<string, unknown>): Step {
     position: Number(row.position ?? 0),
     requiresApproval: Number(row.requires_approval ?? 0) === 1,
     inputArtifacts: JSON.parse(String(row.input_artifacts ?? '[]')) as string[],
+    pendingFeedback: row.pending_feedback ? String(row.pending_feedback) : null,
     outputArtifact: row.output_artifact ? String(row.output_artifact) : null,
     agentRuntimeId: row.agent_runtime_id ? String(row.agent_runtime_id) : null,
     createdAt: String(row.created_at),
@@ -206,8 +208,8 @@ export function createRepositories(db: Db): Repositories {
         db.prepare(
           `INSERT INTO steps
            (id, workflow_id, label, role, status, position, requires_approval,
-            input_artifacts, created_at, updated_at)
-           VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)`
+            input_artifacts, pending_feedback, created_at, updated_at)
+           VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, NULL, ?, ?)`
         ).run(
           id,
           input.workflowId,
@@ -233,6 +235,17 @@ export function createRepositories(db: Db): Repositories {
       updateStatus(id: string, status: StepStatus): Step | null {
         db.prepare('UPDATE steps SET status = ?, updated_at = ? WHERE id = ?').run(
           status,
+          now(),
+          id
+        )
+        const row = db
+          .prepare('SELECT * FROM steps WHERE id = ?')
+          .get(id) as Record<string, unknown> | undefined
+        return row ? mapStep(row) : null
+      },
+      setPendingFeedback(id: string, feedback: string | null): Step | null {
+        db.prepare('UPDATE steps SET pending_feedback = ?, updated_at = ? WHERE id = ?').run(
+          feedback,
           now(),
           id
         )

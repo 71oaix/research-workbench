@@ -71,7 +71,7 @@ export class WorkflowEngine {
   async decide(
     workflowId: string,
     stepId: string,
-    type: 'approve' | 'reject',
+    type: 'approve' | 'modify' | 'reject',
     note: string | null = null
   ): Promise<Workflow> {
     this.requireWorkflow(workflowId)
@@ -94,6 +94,20 @@ export class WorkflowEngine {
       return this.requireWorkflow(workflowId)
     }
 
+    if (type === 'modify') {
+      const target = this.modifyTarget(step, this.stepsSorted(workflowId))
+      for (const candidate of this.stepsSorted(workflowId)) {
+        if (candidate.position >= target.position) {
+          this.repos.steps.updateStatus(candidate.id, 'pending')
+          this.repos.steps.setPendingFeedback(candidate.id, null)
+        }
+      }
+      this.repos.steps.setPendingFeedback(target.id, note)
+      this.setWorkflowStatus(workflowId, 'executing')
+      await this.runPendingSteps(workflowId)
+      return this.requireWorkflow(workflowId)
+    }
+
     this.setStepStatus(stepId, 'approved')
     this.setWorkflowStatus(workflowId, 'executing')
     await this.runPendingSteps(workflowId)
@@ -109,12 +123,18 @@ export class WorkflowEngine {
       const inputArtifacts = this.repos.artifacts.listByWorkflow(workflowId)
       let result: Awaited<ReturnType<StepRunner['run']>>
       try {
-        result = await this.runner.run({ step, goal: workflow.goal, inputArtifacts })
+        result = await this.runner.run({
+          step,
+          goal: workflow.goal,
+          inputArtifacts,
+          feedback: step.pendingFeedback ?? null,
+        })
       } catch (e) {
         this.setStepStatus(step.id, 'failed')
         this.setWorkflowStatus(workflowId, 'failed')
         throw e
       }
+      this.repos.steps.setPendingFeedback(step.id, null)
       const artifact = this.repos.artifacts.create({
         workflowId,
         stepId: step.id,
@@ -149,6 +169,17 @@ export class WorkflowEngine {
     return this.repos.steps
       .listByWorkflow(workflowId)
       .sort((a, b) => a.position - b.position)
+  }
+
+  private modifyTarget(step: Step, steps: Step[]): Step {
+    if (step.role === 'reviewer') {
+      const writer = [...steps].reverse().find((candidate) => candidate.role === 'writer')
+      if (!writer) {
+        throw new EngineError('modify_target_not_found', 400)
+      }
+      return writer
+    }
+    return step
   }
 
   private setWorkflowStatus(id: string, status: Workflow['status']): void {

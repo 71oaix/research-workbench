@@ -29,6 +29,7 @@ function makeStep(role: Step['role']): Step {
     inputArtifacts: [],
     outputArtifact: null,
     agentRuntimeId: null,
+    pendingFeedback: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }
@@ -101,6 +102,28 @@ describe('EvidenceStepServiceImpl', () => {
     await expect(
       service.prepareReviewer({ workflowId: 'wf-1', stepId: 's', inputArtifacts: [] })
     ).rejects.toThrow('03-draft.md')
+  })
+
+  it('prepareWriter reads the latest version of research-cards.md', async () => {
+    const repos = createRepositories(createDb())
+    const service = new EvidenceStepServiceImpl(repos, createEventBus())
+    const oldCards = makeArtifact('research-cards.md', '### [1] 旧卡片')
+    const newCards = makeArtifact('research-cards.md', '### [1] 新卡片')
+    const newVersion = {
+      ...newCards,
+      id: 'a-new',
+      version: 2,
+      createdAt: '2026-08-15T00:01:00.000Z',
+    }
+
+    const result = await service.prepareWriter({
+      workflowId: 'wf-1',
+      stepId: 'step-1',
+      inputArtifacts: [oldCards, newVersion],
+    })
+
+    expect(result.promptExtra).toContain('### [1] 新卡片')
+    expect(result.promptExtra).not.toContain('旧卡片')
   })
 
   it('does not fail the service when the draft has no citations', async () => {

@@ -45,9 +45,11 @@ describe('MockStepRunner', () => {
       step: plannerStep,
       goal: '演示调研',
       inputArtifacts: [],
+      feedback: '补充上下文工程方向',
     })
     expect(planner.artifactName).toBe('01-plan.md')
     expect(planner.content).toContain('检索关键词')
+    expect(planner.content).toContain('已按审批意见修订：补充上下文工程方向')
 
     const researcher = await runner.run({
       step: researcherStep,
@@ -61,10 +63,12 @@ describe('MockStepRunner', () => {
       step: writerStep,
       goal: '演示调研',
       inputArtifacts: [],
+      feedback: '引言太短',
     })
     expect(writer.artifactName).toBe('03-draft.md')
     expect(writer.content).toContain('[1]')
     expect(writer.content).toContain('参考文献')
+    expect(writer.content).toContain('已按审批意见修订：引言太短')
 
     const reviewer = await runner.run({
       step: reviewerStep,

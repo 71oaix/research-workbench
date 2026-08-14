@@ -104,3 +104,11 @@ reject  → step rejected → workflow: cancelled（记录 decision）
 - 前端：React + Zustand store（REST 初始化 + WS 增量更新），三栏布局：工作流列表 / 步骤时间线与产物预览与审批 / 证据引用摘要
 - 产物标签页覆盖：01-plan / research-cards / 02-research / citation-lint / 03-draft / 04-review
 - 演示模式：`DEMO_MODE=1` 使用 MockStepRunner，产出结构与真实一致的产物，无需模型 key
+
+## 工作流多轮迭代（M2-6）
+
+- 审批语义：`approve` = 通过；`modify` = 打回修改（带意见重跑目标步骤及后续）；`reject` = 显式取消任务
+- 打回目标：planner / researcher / writer 打回当前步骤；reviewer 打回 writer，随后 reviewer 自动重审
+- 反馈传递：`steps.pending_feedback` 持久化，随 `StepRunInput.feedback` 注入 prompt，执行成功后清空
+- 产物版本：重跑生成同名 artifact 新版本（v1 / v2 ...），runner 一律读取最新版本（`findLatestArtifact`）
+- 默认模板：四步全部 `requiresApproval=true`，逐步检查

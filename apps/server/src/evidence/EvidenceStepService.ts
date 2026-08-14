@@ -1,5 +1,6 @@
 import type { Artifact } from '@research-workbench/shared'
 import type { Repositories } from '@research-workbench/data'
+import { findLatestArtifact } from '../artifacts'
 import { buildCitationLint } from '../citations/lint'
 import type { WorkflowEventBus } from '../engine/eventBus'
 import { extractCardIds } from '../search/cards'
@@ -28,7 +29,7 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
     stepId: string
     inputArtifacts: Artifact[]
   }): Promise<{ promptExtra: string }> {
-    const cards = findArtifact(input.inputArtifacts, 'research-cards.md')
+    const cards = findLatestArtifact(input.inputArtifacts, 'research-cards.md')
     if (!cards) {
       throw new Error('缺少 research-cards.md，无法撰写综述')
     }
@@ -40,8 +41,8 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
     stepId: string
     inputArtifacts: Artifact[]
   }): Promise<{ promptExtra: string }> {
-    const draft = findArtifact(input.inputArtifacts, '03-draft.md')
-    const cards = findArtifact(input.inputArtifacts, 'research-cards.md')
+    const draft = findLatestArtifact(input.inputArtifacts, '03-draft.md')
+    const cards = findLatestArtifact(input.inputArtifacts, 'research-cards.md')
     if (!draft || !cards) {
       throw new Error('缺少 03-draft.md 或 research-cards.md，无法审查引用')
     }
@@ -57,10 +58,6 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
 
     return { promptExtra: buildReviewerSection({ draft, cards, lintMd }) }
   }
-}
-
-function findArtifact(artifacts: Artifact[], name: string): Artifact | null {
-  return artifacts.find((artifact) => artifact.name === name) ?? null
 }
 
 function buildWriterSection(cardsMd: string): string {

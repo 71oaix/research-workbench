@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Artifact, Step, Workflow } from '@research-workbench/shared'
 import { useWorkflowStore } from '../src/store'
 
@@ -21,6 +21,7 @@ const step: Step = {
   inputArtifacts: [],
   outputArtifact: null,
   agentRuntimeId: null,
+  pendingFeedback: null,
   createdAt: '2026-08-15T00:00:00.000Z',
   updatedAt: '2026-08-15T00:00:00.000Z',
 }
@@ -67,5 +68,33 @@ describe('workflow store', () => {
 
     useWorkflowStore.getState().applyServerEvent({ type: 'artifact.updated', artifact })
     expect(useWorkflowStore.getState().detail?.artifacts).toContainEqual(artifact)
+  })
+
+  it('sends a modify decision with the feedback note', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.endsWith('/api/workflows') && (!init || !init.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => [] })
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ workflow, steps: [], artifacts: [], decisions: [] }),
+      })
+    })
+    useWorkflowStore.setState({
+      selectedId: 'wf-1',
+      detail: { workflow, steps: [], artifacts: [], decisions: [] },
+    })
+
+    await useWorkflowStore.getState().decide('s1', 'modify', '补充上下文工程方向')
+
+    const call = fetchMock.mock.calls.find((entry) => String(entry[0]).includes('/decision'))
+    expect(call).toBeTruthy()
+    expect(JSON.parse(String((call?.[1] as RequestInit | undefined)?.body))).toMatchObject({
+      type: 'modify',
+      note: '补充上下文工程方向',
+    })
   })
 })

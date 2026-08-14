@@ -15,7 +15,7 @@ interface WorkflowState {
   createWorkflow: (goal: string) => Promise<void>
   selectWorkflow: (id: string) => Promise<void>
   startWorkflow: () => Promise<void>
-  decide: (stepId: string, type: 'approve' | 'reject', note?: string) => Promise<void>
+  decide: (stepId: string, type: 'approve' | 'modify' | 'reject', note?: string) => Promise<void>
   applyServerEvent: (event: ServerEvent) => void
   connectWs: () => () => void
 }

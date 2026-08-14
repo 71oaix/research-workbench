@@ -93,3 +93,14 @@ areas: [server, data, shared, web]
 ## 涉及 UI
 
 审批面板与产物标签有 UI 改动，已提供线框图；实现时保持“可用优先”。
+
+## 实现 review
+
+- 日期：2026-08-15
+- 审查方式：类型检查 + 单测 + 演示模式冒烟
+- 结果：typecheck 全绿；server 53 个测试 + data 4 个 + web 6 个通过；DEMO 冒烟：打回后 01-plan.md 生成 v2，逐步审批至 completed
+- 与 plan 的偏差与发现：
+  - [major] 迭代重跑必须读取最新产物版本，否则修改等于白做 → 新增 `findLatestArtifact` 并在 researcher / evidence 分支统一使用；
+  - [minor] Step 类型新增 `pendingFeedback` 后，前端与 runner 测试夹具需同步补齐字段；
+  - [minor] verify-m2-3 / m2-4 改为逐步审批，新增 verify-m2-6 演示一次打回闭环；
+  - [minor] 打回按钮在未填写意见时禁用，避免空反馈重跑。

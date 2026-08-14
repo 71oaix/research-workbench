@@ -102,7 +102,10 @@ export function createAppBundle(
 
   app.post('/workflows/:id/steps/:stepId/decision', async (c) => {
     const body = await c.req.json().catch(() => null)
-    if (!body || (body.type !== 'approve' && body.type !== 'reject')) {
+    if (
+      !body ||
+      (body.type !== 'approve' && body.type !== 'modify' && body.type !== 'reject')
+    ) {
       return c.json({ error: 'invalid_decision' }, 400)
     }
     try {

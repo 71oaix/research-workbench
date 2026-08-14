@@ -44,6 +44,7 @@ export interface Step {
   inputArtifacts: string[]
   outputArtifact: string | null
   agentRuntimeId: string | null
+  pendingFeedback: string | null
   createdAt: string
   updatedAt: string
 }

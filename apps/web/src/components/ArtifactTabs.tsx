@@ -28,7 +28,7 @@ export function ArtifactTabs({ artifacts }: { artifacts: Artifact[] }) {
             className={artifact.id === current?.id ? 'active' : ''}
             onClick={() => setActiveId(artifact.id)}
           >
-            {artifact.name}
+            {artifact.name} (v{artifact.version})
           </button>
         ))}
       </div>

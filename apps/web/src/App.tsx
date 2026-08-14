@@ -48,6 +48,7 @@ export default function App() {
               {awaitingStep && (
                 <ApprovalPanel
                   step={awaitingStep}
+                  decisions={detail.decisions}
                   onDecide={(type, note) => void decide(awaitingStep.id, type, note)}
                 />
               )}

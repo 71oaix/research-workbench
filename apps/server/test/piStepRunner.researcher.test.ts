@@ -17,19 +17,20 @@ function makeResearcherStep(): Step {
     inputArtifacts: [],
     outputArtifact: null,
     agentRuntimeId: null,
+    pendingFeedback: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }
 }
 
-function makePlanArtifact(): Artifact {
+function makePlanArtifact(version: number, content: string): Artifact {
   return {
     id: 'a1',
     workflowId: 'wf-1',
     stepId: null,
     name: '01-plan.md',
-    content: '## 检索关键词\n- RAG',
-    version: 1,
+    content,
+    version,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }
@@ -54,14 +55,17 @@ describe('PiStepRunner researcher branch', () => {
     const input: StepRunInput = {
       step: makeResearcherStep(),
       goal: '调研',
-      inputArtifacts: [makePlanArtifact()],
+      inputArtifacts: [
+        makePlanArtifact(1, '旧计划：无关键词'),
+        makePlanArtifact(2, '新计划：## 检索关键词\n- RAG'),
+      ],
     }
     const result = await runner.run(input)
 
     expect(researcher.prepare).toHaveBeenCalledWith({
       workflowId: 'wf-1',
       stepId: 'step-r',
-      planContent: '## 检索关键词\n- RAG',
+      planContent: '新计划：## 检索关键词\n- RAG',
     })
     expect(handle.send).toHaveBeenCalledWith(
       expect.stringContaining('检索证据卡片（仅以此为事实来源）')

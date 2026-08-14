@@ -4,6 +4,7 @@ export interface StepRunInput {
   step: Step
   goal: string
   inputArtifacts: Artifact[]
+  feedback?: string | null
 }
 
 export interface StepRunResult {

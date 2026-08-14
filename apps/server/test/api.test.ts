@@ -77,4 +77,38 @@ describe('workflow REST API', () => {
     expect(body).toHaveLength(1)
     expect(body[0].goal).toBe('调研')
   })
+
+  it('accepts modify decisions and re-runs the step with a new artifact version', async () => {
+    const app = createApp(undefined, new FakeStepRunner(1))
+    const createRes = await app.request('/workflows', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        goal: '调研',
+        steps: [{ label: '规划', role: 'planner', requiresApproval: true }],
+      }),
+    })
+    const created = (await createRes.json()) as {
+      workflow: { id: string }
+      steps: { id: string }[]
+    }
+    await app.request(`/workflows/${created.workflow.id}/start`, { method: 'POST' })
+
+    const modifyRes = await app.request(
+      `/workflows/${created.workflow.id}/steps/${created.steps[0].id}/decision`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ type: 'modify', note: '补充方向' }),
+      }
+    )
+    expect(modifyRes.status).toBe(200)
+    const after = (await modifyRes.json()) as {
+      workflow: { status: string }
+      artifacts: { name: string; version: number }[]
+    }
+    expect(after.workflow.status).toBe('paused')
+    expect(after.artifacts).toHaveLength(2)
+    expect(after.artifacts.map((artifact) => artifact.version)).toEqual([1, 2])
+  })
 })

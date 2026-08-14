@@ -15,8 +15,8 @@ interface StepSpecInput {
 
 const DEFAULT_STEPS: StepSpecInput[] = [
   { label: '生成检索计划', role: 'planner', requiresApproval: true },
-  { label: '检索文献', role: 'researcher', requiresApproval: false },
-  { label: '撰写综述', role: 'writer', requiresApproval: false },
+  { label: '检索文献', role: 'researcher', requiresApproval: true },
+  { label: '撰写综述', role: 'writer', requiresApproval: true },
   { label: '审查引用', role: 'reviewer', requiresApproval: true },
 ]
 
@@ -41,7 +41,12 @@ export const api = {
   startWorkflow: (workflowId: string) =>
     request<WorkflowDetail>(`/workflows/${workflowId}/start`, { method: 'POST' }),
   getWorkflow: (workflowId: string) => request<WorkflowDetail>(`/workflows/${workflowId}`),
-  decide: (workflowId: string, stepId: string, type: 'approve' | 'reject', note?: string) =>
+  decide: (
+    workflowId: string,
+    stepId: string,
+    type: 'approve' | 'modify' | 'reject',
+    note?: string
+  ) =>
     request<WorkflowDetail>(`/workflows/${workflowId}/steps/${stepId}/decision`, {
       method: 'POST',
       body: JSON.stringify({ type, note: note ?? null }),
