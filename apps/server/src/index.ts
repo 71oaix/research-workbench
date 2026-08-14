@@ -16,6 +16,7 @@ import { OpenAlexClient } from './search/openAlex'
 import { ResearcherStepServiceImpl } from './search/researcherStep'
 import { SemanticScholarClient } from './search/semanticScholar'
 import { wsRoutes } from './ws'
+import { EvidenceStepServiceImpl } from './evidence/EvidenceStepService'
 
 const ROLES: Role[] = ['planner', 'researcher', 'writer', 'reviewer']
 
@@ -121,13 +122,15 @@ function createDefaultStepRunner(
     searchConfig
   )
   const researcher = new ResearcherStepServiceImpl(searchService, repos, bus)
+  const evidence = new EvidenceStepServiceImpl(repos, bus)
   return new PiStepRunner(
     provider,
     (usage) => {
       const record = repos.usage.record(usage)
       bus.emit({ type: 'usage.recorded', usage: record })
     },
-    researcher
+    researcher,
+    evidence
   )
 }
 

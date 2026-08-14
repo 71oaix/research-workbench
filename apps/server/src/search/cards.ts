@@ -1,5 +1,15 @@
 import type { KeywordGroup, MergedPaper, SearchStats } from './types'
 
+export function extractCardIds(cardsMd: string): number[] {
+  const ids: number[] = []
+  const pattern = /^###\s*\[(\d{1,4})\]/gm
+  let match: RegExpExecArray | null
+  while ((match = pattern.exec(cardsMd))) {
+    ids.push(Number(match[1]))
+  }
+  return ids
+}
+
 export function buildResearchCards(
   papers: MergedPaper[],
   stats: SearchStats,

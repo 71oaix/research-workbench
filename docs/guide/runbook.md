@@ -103,6 +103,16 @@ node scripts/verify-m2-3.mjs
 
 脚本会检查：`research-cards.md` 是否生成、`02-research.md` 是否含不少于 10 张论文卡片、是否包含检索概览与失败源说明，以及 papers 表行数变化。
 
+## M2-4 证据引用验证
+
+真实端到端验证（服务已启动且进程带 OPENCODE_GO_API_KEY）：
+
+```bash
+node scripts/verify-m2-4.mjs
+```
+
+脚本在 M2-3 检查基础上增加：`03-draft.md` 引用编号数不少于 5 且全部在卡片范围内、包含参考文献列表；`citation-lint.md` 自动生成；`04-review.md` 包含可信引用清单、存疑引用与原因、覆盖不足的方向。
+
 ## 常见问题
 
 - 端口被占用：设置环境变量 `PORT`（server）或修改

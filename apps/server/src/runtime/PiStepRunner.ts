@@ -1,5 +1,6 @@
 import type { UsageRecord } from '@research-workbench/shared'
 import type { StepRunInput, StepRunResult, StepRunner } from '../engine/StepRunner'
+import type { EvidenceStepService } from '../evidence/EvidenceStepService'
 import type { ResearcherStepService } from '../search/types'
 import { PiRuntimeProvider } from './PiRuntimeProvider'
 import { ARTIFACT_NAMES, ROLE_SYSTEM_PROMPTS } from './prompts'
@@ -8,7 +9,8 @@ export class PiStepRunner implements StepRunner {
   constructor(
     private readonly provider: PiRuntimeProvider,
     private readonly onUsage?: (usage: Omit<UsageRecord, 'id' | 'createdAt'>) => void,
-    private readonly researcher?: ResearcherStepService
+    private readonly researcher?: ResearcherStepService,
+    private readonly evidence?: EvidenceStepService
   ) {}
 
   async run({ step, goal, inputArtifacts }: StepRunInput): Promise<StepRunResult> {
@@ -27,6 +29,21 @@ export class PiStepRunner implements StepRunner {
           planContent: plan.content,
         })
         prompt = buildResearcherPrompt({ goal, step, inputArtifacts, cardsMd })
+      }
+      if (step.role === 'writer' && this.evidence) {
+        const { promptExtra } = await this.evidence.prepareWriter({
+          workflowId: step.workflowId,
+          stepId: step.id,
+          inputArtifacts,
+        })
+        prompt = `${prompt}\n\n${promptExtra}`
+      } else if (step.role === 'reviewer' && this.evidence) {
+        const { promptExtra } = await this.evidence.prepareReviewer({
+          workflowId: step.workflowId,
+          stepId: step.id,
+          inputArtifacts,
+        })
+        prompt = `${prompt}\n\n${promptExtra}`
       }
       const content = await handle.send(prompt)
       const usage = this.provider.takeUsage(handle.id)
