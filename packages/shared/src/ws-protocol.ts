@@ -9,6 +9,7 @@ import type {
 
 export type ServerEvent =
   | { type: 'hello' }
+  | { type: 'workflow.created'; workflow: Workflow }
   | { type: 'workflow.updated'; workflow: Workflow }
   | { type: 'step.updated'; step: Step }
   | { type: 'artifact.updated'; artifact: Artifact }

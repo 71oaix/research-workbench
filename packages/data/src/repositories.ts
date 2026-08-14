@@ -26,6 +26,8 @@ export interface StepRepository {
     workflowId: string
     label: string
     role: Role
+    position: number
+    requiresApproval: boolean
     inputArtifacts?: string[]
   }): Step
   listByWorkflow(workflowId: string): Step[]
@@ -90,6 +92,8 @@ function mapStep(row: Record<string, unknown>): Step {
     label: String(row.label),
     role: row.role as Role,
     status: row.status as StepStatus,
+    position: Number(row.position ?? 0),
+    requiresApproval: Number(row.requires_approval ?? 0) === 1,
     inputArtifacts: JSON.parse(String(row.input_artifacts ?? '[]')) as string[],
     outputArtifact: row.output_artifact ? String(row.output_artifact) : null,
     agentRuntimeId: row.agent_runtime_id ? String(row.agent_runtime_id) : null,
@@ -192,19 +196,24 @@ export function createRepositories(db: Db): Repositories {
         workflowId: string
         label: string
         role: Role
+        position: number
+        requiresApproval: boolean
         inputArtifacts?: string[]
       }): Step {
         const id = randomUUID()
         const ts = now()
         db.prepare(
           `INSERT INTO steps
-           (id, workflow_id, label, role, status, input_artifacts, created_at, updated_at)
-           VALUES (?, ?, ?, ?, 'pending', ?, ?, ?)`
+           (id, workflow_id, label, role, status, position, requires_approval,
+            input_artifacts, created_at, updated_at)
+           VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)`
         ).run(
           id,
           input.workflowId,
           input.label,
           input.role,
+          input.position,
+          input.requiresApproval ? 1 : 0,
           JSON.stringify(input.inputArtifacts ?? []),
           ts,
           ts
