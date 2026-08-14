@@ -1,6 +1,6 @@
 ---
 title: M1 项目骨架初始化（monorepo + 前后端脚手架 + SQLite + CI）
-status: active
+status: archived
 created: 2026-08-14
 updated: 2026-08-14
 kind: infra

@@ -1,6 +1,6 @@
 ---
 title: M1 项目骨架初始化（plan）
-status: active
+status: archived
 created: 2026-08-14
 updated: 2026-08-14
 issue: 2026-08-14-m1-project-skeleton

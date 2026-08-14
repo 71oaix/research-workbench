@@ -20,6 +20,7 @@ updated: 2026-08-05
 | 竞赛叙事与答辩预设 | active | architecture/01-competition-story.md | 作品故事 / 演示脚本 / 答辩 Q&A |
 | issues 目录规范 | active | issues/readme.md | SDD 任务索引与 frontmatter 规范 |
 | plans 目录规范 | active | plans/readme.md | SDD 方案索引与内容要求 |
-| Issue: SDD 工作流 | active | issues/open/2026-08-06-sdd-workflow.md | 建立轻量 SDD 工作流并启动首个开发循环 |
-| Issue: M1 项目骨架初始化 | active | issues/open/2026-08-14-m1-project-skeleton.md | 首个开发任务：工程骨架 |
-| Plan: M1 项目骨架初始化 | active | plans/open/2026-08-14-m1-project-skeleton.md | 首个开发任务的方案 |
+| Issue: SDD 工作流 | archived | issues/close/2026-08-06-sdd-workflow.md | 已归档：流程建立 + 首个循环跑通 |
+| Issue: M1 项目骨架初始化 | archived | issues/close/2026-08-14-m1-project-skeleton.md | 已归档：骨架可运行 |
+| Plan: M1 项目骨架初始化 | archived | plans/close/2026-08-14-m1-project-skeleton.md | 已归档：实现完成 |
+| Issue: M2-1 WorkflowEngine | active | issues/open/2026-08-14-m2-1-workflow-engine.md | 状态机 + artifact 交接 + 审批点 |

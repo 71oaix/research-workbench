@@ -1,8 +1,8 @@
 ---
 title: 在 research-workbench 建立轻量 SDD 工作流并启动首个开发循环
-status: active
+status: archived
 created: 2026-08-06
-updated: 2026-08-06
+updated: 2026-08-14
 kind: infra
 priority: high
 triage: actionable
