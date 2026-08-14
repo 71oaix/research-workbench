@@ -27,6 +27,8 @@ updated: 2026-08-05
 | Plan: M2-1 WorkflowEngine | archived | plans/close/2026-08-14-m2-1-workflow-engine.md | 已归档：实现完成 |
 | Issue: M2-2 角色运行时 | archived | issues/close/2026-08-14-m2-2-pi-runtime.md | 已归档：真实 Planner 跑通 |
 | Plan: M2-2 角色运行时 | archived | plans/close/2026-08-14-m2-2-pi-runtime.md | 已归档：实现完成 |
-| Issue: M2-3 学术检索 | active | issues/open/2026-08-14-m2-3-academic-search.md | Semantic Scholar / OpenAlex 真实论文卡片 |
+| Issue: M2-3 学术检索 | archived | issues/close/2026-08-14-m2-3-academic-search.md | 已归档：双源检索实现完成 |
 | 调研：学术检索最佳实践 | active | research/2026-08-14-academic-search-best-practices.md | M2-3 方案定稿依据 |
-| Plan: M2-3 学术检索 | active | plans/open/2026-08-14-m2-3-academic-search.md | 待用户确认后实现 |
+| Plan: M2-3 学术检索 | archived | plans/close/2026-08-14-m2-3-academic-search.md | 已归档：实现完成 |
+| Issue: M2-4 Writer/Reviewer 证据引用 | active | issues/open/2026-08-14-m2-4-evidence-citation.md | 卡片引用写作与核查 |
+| Plan: M2-4 Writer/Reviewer 证据引用 | active | plans/open/2026-08-14-m2-4-evidence-citation.md | 待用户确认后实现 |

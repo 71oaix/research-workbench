@@ -1,6 +1,6 @@
 ---
 title: M2-3 学术检索工具（Semantic Scholar / OpenAlex 真实论文卡片）
-status: active
+status: archived
 created: 2026-08-14
 updated: 2026-08-14
 kind: feature
