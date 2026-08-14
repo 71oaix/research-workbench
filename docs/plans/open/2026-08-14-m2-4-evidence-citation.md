@@ -71,3 +71,13 @@ areas: [server, shared]
 ## 不涉及 UI
 
 纯后端，无 UI，按 artifacts 硬性要求无需线框图或 HTML 预览。
+
+## 实现 review
+
+- 日期：2026-08-14
+- 审查方式：类型检查 + 单测 + 代码走查
+- 结果：typecheck 全绿；server 45 个测试 + data 3 个测试通过
+- 与 plan 的偏差与发现：
+  - [major] reviewer 前置准备会把 lint 写入 artifacts 表，runner 级测试必须先建 workflow/step 行（真实流程由引擎保证）→ 测试已按真实结构修正；
+  - [minor] 引用编号提取也会匹配 markdown 链接文本中的数字，MVP 可接受，M3 再引入更严格的引用解析；
+  - [minor] 端到端真实模型验证留给 `scripts/verify-m2-4.mjs`（需服务带 OPENCODE_GO_API_KEY）。

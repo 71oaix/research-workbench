@@ -88,3 +88,11 @@ reject  → step rejected → workflow: cancelled（记录 decision）
 - 限流与容错：Semantic Scholar 进程内 1 req/s + 429 重试；OpenAlex 使用 `mailto` polite pool；单源失败降级到另一源并记录失败源
 - 事件：`search.completed`（查询组数、数据源、命中数、去重数、失败源）
 - 配置：`SEMANTIC_SCHOLAR_API_KEY`（可选）、`OPENALEX_MAILTO`（可选）、`SEARCH_TOP_N`（默认 15）、`SEARCH_PER_QUERY`（默认 25）
+
+## 证据引用（M2-4）
+
+- Writer 只读 `research-cards.md` 撰写 `03-draft.md`：引言 + 2-4 个章节 + 小结，正文用 [编号] 标注卡片，文末附参考文献列表
+- 确定性引用检查：`apps/server/src/citations/lint.ts` 提取草稿中的 [n]，对照卡片实际编号集合生成 `citation-lint.md`；检查不阻断流程，由 Reviewer 与人判断
+- Reviewer 基于草稿 + 卡片 + lint 报告输出 `04-review.md`：可信引用清单、存疑引用与原因、覆盖不足的方向、总体结论
+- 组件：`EvidenceStepServiceImpl`（writer / reviewer 前置准备 + lint artifact 落库与广播）
+- 中间产物：`citation-lint.md`（引用总数、有效编号、越界 / 缺失编号、引用频次）
