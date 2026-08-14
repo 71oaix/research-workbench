@@ -35,7 +35,8 @@ updated: 2026-08-14
 | packages/shared | 核心类型 + WS 协议 | ✅ |
 | packages/data | SQLite schema + 仓储接口/实现 | ✅ |
 | WorkflowEngine（apps/server/src/engine） | 状态机 + artifact 交接 + 审批点 + 事件广播 | ✅（M2-1） |
-| apps/server | Hono 入口、/health、工作流 REST、WS 占位、运行时抽象 | ✅（provider 为 noop 占位） |
+| PiRuntimeProvider（apps/server/src/runtime） | pi SDK 0.80.3 + opencode-go/deepseek-v4-flash，角色提示词注入，usage 落库 | ✅（M2-2） |
+| apps/server | Hono 入口、/health、工作流 REST、WS 占位 | ✅ |
 | apps/web | 三栏占位页 + 健康检查 | ✅ |
 | scripts/dev.js | 一键并行启动 | ✅ |
 | .github/workflows/ci.yml | install → typecheck → build → test | ✅ |
@@ -49,6 +50,14 @@ updated: 2026-08-14
 - `POST /workflows/:id/steps/:stepId/decision` → approve / reject
 - `GET /ws` → 426 占位（协议类型已在 shared 定义，真实 WS 通道 M2 接入）
 - `AgentRuntimeProvider.createRuntime(role, systemPrompt)` → M2 接入 pi SDK
+
+## 模型运行时（M2-2）
+
+- Provider：`opencode-go`，base URL `https://opencode.ai/zen/go/v1`，Bearer key（`OPENCODE_GO_API_KEY`）
+- 默认模型：`deepseek-v4-flash`（已实测）；`PI_MODEL_<ROLE>` 可覆盖
+- 角色 system prompt 通过 `resourceLoaderOptions.systemPromptOverride` 注入（0.80.3 的正确入口）
+- 运行时禁用工具（`noTools: 'all'`），角色只做规划/检索/撰写/审查文本
+- 每次调用的 token / 成本写入 `usage_records` 并广播 `usage.recorded`
 
 ## 工作流状态机（M2-1）
 

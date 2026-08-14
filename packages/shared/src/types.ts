@@ -6,6 +6,7 @@ export type WorkflowStatus =
   | 'paused'
   | 'completed'
   | 'cancelled'
+  | 'failed'
 
 export type StepStatus =
   | 'pending'
@@ -14,6 +15,7 @@ export type StepStatus =
   | 'approved'
   | 'rejected'
   | 'skipped'
+  | 'failed'
 
 export type DecisionType = 'approve' | 'reject' | 'modify' | 'retry'
 

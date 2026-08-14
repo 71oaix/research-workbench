@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import { FakeStepRunner } from '../src/engine/StepRunner'
 import { createApp } from '../src/index'
 
 describe('workflow REST API', () => {
   it('creates, starts and completes a workflow via API', async () => {
-    const app = createApp()
+    const app = createApp(undefined, new FakeStepRunner(1))
 
     const createRes = await app.request('/workflows', {
       method: 'POST',

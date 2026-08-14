@@ -2,6 +2,7 @@ import type { Artifact, Step } from '@research-workbench/shared'
 
 export interface StepRunInput {
   step: Step
+  goal: string
   inputArtifacts: Artifact[]
 }
 
@@ -21,7 +22,7 @@ export interface StepRunner {
 export class FakeStepRunner implements StepRunner {
   constructor(private readonly delayMs = 200) {}
 
-  async run({ step, inputArtifacts }: StepRunInput): Promise<StepRunResult> {
+  async run({ step, goal, inputArtifacts }: StepRunInput): Promise<StepRunResult> {
     await new Promise((resolve) => setTimeout(resolve, this.delayMs))
     const refs =
       inputArtifacts.length > 0
@@ -30,6 +31,7 @@ export class FakeStepRunner implements StepRunner {
     const content = [
       `# ${step.label}（模拟产物）`,
       '',
+      `- 工作流目标: ${goal}`,
       `- 角色: ${step.role}`,
       '- 输入 artifact:',
       refs,
