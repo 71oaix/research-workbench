@@ -25,6 +25,17 @@
 - 模型：OpenAI 兼容接口（DeepSeek / Qwen / OpenAI），自带 key
 - 形态：本地 Web 工作台（MVP 不做 Electron）
 
+## 快速开始
+
+```bash
+npm install
+npm run dev
+```
+
+- 前端：http://localhost:5173
+- 后端健康检查：http://localhost:3000/health
+- 详见 [本地运行手册](docs/guide/runbook.md)
+
 ## 文档
 
 - [文档索引](docs/INDEX.md)

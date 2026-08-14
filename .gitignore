@@ -21,6 +21,9 @@ venv/
 data/*.db
 data/*.sqlite
 data/*.sqlite3
+data/*.db-shm
+data/*.db-wal
+data/*.db-journal
 
 # 测试产物
 test-results/
