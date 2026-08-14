@@ -60,4 +60,21 @@ describe('workflow REST API', () => {
     expect((await app.request('/workflows', { method: 'POST', body: '{}' })).status).toBe(400)
     expect((await app.request('/workflows/unknown')).status).toBe(404)
   })
+
+  it('lists created workflows', async () => {
+    const app = createApp(undefined, new FakeStepRunner(1))
+    await app.request('/workflows', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        goal: '调研',
+        steps: [{ label: '规划', role: 'planner', requiresApproval: true }],
+      }),
+    })
+    const res = await app.request('/workflows')
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { id: string; goal: string }[]
+    expect(body).toHaveLength(1)
+    expect(body[0].goal).toBe('调研')
+  })
 })

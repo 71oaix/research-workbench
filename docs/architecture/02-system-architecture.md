@@ -96,3 +96,11 @@ reject  → step rejected → workflow: cancelled（记录 decision）
 - Reviewer 基于草稿 + 卡片 + lint 报告输出 `04-review.md`：可信引用清单、存疑引用与原因、覆盖不足的方向、总体结论
 - 组件：`EvidenceStepServiceImpl`（writer / reviewer 前置准备 + lint artifact 落库与广播）
 - 中间产物：`citation-lint.md`（引用总数、有效编号、越界 / 缺失编号、引用频次）
+
+## 工作流 UI 与 WebSocket（M2-5）
+
+- REST 新增 `GET /workflows` 列表端点
+- WebSocket：`ws` 包挂在 @hono/node-server 的 HTTP server 上（path `/ws`），事件总线广播 `ServerEvent` JSON；连接即发 `hello`；客户端断线自动重连
+- 前端：React + Zustand store（REST 初始化 + WS 增量更新），三栏布局：工作流列表 / 步骤时间线与产物预览与审批 / 证据引用摘要
+- 产物标签页覆盖：01-plan / research-cards / 02-research / citation-lint / 03-draft / 04-review
+- 演示模式：`DEMO_MODE=1` 使用 MockStepRunner，产出结构与真实一致的产物，无需模型 key

@@ -92,3 +92,14 @@ areas: [web, server, shared]
 ## 涉及 UI
 
 本任务为主要 UI 里程碑，已提供线框图；实现时按“可用优先、不追求视觉打磨”原则。
+
+## 实现 review
+
+- 日期：2026-08-15
+- 审查方式：类型检查 + 单测 + 前端构建 + 演示模式冒烟
+- 结果：typecheck 全绿；server 48 个测试 + data 3 个 + web 4 个通过；vite build 成功；DEMO_MODE 冒烟：四步 completed，六类产物齐全，列表接口正常
+- 与 plan 的偏差与发现：
+  - [major] store 的 step 事件需“新增或替换”而非仅替换，避免事件先于详情到达时丢步骤 → 已改为 upsertStep；
+  - [minor] WS 测试中 hello 帧可能在消息监听器挂载前到达 → 先挂监听再等 open；
+  - [minor] 前端测试的 fetch mock 需兼容不带 method 的 GET → 已修正；
+  - [minor] WebSocket 集成测试与 MockStepRunner 测试需真实 workflow/step 行 → 已按真实结构构造。

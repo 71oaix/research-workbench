@@ -113,6 +113,27 @@ node scripts/verify-m2-4.mjs
 
 脚本在 M2-3 检查基础上增加：`03-draft.md` 引用编号数不少于 5 且全部在卡片范围内、包含参考文献列表；`citation-lint.md` 自动生成；`04-review.md` 包含可信引用清单、存疑引用与原因、覆盖不足的方向。
 
+## M2-5 工作流 UI 启动与验证
+
+普通模式（需要 OPENCODE_GO_API_KEY）：
+
+```bash
+npm.cmd run dev
+```
+
+访问 http://localhost:5173。
+
+演示模式（无需 key）：
+
+```powershell
+$env:DEMO_MODE='1'
+npm.cmd run dev
+```
+
+WebSocket 通道为 `ws://localhost:3000/ws`，开发时经 Vite 代理 `/ws` 到 5173。
+
+验证路径：浏览器新建工作流 → 启动 → 步骤时间线推进 → 产物标签预览 → 审批 → completed。
+
 ## 常见问题
 
 - 端口被占用：设置环境变量 `PORT`（server）或修改

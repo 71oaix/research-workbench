@@ -33,4 +33,4 @@ updated: 2026-08-05
 | Issue: M2-4 Writer/Reviewer 证据引用 | archived | issues/close/2026-08-14-m2-4-evidence-citation.md | 已归档：证据引用实现完成 |
 | Plan: M2-4 Writer/Reviewer 证据引用 | archived | plans/close/2026-08-14-m2-4-evidence-citation.md | 已归档：实现完成 |
 | Issue: M2-5 工作流 UI | active | issues/open/2026-08-14-m2-5-workflow-ui.md | 列表 / 时间线 / 产物 / 审批 / 实时事件 |
-| Plan: M2-5 工作流 UI | active | plans/open/2026-08-14-m2-5-workflow-ui.md | 待用户确认后实现 |
+| Plan: M2-5 工作流 UI | active | plans/open/2026-08-14-m2-5-workflow-ui.md | 已实现，待合并 |
