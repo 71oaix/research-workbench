@@ -17,6 +17,12 @@ export type StepStatus =
 
 export type DecisionType = 'approve' | 'reject' | 'modify' | 'retry'
 
+export interface StepSpec {
+  label: string
+  role: Role
+  requiresApproval: boolean
+}
+
 export interface Workflow {
   id: string
   goal: string
@@ -31,6 +37,8 @@ export interface Step {
   label: string
   role: Role
   status: StepStatus
+  position: number
+  requiresApproval: boolean
   inputArtifacts: string[]
   outputArtifact: string | null
   agentRuntimeId: string | null

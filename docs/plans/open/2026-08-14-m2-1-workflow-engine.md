@@ -85,3 +85,13 @@ reject  → step rejected → workflow: cancelled（记录 decision）
 ## 不涉及 UI
 
 本任务纯后端，不涉及 UI，按 artifacts 硬性要求无需线框图或 HTML 预览。
+
+## 实现 review
+
+- 日期：2026-08-14
+- 审查方式：类型检查 + 单测/API 测试 + 真实服务端到端验证
+- 结果：typecheck ✅，测试 12/12 ✅（server 8 + web 1 + data 3），手动四步工作流 ✅
+- 与 plan 的偏差：
+  - 计划写“重建开发库”，实现改为 `ALTER TABLE` 幂等迁移（`position` / `requires_approval` 缺列时自动加），避免破坏已有数据
+  - `decide` 的 note 参数改为可选；非法角色/步骤在 API 层返回 400
+  - 测试初期断言 artifact 数量为 2，实际每一步执行都会产 artifact（含审批步骤），修正为 3

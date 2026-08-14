@@ -1,9 +1,19 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
-import { createDb } from '@research-workbench/data'
+import type { Context } from 'hono'
+import { createDb, createRepositories } from '@research-workbench/data'
+import type { Role, StepSpec } from '@research-workbench/shared'
+import { createEventBus } from './engine/eventBus'
+import { EngineError, WorkflowEngine } from './engine/WorkflowEngine'
+import { FakeStepRunner } from './engine/StepRunner'
 import { wsRoutes } from './ws'
 
+const ROLES: Role[] = ['planner', 'researcher', 'writer', 'reviewer']
+
 export function createApp(db: ReturnType<typeof createDb> = createDb()) {
+  const repos = createRepositories(db)
+  const bus = createEventBus()
+  const engine = new WorkflowEngine(repos, new FakeStepRunner(), bus)
   const app = new Hono()
 
   app.get('/health', (c) => {
@@ -15,8 +25,74 @@ export function createApp(db: ReturnType<typeof createDb> = createDb()) {
     }
   })
 
+  app.post('/workflows', async (c) => {
+    const body = await c.req.json().catch(() => null)
+    if (
+      !body ||
+      typeof body.goal !== 'string' ||
+      !Array.isArray(body.steps) ||
+      body.steps.length === 0
+    ) {
+      return c.json({ error: 'invalid_body' }, 400)
+    }
+    const steps: StepSpec[] = []
+    for (const raw of body.steps as Record<string, unknown>[]) {
+      const label = typeof raw.label === 'string' ? raw.label.trim() : ''
+      const role = typeof raw.role === 'string' ? (raw.role as Role) : null
+      if (!label || !role || !ROLES.includes(role)) {
+        return c.json({ error: 'invalid_step' }, 400)
+      }
+      steps.push({ label, role, requiresApproval: raw.requiresApproval === true })
+    }
+    const workflow = engine.createWorkflow({ goal: body.goal, steps })
+    return c.json(engine.getDetail(workflow.id), 201)
+  })
+
+  app.post('/workflows/:id/start', async (c) => {
+    try {
+      const workflow = await engine.start(c.req.param('id'))
+      return c.json(engine.getDetail(workflow.id))
+    } catch (e) {
+      return handleError(c, e)
+    }
+  })
+
+  app.get('/workflows/:id', (c) => {
+    try {
+      return c.json(engine.getDetail(c.req.param('id')))
+    } catch (e) {
+      return handleError(c, e)
+    }
+  })
+
+  app.post('/workflows/:id/steps/:stepId/decision', async (c) => {
+    const body = await c.req.json().catch(() => null)
+    if (!body || (body.type !== 'approve' && body.type !== 'reject')) {
+      return c.json({ error: 'invalid_decision' }, 400)
+    }
+    try {
+      const workflow = await engine.decide(
+        c.req.param('id'),
+        c.req.param('stepId'),
+        body.type,
+        typeof body.note === 'string' ? body.note : null
+      )
+      return c.json(engine.getDetail(workflow.id))
+    } catch (e) {
+      return handleError(c, e)
+    }
+  })
+
   app.route('/', wsRoutes)
   return app
+}
+
+function handleError(c: Context, e: unknown) {
+  if (e instanceof EngineError) {
+    return c.json({ error: e.message }, e.status as 400 | 404 | 409)
+  }
+  console.error(e)
+  return c.json({ error: 'internal_error' }, 500)
 }
 
 if (process.env.NODE_ENV !== 'test') {
