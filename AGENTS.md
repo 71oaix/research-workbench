@@ -6,7 +6,7 @@
 
 ## 目录约定
 
-- `docs/` — 文档；必须维护 `docs/INDEX.md`；按 `architecture/`、`guide/`、`decisions/` 等分类
+- `docs/` — 文档；必须维护 `docs/INDEX.md`；按 `architecture/`、`specification/`、`guide/`、`research/`、`reference/`、`decisions/` 分类（映射规范见 [文档分类体系](docs/guide/02-document-taxonomy.md)）；SDD 任务文档独立于 `issues/`、`plans/`
 - `.github/` — issue / PR 模板与流程配置
 - 代码目录 — 待 M1 骨架确定（前端 / 后端 / 数据）
 - `scripts/` — 辅助脚本
@@ -25,6 +25,13 @@
 - 状态只有 `active | archived`；被替代的文档标记 `archived` 并填写 `supersedes`
 - 创建、修改、移动、归档文档后，必须同步更新 `docs/INDEX.md`
 - 归档不删除
+
+## SDD 开发流程（重要）
+
+- 本项目的功能开发遵循轻量 SDD：`docs/issues/`（要做什么）+ `docs/plans/`（怎么做），结构与规范见 [issues 目录规范](docs/issues/readme.md)
+- 接到开发/修复/重构任务时，**加载 `sdd-development` skill** 并按其循环执行：issue → plan → plan review → 人确认 → 实现 → 实现 review → 测试 → 人确认合并 → 归档
+- 未经用户确认 plan，不得开始实现（小改动除外）
+- plan/合并产物必须满足 skill 中的"产出硬性要求"（任务解释、关键决策、UI 预览、改动说明、预览地址）——用户不看代码也能验收
 
 ## Git / GitHub 协作规范（所有 agent 通用）
 
