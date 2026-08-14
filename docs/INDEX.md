@@ -34,3 +34,5 @@ updated: 2026-08-05
 | Plan: M2-4 Writer/Reviewer 证据引用 | archived | plans/close/2026-08-14-m2-4-evidence-citation.md | 已归档：实现完成 |
 | Issue: M2-5 工作流 UI | active | issues/open/2026-08-14-m2-5-workflow-ui.md | 列表 / 时间线 / 产物 / 审批 / 实时事件 |
 | Plan: M2-5 工作流 UI | active | plans/open/2026-08-14-m2-5-workflow-ui.md | 已实现，待合并 |
+| Issue: M2-6 工作流多轮迭代 | active | issues/open/2026-08-15-m2-6-workflow-iteration.md | 打回修改 / 逐步检查 / 反馈注入 |
+| Plan: M2-6 工作流多轮迭代 | active | plans/open/2026-08-15-m2-6-workflow-iteration.md | 待用户确认后实现 |
