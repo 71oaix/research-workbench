@@ -1,6 +1,11 @@
 ---
 title: M2-8 科研 Skill 流程内化（借鉴 nature-skills 与 science-skills）
-status: active
+status: archived
+supersedes:
+  - "docs/issues/open/2026-08-15-m2-7-search-iteration-evidence-loop.md"
+  - "docs/issues/open/2026-08-16-m2-8-fulltext-evidence.md"
+  - "docs/issues/open/2026-08-16-m2-9-citation-verification.md"
+  - "docs/issues/open/2026-08-16-m2-10-review-evaluation.md"
 created: 2026-08-15
 updated: 2026-08-15
 kind: feature
