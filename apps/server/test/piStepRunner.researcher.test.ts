@@ -66,6 +66,7 @@ describe('PiStepRunner researcher branch', () => {
       workflowId: 'wf-1',
       stepId: 'step-r',
       planContent: '新计划：## 检索关键词\n- RAG',
+      compensate: false,
     })
     expect(handle.send).toHaveBeenCalledWith(
       expect.stringContaining('检索证据卡片（仅以此为事实来源）')
@@ -91,5 +92,32 @@ describe('PiStepRunner researcher branch', () => {
       runner.run({ step: makeResearcherStep(), goal: '调研', inputArtifacts: [] })
     ).rejects.toThrow('01-plan.md')
     expect(handle.send).not.toHaveBeenCalled()
+  })
+
+  it('passes compensate=true when previous feedback is present', async () => {
+    const handle = {
+      id: 'h1',
+      send: vi.fn().mockResolvedValue('ok'),
+      close: vi.fn().mockResolvedValue(undefined),
+    }
+    const provider = {
+      createRuntime: vi.fn().mockResolvedValue(handle),
+      takeUsage: vi.fn().mockReturnValue(null),
+    } as unknown as PiRuntimeProvider
+    const researcher = {
+      prepare: vi.fn().mockResolvedValue({ cardsMd: '# cards' }),
+    } as unknown as ResearcherStepService
+    const runner = new PiStepRunner(provider, undefined, researcher)
+
+    await runner.run({
+      step: makeResearcherStep(),
+      goal: '调研',
+      inputArtifacts: [makePlanArtifact(1, '## 检索关键词\n- RAG')],
+      feedback: '论文太少，扩大检索',
+    })
+
+    expect(researcher.prepare).toHaveBeenCalledWith(
+      expect.objectContaining({ compensate: true })
+    )
   })
 })

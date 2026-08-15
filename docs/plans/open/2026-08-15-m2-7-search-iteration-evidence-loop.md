@@ -11,13 +11,13 @@ areas: [server, data, shared]
 
 ## 任务解释
 
-把“规划”和“检索”升级为可分级、可补偿、可复现的确定性管道：Planner 用 deepseek-v4-pro 拆解问题锚点；检索按源分级路由、关键词用足、查询构造与去重稳健、限流与错误可见；打回时真正改变检索策略。
+把“规划”和“检索”升级为可分级、可补偿、可复现的确定性管道：Planner 保持稳定 flash 并产出问题锚点；检索按源分级路由、关键词用足、查询构造与去重稳健、限流与错误可见；打回时真正改变检索策略。
 
 ## 关键决策
 
 | 决策点 | 选择 | 放弃 / 备选 | 理由 |
 |--------|------|-------------|------|
-| Planner 模型 | `roleModel.planner` 默认 `deepseek-v4-pro`（`PI_MODEL_PLANNER` 可覆盖） | 维持 flash | 深度拆解锚点，且只影响 planner 成本 |
+| Planner 模型 | 保持默认 `deepseek-v4-flash`，`PI_MODEL_PLANNER` 覆盖入口保留 | 默认 v4-pro | Pro 仍在测试，先稳定；覆盖入口已具备，后续切换零代码 |
 | 问题锚点 | 计划新增“锚定点”小节；打回时先“锚点修订”再重查 | 只改关键词 | 检索质量取决于问题锚定 |
 | 源分级 | T1=OpenAlex/arXiv/Crossref/有 key 的 S2；T2=无 key 的 S2/bioRxiv/medRxiv；T3=抓取源（警告）；域→源 + 兜底链 | 双源平权 | 把可靠性编码，失败可降级可记录 |
 | 关键词 | 全部组（上限 10），组内按 `/` 拆中英文多查询 | 只用前 3 组 | 真实运行证明前 3 组不够 |
@@ -29,7 +29,7 @@ areas: [server, data, shared]
 
 ## 实现步骤
 
-1. `piConfig`：`roleModel.planner` 默认 `deepseek-v4-pro`（env 可覆盖）；`prompts.planner` 增加“锚定点”与“打回先锚点修订”。
+1. `prompts.planner`：增加“锚定点”与“打回先锚点修订”；模型保持 flash 默认（`PI_MODEL_PLANNER` 覆盖入口已存在，不改默认）。
 2. `keywords.ts`：`extractKeywordGroups` 默认 `maxGroups=10`；组内按 `/` 拆分为中英文两个查询（返回多查询）。
 3. `search/config.ts`：新增 `SEARCH_COMPENSATE_PER_QUERY`(50)、`SEARCH_MIN_CITATIONS`(0)、`SEARCH_MAX_GROUPS`(10)。
 4. `search/sources.ts`：源注册表（source → tier / domain / client 工厂），域→源映射与兜底链。
@@ -42,7 +42,7 @@ areas: [server, data, shared]
 
 ## 测试方案
 
-- piConfig：planner 默认 v4-pro、env 覆盖；
+- piConfig：planner 默认 flash、`PI_MODEL_PLANNER` 覆盖生效；
 - keywords：≤10 组、中英文拆分；
 - sources：注册表与 tier/domain 路由、单源失败降级；
 - clients：arXiv / Crossref 归一化、限流、429 退避（mock fetch）；
@@ -67,10 +67,22 @@ areas: [server, data, shared]
 - 发现与处理：
   - [major] 打回必须改变策略，否则补偿是空话 → compensate 参数化并写入 stats，单测覆盖；
   - [major] 源分级必须按域选源、单源失败独立记录 → sources 注册表 + failedSources；
-  - [minor] v4-pro 更贵，仅 planner 使用 → 角色级模型覆盖 + runbook 说明；
+  - [minor] Pro 尚在测试，先保持 flash 默认 → 角色级模型覆盖入口已具备，后续切换零代码；
   - [minor] 规范片段先做最小骨架（loadSpec + 三个片段），M2-9 / M2-10 复用；
   - [minor] Jaccard 阈值 0.90 与合并偏好需单测固化。
 
 ## 不涉及 UI
 
 纯后端，不涉及 UI，按 artifacts 硬性要求无需线框图或 HTML 预览。
+
+## 实现 review
+
+- 日期：2026-08-16
+- 审查方式：类型检查 + 单测
+- 结果：typecheck 全绿；server 67 个测试 + data 4 个测试通过
+- 与 plan 的偏差与发现：
+  - [major] 打回补偿通过 `feedback` 触发，`compensate` 参数化并写入 stats → 已实现并单测；
+  - [major] 源分级以注册表 + 域选择实现，S2 无 key 标 T2、有 key 标 T1 → 已实现并单测；
+  - [minor] 放宽查询在单源返回 0 时自动重试一次（取前两个词）→ 已实现；
+  - [minor] Planner 保持 flash 默认，未改模型 → 与用户确认一致；
+  - [minor] 规范片段先落为代码内 markdown + loadSpec，注入 researcher 系统提示词 → 已实现。

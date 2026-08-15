@@ -6,7 +6,7 @@ interface PlanSection {
   items: string[]
 }
 
-export function extractKeywordGroups(planMd: string, maxGroups = 3): KeywordGroup[] {
+export function extractKeywordGroups(planMd: string, maxGroups = 10): KeywordGroup[] {
   const sections = splitSections(planMd)
   const keywordsSection = sections.find((s) => /检索\s*关键词|搜索关键词|关键词/.test(s.title))
   let items = keywordsSection?.items ?? []
@@ -24,6 +24,24 @@ export function extractKeywordGroups(planMd: string, maxGroups = 3): KeywordGrou
     )
   }
   return groups.map((query, index) => ({ label: `g${index + 1}`, query }))
+}
+
+export function expandKeywordQueries(groups: KeywordGroup[]): KeywordGroup[] {
+  const expanded: KeywordGroup[] = []
+  for (const group of groups) {
+    const parts = group.query
+      .split(/[/；;]/)
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0)
+    if (parts.length <= 1) {
+      expanded.push(group)
+    } else {
+      parts.forEach((part, index) => {
+        expanded.push({ label: `${group.label}-${index + 1}`, query: part })
+      })
+    }
+  }
+  return expanded
 }
 
 function splitSections(md: string): PlanSection[] {

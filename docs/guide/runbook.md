@@ -151,6 +151,22 @@ WebSocket 通道为 `ws://localhost:3000/ws`，开发时经 Vite 代理 `/ws` �
 node scripts/verify-m2-6.mjs
 ```
 
+## M2-7 规划与检索配置
+
+```bash
+PI_MODEL_PLANNER=...        # 可选，覆盖 planner 模型；默认 flash
+SEARCH_MAX_GROUPS=10        # 可选，关键词组上限，默认 10
+SEARCH_COMPENSATE_PER_QUERY=50  # 可选，打回后每查询条数，默认 50
+SEARCH_MIN_CITATIONS=0      # 可选，打回后引用数下限，默认 0
+CROSSREF_MAILTO=you@example.com  # 可选，进入 Crossref polite pool
+```
+
+规划与检索验证（真实模型）：
+
+```bash
+node scripts/verify-m2-7.mjs
+```
+
 ## 常见问题
 
 - 端口被占用：设置环境变量 `PORT`（server）或修改

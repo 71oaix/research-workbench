@@ -30,5 +30,6 @@ export interface ResearcherStepService {
     workflowId: string
     stepId: string
     planContent: string
+    compensate?: boolean
   }): Promise<{ cardsMd: string }>
 }

@@ -122,4 +122,20 @@ describe('mergeAndRank', () => {
       'Medium single',
     ])
   })
+
+  it('merges near-title duplicates by first author and Jaccard similarity', () => {
+    const versionA = paper({
+      title: 'An updated guideline for reporting systematic reviews',
+      authors: ['Matthew Page'],
+      source: 'crossref',
+    })
+    const versionB = paper({
+      title: 'Updated guideline for reporting systematic reviews',
+      authors: ['M. Page'],
+      source: 'openalex',
+    })
+    const { papers } = mergeAndRank([versionA, versionB], 15)
+    expect(papers).toHaveLength(1)
+    expect(papers[0].authors).toEqual(['Matthew Page', 'M. Page'])
+  })
 })

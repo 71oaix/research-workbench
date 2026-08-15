@@ -15,8 +15,11 @@ export class ResearcherStepServiceImpl implements ResearcherStepService {
     workflowId: string
     stepId: string
     planContent: string
+    compensate?: boolean
   }): Promise<{ cardsMd: string }> {
-    const output = await this.search.search(input.planContent)
+    const output = await this.search.search(input.planContent, {
+      compensate: input.compensate ?? false,
+    })
     for (const paper of output.rawPapers) {
       this.repos.papers.upsert(paper)
     }

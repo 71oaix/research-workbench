@@ -71,6 +71,9 @@ describe('ResearcherStepServiceImpl', () => {
       stats: {
         queryGroups: 1,
         sources: ['semantic-scholar', 'openalex'],
+        keywordsUsed: 1,
+        queries: 2,
+        minCitations: 0,
         totalHits: 2,
         uniquePapers: 1,
         failedSources: [],

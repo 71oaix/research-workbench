@@ -79,6 +79,9 @@ export interface Paper {
 export interface SearchStats {
   queryGroups: number
   sources: string[]
+  keywordsUsed: number
+  queries: number
+  minCitations: number
   totalHits: number
   uniquePapers: number
   failedSources: string[]

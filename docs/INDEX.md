@@ -38,7 +38,7 @@ updated: 2026-08-05
 | Issue: M2-6 工作流多轮迭代 | archived | issues/close/2026-08-15-m2-6-workflow-iteration.md | 已归档：多轮迭代实现完成 |
 | Plan: M2-6 工作流多轮迭代 | archived | plans/close/2026-08-15-m2-6-workflow-iteration.md | 已归档：实现完成 |
 | Issue: M2-7 规划与检索质量 | active | issues/open/2026-08-15-m2-7-search-iteration-evidence-loop.md | 问题锚点 + 分级检索 + 补偿 |
-| Plan: M2-7 规划与检索质量 | active | plans/open/2026-08-15-m2-7-search-iteration-evidence-loop.md | 待用户确认后实现 |
+| Plan: M2-7 规划与检索质量 | active | plans/open/2026-08-15-m2-7-search-iteration-evidence-loop.md | 已实现，待合并 |
 | Issue: M2-8 全文获取与证据闭环 | active | issues/open/2026-08-16-m2-8-fulltext-evidence.md | 下载校验 + 证据池 + 全文写作 |
 | Issue: M2-9 引用核验升级 | active | issues/open/2026-08-16-m2-9-citation-verification.md | 字段级多源交叉 + 分级报告 |
 | Issue: M2-10 审查与评估 | active | issues/open/2026-08-16-m2-10-review-evaluation.md | concern ledger + evaluation-report + UI |

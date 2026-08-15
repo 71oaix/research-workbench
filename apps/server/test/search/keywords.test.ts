@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SearchError } from '../../src/search/errors'
-import { extractKeywordGroups } from '../../src/search/keywords'
+import { expandKeywordQueries, extractKeywordGroups } from '../../src/search/keywords'
 
 describe('extractKeywordGroups', () => {
   it('parses keyword groups from the plan, stripping markdown and numbering', () => {
@@ -21,10 +21,11 @@ describe('extractKeywordGroups', () => {
     ].join('\n')
 
     const groups = extractKeywordGroups(plan)
-    expect(groups).toHaveLength(3)
+    expect(groups).toHaveLength(4)
     expect(groups[0].query).toBe('LLM 测试：agent 评测')
     expect(groups[1].query).toBe('RAG')
     expect(groups[2].query).toBe('大模型幻觉')
+    expect(groups[3].query).toBe('基准测试')
   })
 
   it('falls back to sub-questions when no keyword section exists', () => {
@@ -45,5 +46,17 @@ describe('extractKeywordGroups', () => {
 
   it('throws a clear error when nothing parseable exists', () => {
     expect(() => extractKeywordGroups('# 空计划')).toThrow(SearchError)
+  })
+
+  it('expands slash-separated bilingual keywords into separate queries', () => {
+    const expanded = expandKeywordQueries([
+      { label: 'g1', query: '多智能体 记忆架构 / multi-agent memory architecture' },
+      { label: 'g2', query: 'RAG' },
+    ])
+    expect(expanded).toEqual([
+      { label: 'g1-1', query: '多智能体 记忆架构' },
+      { label: 'g1-2', query: 'multi-agent memory architecture' },
+      { label: 'g2', query: 'RAG' },
+    ])
   })
 })
