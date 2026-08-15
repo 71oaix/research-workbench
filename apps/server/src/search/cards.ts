@@ -15,6 +15,7 @@ export function buildResearchCards(
   stats: SearchStats,
   groups: KeywordGroup[]
 ): string {
+  const fullTextCount = papers.filter((paper) => Boolean(paper.fullText)).length
   const lines: string[] = [
     '# 检索证据卡片（确定性管道）',
     '',
@@ -24,6 +25,7 @@ export function buildResearchCards(
     `- 命中 / 去重：${stats.totalHits} / ${stats.uniquePapers}（取前 ${stats.topN}）`,
     `- 关键词组 / 查询数：${stats.keywordsUsed} / ${stats.queries}`,
     stats.minCitations > 0 ? `- 引用数下限：${stats.minCitations}` : '',
+    `- 全文：已读 ${fullTextCount} / 仅摘要 ${papers.length - fullTextCount}`,
     `- 失败源：${stats.failedSources.length > 0 ? stats.failedSources.join('、') : '无'}`,
     '',
     '## 论文卡片',
@@ -40,6 +42,7 @@ export function buildResearchCards(
       paper.year ? `年份：${paper.year}` : '年份：未知',
       `引用数：${paper.citationCount ?? 0}`,
       `来源：${paper.sources.join('+')}`,
+      paper.fullText ? '全文：已读' : '全文：仅摘要',
     ]
     if (paper.doi) meta.push(`DOI：${paper.doi}`)
     if (paper.arxivId) meta.push(`arXiv：${paper.arxivId}`)

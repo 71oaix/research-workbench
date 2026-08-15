@@ -24,6 +24,7 @@ data/*.sqlite3
 data/*.db-shm
 data/*.db-wal
 data/*.db-journal
+data/pdfs/
 
 # pi 运行时会话
 .pi/

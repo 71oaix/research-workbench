@@ -17,3 +17,7 @@ export function buildSearchSpecPrompt(): string {
     loadSpec('dedup'),
   ].join('\n\n')
 }
+
+export function buildWritingSpecPrompt(): string {
+  return ['', '## 写作规范（程序内化）', loadSpec('writing')].join('\n\n')
+}

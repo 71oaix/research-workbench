@@ -72,6 +72,7 @@ export interface Paper {
   arxivId: string | null
   url: string | null
   citationCount: number | null
+  fullText?: string | null
   raw: string | null
   createdAt: string
 }

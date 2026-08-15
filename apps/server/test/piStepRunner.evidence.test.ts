@@ -66,7 +66,7 @@ describe('PiStepRunner evidence branches', () => {
 
     const result = await runner.run(input)
 
-    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('证据卡片（仅以此为事实来源）'))
+    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('证据池（仅以此为事实来源）'))
     expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('### [1] Paper A'))
     expect(result.artifactName).toBe('03-draft.md')
   })

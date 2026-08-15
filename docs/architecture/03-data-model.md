@@ -32,6 +32,7 @@ updated: 2026-08-14
 - 每个检索源各自按 `(source, external_id)` 落库（S2 用 paperId，OpenAlex 用 work ID），重复检索不产生重复行
 - 新增 `arxiv_id` 列（可空），用于跨源去重的中间键：DOI → arXiv ID → 归一化标题
 - 跨源合并结果只存在内存与 `research-cards.md` artifact 中，不落库，保留每个源的 provenance
+- `papers` 表新增 `full_text TEXT`：OA 全文提取后截断存入，供 Writer 阅读使用
 
 ## 审批与迭代（M2-6）
 

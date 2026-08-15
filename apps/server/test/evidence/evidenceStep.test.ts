@@ -51,7 +51,7 @@ describe('EvidenceStepServiceImpl', () => {
       inputArtifacts: [cards],
     })
 
-    expect(result.promptExtra).toContain('证据卡片（仅以此为事实来源）')
+    expect(result.promptExtra).toContain('证据池（仅以此为事实来源）')
     expect(result.promptExtra).toContain('### [1] Paper A')
     expect(repos.artifacts.listByWorkflow('wf-1')).toHaveLength(0)
   })
@@ -104,11 +104,11 @@ describe('EvidenceStepServiceImpl', () => {
     ).rejects.toThrow('03-draft.md')
   })
 
-  it('prepareWriter reads the latest version of research-cards.md', async () => {
+  it('prepareWriter merges multiple research-cards versions into one pool', async () => {
     const repos = createRepositories(createDb())
     const service = new EvidenceStepServiceImpl(repos, createEventBus())
-    const oldCards = makeArtifact('research-cards.md', '### [1] 旧卡片')
-    const newCards = makeArtifact('research-cards.md', '### [1] 新卡片')
+    const oldCards = makeArtifact('research-cards.md', '### [1] Paper A')
+    const newCards = makeArtifact('research-cards.md', '### [1] Paper A')
     const newVersion = {
       ...newCards,
       id: 'a-new',
@@ -122,8 +122,8 @@ describe('EvidenceStepServiceImpl', () => {
       inputArtifacts: [oldCards, newVersion],
     })
 
-    expect(result.promptExtra).toContain('### [1] 新卡片')
-    expect(result.promptExtra).not.toContain('旧卡片')
+    expect(result.promptExtra).toContain('合并卡片数：1')
+    expect(result.promptExtra).toContain('来源版本：v1, v2')
   })
 
   it('does not fail the service when the draft has no citations', async () => {

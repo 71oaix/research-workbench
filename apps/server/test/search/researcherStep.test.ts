@@ -3,6 +3,7 @@ import type { ServerEvent } from '@research-workbench/shared'
 import { createDb, createRepositories } from '@research-workbench/data'
 import { createEventBus } from '../../src/engine/eventBus'
 import type { AcademicSearchService } from '../../src/search/AcademicSearchService'
+import { loadSearchConfig } from '../../src/search/config'
 import { ResearcherStepServiceImpl } from '../../src/search/researcherStep'
 import type { SearchOutput } from '../../src/search/types'
 
@@ -82,7 +83,7 @@ describe('ResearcherStepServiceImpl', () => {
       groups: [{ label: 'g1', query: 'paper' }],
     }
     const search = { search: vi.fn().mockResolvedValue(output) } as unknown as AcademicSearchService
-    const service = new ResearcherStepServiceImpl(search, repos, bus)
+    const service = new ResearcherStepServiceImpl(search, repos, bus, loadSearchConfig({}))
 
     const result = await service.prepare({
       workflowId: workflow.id,

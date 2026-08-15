@@ -123,3 +123,9 @@ reject  → step rejected → workflow: cancelled（记录 decision）
 - 打回补偿：feedback 非空时提高 per-query、按引用数下限过滤
 - 规范片段：`apps/server/src/specs/` 的 `loadSpec` 按需加载检索片段，注入 researcher
 - 配置：`SEARCH_MAX_GROUPS` / `SEARCH_COMPENSATE_PER_QUERY` / `SEARCH_MIN_CITATIONS` / `CROSSREF_MAILTO`
+
+## 全文获取与证据闭环（M2-8）
+
+- 全文：top-N（默认 8）论文 OA 优先下载 PDF、校验并提取文本，存入 `papers.full_text`，失败标注“仅摘要”
+- 证据池：多版本 `research-cards.md` 合并去重、重编号，Writer / Reviewer / lint 统一基于证据池
+- 写作：Writer 注入证据池与 `paper-fulltext.md`，先输出一句话论点与段落图，文末附 claim-evidence map

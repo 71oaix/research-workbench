@@ -159,12 +159,20 @@ SEARCH_MAX_GROUPS=10        # 可选，关键词组上限，默认 10
 SEARCH_COMPENSATE_PER_QUERY=50  # 可选，打回后每查询条数，默认 50
 SEARCH_MIN_CITATIONS=0      # 可选，打回后引用数下限，默认 0
 CROSSREF_MAILTO=you@example.com  # 可选，进入 Crossref polite pool
+SEARCH_READ_TOP=8              # 可选，全文阅读篇数，默认 8
+SEARCH_FULLTEXT_MAX=20000      # 可选，每篇全文截断字符数，默认 20000
 ```
 
 规划与检索验证（真实模型）：
 
 ```bash
 node scripts/verify-m2-7.mjs
+```
+
+M2-8 全文与证据闭环验证（真实模型）：
+
+```bash
+node scripts/verify-m2-8.mjs
 ```
 
 ## 常见问题

@@ -131,7 +131,7 @@ function createDefaultStepRunner(
   const provider = new PiRuntimeProvider(config)
   const searchConfig = loadSearchConfig()
   const searchService = new AcademicSearchService(buildSourceRegistry(searchConfig), searchConfig)
-  const researcher = new ResearcherStepServiceImpl(searchService, repos, bus)
+  const researcher = new ResearcherStepServiceImpl(searchService, repos, bus, searchConfig)
   const evidence = new EvidenceStepServiceImpl(repos, bus)
   return new PiStepRunner(
     provider,
