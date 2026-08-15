@@ -1,3 +1,4 @@
+import path from 'node:path'
 import type { Role } from '@research-workbench/shared'
 
 export class PiConfigError extends Error {}
@@ -7,6 +8,15 @@ export interface PiConfig {
   provider: string
   defaultModel: string
   roleModel: Partial<Record<Role, string>>
+  agentDir: string
+}
+
+export function resolvePiAgentDir(env: NodeJS.ProcessEnv = process.env): string {
+  const explicit = env.PI_WORKBENCH_AGENT_DIR?.trim()
+  if (explicit) {
+    return path.resolve(explicit)
+  }
+  return path.resolve(process.cwd(), '.pi', 'agent')
 }
 
 export function loadPiConfig(env: NodeJS.ProcessEnv = process.env): PiConfig {
@@ -24,5 +34,11 @@ export function loadPiConfig(env: NodeJS.ProcessEnv = process.env): PiConfig {
       roleModel[role] = value
     }
   }
-  return { apiKey: env.OPENCODE_GO_API_KEY, provider, defaultModel, roleModel }
+  return {
+    apiKey: env.OPENCODE_GO_API_KEY,
+    provider,
+    defaultModel,
+    roleModel,
+    agentDir: resolvePiAgentDir(env),
+  }
 }

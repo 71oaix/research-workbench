@@ -58,6 +58,7 @@ updated: 2026-08-14
 - 角色 system prompt 通过 `resourceLoaderOptions.systemPromptOverride` 注入（0.80.3 的正确入口）
 - 运行时禁用工具（`noTools: 'all'`），角色只做规划/检索/撰写/审查文本
 - 每次调用的 token / 成本写入 `usage_records` 并广播 `usage.recorded`
+- 会话隔离：pi agent 目录默认 `<项目根>/.pi/agent`（可用 `PI_WORKBENCH_AGENT_DIR` 覆盖），与个人 PI 的 `~/.pi/agent` 互不干扰
 
 ## 工作流状态机（M2-1）
 

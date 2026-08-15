@@ -71,6 +71,7 @@ PI_MODEL_PLANNER=...         # 可选，每角色覆盖（仅模型 ID）
 PI_MODEL_RESEARCHER=...
 PI_MODEL_WRITER=...
 PI_MODEL_REVIEWER=...
+PI_WORKBENCH_AGENT_DIR=...   # 可选，pi 会话隔离目录（默认 <项目根>/.pi/agent）
 ```
 
 真实调用验证（服务已启动且进程带 key）：
@@ -81,6 +82,9 @@ node scripts/verify-m2-2.mjs
 
 > 说明：角色 system prompt 通过 pi SDK 的 `resourceLoaderOptions.systemPromptOverride`
 > 注入（0.80.3 直接改 `agent.state.systemPrompt` 会被覆盖）；运行时禁用编码工具（`noTools: 'all'`）。
+>
+> 会话隔离：研镜的 pi 会话默认写入项目内 `.pi/agent`，与个人 PI 的 `~/.pi/agent` 完全隔离，
+> 不会出现在 PI coding agent 的会话列表里；如需换位置，设置 `PI_WORKBENCH_AGENT_DIR`。
 
 ## M2-3 学术检索配置与验证
 

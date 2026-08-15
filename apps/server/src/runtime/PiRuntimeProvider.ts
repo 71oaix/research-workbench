@@ -1,3 +1,5 @@
+import { mkdirSync } from 'node:fs'
+import path from 'node:path'
 import {
   AuthStorage,
   ModelRegistry,
@@ -5,7 +7,6 @@ import {
   createAgentSessionFromServices,
   createAgentSessionRuntime,
   createAgentSessionServices,
-  getAgentDir,
 } from '@earendil-works/pi-coding-agent'
 import type { Role } from '@research-workbench/shared'
 import { EngineError } from '../engine/WorkflowEngine'
@@ -28,6 +29,7 @@ export class PiRuntimeProvider {
   private readonly runtimes = new Map<string, PiRuntimeHandle>()
 
   constructor(private readonly config: PiConfig) {
+    mkdirSync(this.config.agentDir, { recursive: true })
     this.authStorage = AuthStorage.create()
     this.modelRegistry = ModelRegistry.create(this.authStorage)
     if (config.apiKey) {
@@ -46,6 +48,7 @@ export class PiRuntimeProvider {
     }
 
     const cwd = process.cwd()
+    const sessionDir = resolveSessionDir(this.config.agentDir, cwd)
     const runtime = await createAgentSessionRuntime(
       async ({ cwd: sessionCwd, sessionManager, sessionStartEvent }) => {
         const services = await createAgentSessionServices({
@@ -69,8 +72,8 @@ export class PiRuntimeProvider {
       },
       {
         cwd,
-        agentDir: getAgentDir(),
-        sessionManager: SessionManager.create(cwd),
+        agentDir: this.config.agentDir,
+        sessionManager: SessionManager.create(cwd, sessionDir),
       }
     )
 
@@ -106,6 +109,14 @@ export class PiRuntimeProvider {
       })),
     })
   }
+}
+
+function resolveSessionDir(agentDir: string, cwd: string): string {
+  const safePath = `--${path
+    .resolve(cwd)
+    .replace(/^[/\\]/, '')
+    .replace(/[/\\:]/g, '-')}--`
+  return path.join(agentDir, 'sessions', safePath)
 }
 
 export class PiRuntimeHandle {
