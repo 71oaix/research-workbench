@@ -1,6 +1,6 @@
 ---
 title: M2-5 工作流 UI（列表、步骤时间线、产物预览、审批、实时事件）（plan）
-status: active
+status: archived
 created: 2026-08-14
 updated: 2026-08-14
 issue: 2026-08-14-m2-5-workflow-ui
