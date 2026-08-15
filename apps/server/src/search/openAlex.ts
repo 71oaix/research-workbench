@@ -4,7 +4,7 @@ import { RateLimiter } from './rateLimiter'
 import type { AcademicSearchClient, SearchPaper } from './types'
 
 const OPENALEX_SELECT =
-  'id,doi,title,publication_year,authorships,abstract_inverted_index,cited_by_count,primary_location,ids'
+  'id,doi,title,publication_year,authorships,abstract_inverted_index,cited_by_count,primary_location,best_oa_location,ids'
 
 export interface OpenAlexOptions {
   mailto?: string

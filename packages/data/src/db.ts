@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS papers (
   arxiv_id TEXT,
   url TEXT,
   citation_count INTEGER,
+  full_text TEXT,
   raw TEXT,
   created_at TEXT NOT NULL,
   UNIQUE(source, external_id)
@@ -110,5 +111,8 @@ function migrate(db: Db): void {
   )
   if (!paperCols.has('arxiv_id')) {
     db.exec('ALTER TABLE papers ADD COLUMN arxiv_id TEXT')
+  }
+  if (!paperCols.has('full_text')) {
+    db.exec('ALTER TABLE papers ADD COLUMN full_text TEXT')
   }
 }

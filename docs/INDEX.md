@@ -2,7 +2,7 @@
 title: 文档索引
 status: active
 created: 2026-08-05
-updated: 2026-08-05
+updated: 2026-08-16
 ---
 
 # 文档索引
@@ -40,6 +40,8 @@ updated: 2026-08-05
 | Issue: M2-7 规划与检索质量 | active | issues/open/2026-08-15-m2-7-search-iteration-evidence-loop.md | 问题锚点 + 分级检索 + 补偿 |
 | Plan: M2-7 规划与检索质量 | active | plans/open/2026-08-15-m2-7-search-iteration-evidence-loop.md | 已实现，待合并 |
 | Issue: M2-8 全文获取与证据闭环 | active | issues/open/2026-08-16-m2-8-fulltext-evidence.md | 下载校验 + 证据池 + 全文写作 |
+| Plan: M2-8 全文获取与证据闭环 | active | plans/open/2026-08-16-m2-8-fulltext-evidence.md | 待用户确认后实现 |
 | Issue: M2-9 引用核验升级 | active | issues/open/2026-08-16-m2-9-citation-verification.md | 字段级多源交叉 + 分级报告 |
+| Plan: M2-9 引用核验升级 | active | plans/open/2026-08-16-m2-9-citation-verification.md | 已实现，待合并 |
 | Issue: M2-10 审查与评估 | active | issues/open/2026-08-16-m2-10-review-evaluation.md | concern ledger + evaluation-report + UI |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |

@@ -133,6 +133,7 @@ function mapPaper(row: Record<string, unknown>): Paper {
       row.citation_count === null || row.citation_count === undefined
         ? null
         : Number(row.citation_count),
+    fullText: row.full_text ? String(row.full_text) : null,
     raw: row.raw ? String(row.raw) : null,
     createdAt: String(row.created_at),
   }
@@ -297,8 +298,8 @@ export function createRepositories(db: Db): Repositories {
         db.prepare(
           `INSERT INTO papers
            (id, source, external_id, title, abstract, authors, year, doi, url,
-            arxiv_id, citation_count, raw, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            arxiv_id, citation_count, full_text, raw, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(source, external_id) DO UPDATE SET
              title = excluded.title,
              abstract = excluded.abstract,
@@ -308,6 +309,7 @@ export function createRepositories(db: Db): Repositories {
              arxiv_id = excluded.arxiv_id,
              url = excluded.url,
              citation_count = excluded.citation_count,
+             full_text = excluded.full_text,
              raw = excluded.raw`
         ).run(
           id,
@@ -321,6 +323,7 @@ export function createRepositories(db: Db): Repositories {
           input.url,
           input.arxivId,
           input.citationCount,
+          input.fullText ?? null,
           input.raw,
           ts
         )

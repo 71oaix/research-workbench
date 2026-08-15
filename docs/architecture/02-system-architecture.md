@@ -2,7 +2,7 @@
 title: 系统架构（M1）
 status: active
 created: 2026-08-14
-updated: 2026-08-14
+updated: 2026-08-16
 ---
 
 # 系统架构（M1）
@@ -123,3 +123,16 @@ reject  → step rejected → workflow: cancelled（记录 decision）
 - 打回补偿：feedback 非空时提高 per-query、按引用数下限过滤
 - 规范片段：`apps/server/src/specs/` 的 `loadSpec` 按需加载检索片段，注入 researcher
 - 配置：`SEARCH_MAX_GROUPS` / `SEARCH_COMPENSATE_PER_QUERY` / `SEARCH_MIN_CITATIONS` / `CROSSREF_MAILTO`
+
+## 全文获取与证据闭环（M2-8）
+
+- 全文：top-N（默认 8）论文 OA 优先下载 PDF、校验并提取文本，存入 `papers.full_text`，失败标注“仅摘要”
+- 证据池：多版本 `research-cards.md` 合并去重、重编号，Writer / Reviewer / lint 统一基于证据池
+- 写作：Writer 注入证据池与 `paper-fulltext.md`，先输出一句话论点与段落图，文末附 claim-evidence map
+
+## 引用核验（M2-9）
+
+- 引用解析：`citations/lint.ts` 新增 `extractCitationRefs`，兼容 `[n]` 与 `[V1-n]`（归一化为 n）并保留格式异常标记
+- DOI 交叉：`CrossrefClient.lookup(doi)` 命中 `/works/{doi}`；无 DOI 时回退“标题 + 第一作者”检索
+- 字段比对：标题核心词（Jaccard）、年份、第一作者逐字段比对，输出 Critical / Warning / Info 与 Verified / Check suggested / Needs fix / Unverifiable
+- 接入 Reviewer：`EvidenceStepServiceImpl.prepareReviewer` 生成 `citation-verification.md` artifact 并注入 reviewer prompt，与 `citation-lint.md` 并列

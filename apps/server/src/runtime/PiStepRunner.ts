@@ -3,7 +3,7 @@ import { findLatestArtifact } from '../artifacts'
 import type { StepRunInput, StepRunResult, StepRunner } from '../engine/StepRunner'
 import type { EvidenceStepService } from '../evidence/EvidenceStepService'
 import type { ResearcherStepService } from '../search/types'
-import { buildSearchSpecPrompt } from '../specs'
+import { buildSearchSpecPrompt, buildWritingSpecPrompt } from '../specs'
 import { PiRuntimeProvider } from './PiRuntimeProvider'
 import { ARTIFACT_NAMES, ROLE_SYSTEM_PROMPTS } from './prompts'
 
@@ -18,7 +18,11 @@ export class PiStepRunner implements StepRunner {
   async run({ step, goal, inputArtifacts, feedback }: StepRunInput): Promise<StepRunResult> {
     const systemPrompt =
       ROLE_SYSTEM_PROMPTS[step.role] +
-      (step.role === 'researcher' ? buildSearchSpecPrompt() : '')
+      (step.role === 'researcher'
+        ? buildSearchSpecPrompt()
+        : step.role === 'writer'
+          ? buildWritingSpecPrompt()
+          : '')
     const handle = await this.provider.createRuntime(step.role, systemPrompt)
     try {
       let prompt = buildStepPrompt({ goal, step, inputArtifacts, feedback })

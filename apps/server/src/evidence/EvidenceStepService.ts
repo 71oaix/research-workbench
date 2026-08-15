@@ -3,7 +3,9 @@ import type { Repositories } from '@research-workbench/data'
 import { findLatestArtifact } from '../artifacts'
 import { buildCitationLint } from '../citations/lint'
 import type { WorkflowEventBus } from '../engine/eventBus'
-import { extractCardIds } from '../search/cards'
+import { verifyCitations } from './citationVerifier'
+import type { CitationVerifierDeps } from './citationVerifier'
+import { buildEvidencePool } from './evidencePool'
 
 export interface EvidenceStepService {
   prepareWriter(input: {
@@ -21,7 +23,8 @@ export interface EvidenceStepService {
 export class EvidenceStepServiceImpl implements EvidenceStepService {
   constructor(
     private readonly repos: Repositories,
-    private readonly bus: WorkflowEventBus
+    private readonly bus: WorkflowEventBus,
+    private readonly verifierDeps?: CitationVerifierDeps
   ) {}
 
   async prepareWriter(input: {
@@ -29,11 +32,14 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
     stepId: string
     inputArtifacts: Artifact[]
   }): Promise<{ promptExtra: string }> {
-    const cards = findLatestArtifact(input.inputArtifacts, 'research-cards.md')
-    if (!cards) {
+    const pool = buildEvidencePool(input.inputArtifacts)
+    if (pool.cardIds.length === 0) {
       throw new Error('缺少 research-cards.md，无法撰写综述')
     }
-    return { promptExtra: buildWriterSection(cards.content) }
+    const fullText = findLatestArtifact(input.inputArtifacts, 'paper-fulltext.md')
+    return {
+      promptExtra: buildWriterSection(pool.cardsMd, fullText?.content ?? null),
+    }
   }
 
   async prepareReviewer(input: {
@@ -42,55 +48,85 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
     inputArtifacts: Artifact[]
   }): Promise<{ promptExtra: string }> {
     const draft = findLatestArtifact(input.inputArtifacts, '03-draft.md')
-    const cards = findLatestArtifact(input.inputArtifacts, 'research-cards.md')
-    if (!draft || !cards) {
+    const pool = buildEvidencePool(input.inputArtifacts)
+    if (!draft || pool.cardIds.length === 0) {
       throw new Error('缺少 03-draft.md 或 research-cards.md，无法审查引用')
     }
-
-    const lintMd = buildCitationLint(draft.content, extractCardIds(cards.content))
-    const artifact = this.repos.artifacts.create({
+    const lintMd = buildCitationLint(draft.content, pool.cardIds)
+    const lintArtifact = this.repos.artifacts.create({
       workflowId: input.workflowId,
       stepId: input.stepId,
       name: 'citation-lint.md',
       content: lintMd,
     })
-    this.bus.emit({ type: 'artifact.updated', artifact })
+    this.bus.emit({ type: 'artifact.updated', artifact: lintArtifact })
 
-    return { promptExtra: buildReviewerSection({ draft, cards, lintMd }) }
+    let verificationMd: string | null = null
+    if (this.verifierDeps) {
+      const report = await verifyCitations({
+        draft: draft.content,
+        cards: pool.cards,
+        deps: this.verifierDeps,
+      })
+      const verificationArtifact = this.repos.artifacts.create({
+        workflowId: input.workflowId,
+        stepId: input.stepId,
+        name: 'citation-verification.md',
+        content: report.md,
+      })
+      this.bus.emit({ type: 'artifact.updated', artifact: verificationArtifact })
+      verificationMd = report.md
+    }
+
+    return {
+      promptExtra: buildReviewerSection({ draft, cardsMd: pool.cardsMd, lintMd, verificationMd }),
+    }
   }
 }
 
-function buildWriterSection(cardsMd: string): string {
-  return [
-    '## 证据卡片（仅以此为事实来源）',
-    cardsMd,
+function buildWriterSection(cardsMd: string, fullTextMd: string | null): string {
+  const sections = ['## 证据池（仅以此为事实来源）', cardsMd]
+  if (fullTextMd) {
+    sections.push('## 论文全文（阅读证据）', fullTextMd)
+  }
+  sections.push(
     '',
     '写作要求：',
-    '1. 输出结构化综述初稿（引言 + 2-4 个章节 + 小结）；',
-    '2. 每个论点用 [编号] 标注对应卡片；',
-    '3. 文末附“参考文献”列表，映射 [编号] → 标题 / 年份 / DOI / 链接；',
-    '4. 只引用卡片中存在的论文，不得编造。',
-  ].join('\n')
+    '1. 先用一句话概括核心论点（一句话论点），再给出段落图（每段只做一件事）；',
+    '2. 从证据向外写，每个论点用 [编号] 标注证据池中的卡片；',
+    '3. 动词与证据强度匹配：只写“报告/表明/与…一致”，不要写成“证明/首次/前所未有”；',
+    '4. 未读全文的论文只能引其摘要可支撑的结论，不得展开；',
+    '5. 文末附“参考文献”与“claim-evidence map”，每条格式为 Claim | Evidence | Status；',
+    '6. 只使用证据池中的论文，不得编造引用。'
+  )
+  return sections.join('\n\n')
 }
 
 function buildReviewerSection(input: {
   draft: Artifact
-  cards: Artifact
+  cardsMd: string
   lintMd: string
+  verificationMd: string | null
 }): string {
-  return [
+  const sections = [
     '## 待审查草稿',
     input.draft.content,
     '',
-    '## 证据卡片',
-    input.cards.content,
+    '## 证据池',
+    input.cardsMd,
     '',
     '## 自动引用检查报告',
     input.lintMd,
+  ]
+  if (input.verificationMd) {
+    sections.push('', '## 自动引用核验报告（Crossref 字段级交叉）', input.verificationMd)
+  }
+  sections.push(
     '',
     '审查要求：',
     '1. 输出“可信引用清单 / 存疑引用与原因 / 覆盖不足的方向 / 总体结论”；',
     '2. 以自动检查报告为计数依据，不要自行数引用；',
-    '3. 只对卡片中存在的论文做判断。',
-  ].join('\n')
+    '3. 只对证据池中存在的论文做判断，证据不足时写 Not assessable。',
+  )
+  return sections.join('\n')
 }

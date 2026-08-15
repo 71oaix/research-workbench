@@ -51,7 +51,7 @@ describe('EvidenceStepServiceImpl', () => {
       inputArtifacts: [cards],
     })
 
-    expect(result.promptExtra).toContain('证据卡片（仅以此为事实来源）')
+    expect(result.promptExtra).toContain('证据池（仅以此为事实来源）')
     expect(result.promptExtra).toContain('### [1] Paper A')
     expect(repos.artifacts.listByWorkflow('wf-1')).toHaveLength(0)
   })
@@ -104,11 +104,11 @@ describe('EvidenceStepServiceImpl', () => {
     ).rejects.toThrow('03-draft.md')
   })
 
-  it('prepareWriter reads the latest version of research-cards.md', async () => {
+  it('prepareWriter merges multiple research-cards versions into one pool', async () => {
     const repos = createRepositories(createDb())
     const service = new EvidenceStepServiceImpl(repos, createEventBus())
-    const oldCards = makeArtifact('research-cards.md', '### [1] 旧卡片')
-    const newCards = makeArtifact('research-cards.md', '### [1] 新卡片')
+    const oldCards = makeArtifact('research-cards.md', '### [1] Paper A')
+    const newCards = makeArtifact('research-cards.md', '### [1] Paper A')
     const newVersion = {
       ...newCards,
       id: 'a-new',
@@ -122,8 +122,8 @@ describe('EvidenceStepServiceImpl', () => {
       inputArtifacts: [oldCards, newVersion],
     })
 
-    expect(result.promptExtra).toContain('### [1] 新卡片')
-    expect(result.promptExtra).not.toContain('旧卡片')
+    expect(result.promptExtra).toContain('合并卡片数：1')
+    expect(result.promptExtra).toContain('来源版本：v1, v2')
   })
 
   it('does not fail the service when the draft has no citations', async () => {
@@ -147,5 +147,41 @@ describe('EvidenceStepServiceImpl', () => {
       inputArtifacts: [cards, draft],
     })
     expect(result.promptExtra).toContain('未发现 [编号] 引用')
+  })
+
+  it('generates citation-verification.md and injects it when verifier deps are provided', async () => {
+    const db = createDb()
+    const repos = createRepositories(db)
+    const bus = createEventBus()
+    const events: ServerEvent[] = []
+    bus.on((event) => events.push(event))
+    const workflow = repos.workflows.create('调研')
+    const step = repos.steps.create({
+      workflowId: workflow.id,
+      label: '审查引用',
+      role: 'reviewer',
+      position: 2,
+      requiresApproval: true,
+    })
+    const verifierDeps = {
+      lookupDoi: vi.fn().mockResolvedValue(null),
+      searchByTitleAuthor: vi.fn().mockResolvedValue(null),
+    }
+    const service = new EvidenceStepServiceImpl(repos, bus, verifierDeps)
+    const cards = makeArtifact('research-cards.md', '### [1] Paper A')
+    const draft = makeArtifact('03-draft.md', 'draft uses [1]')
+
+    const result = await service.prepareReviewer({
+      workflowId: workflow.id,
+      stepId: step.id,
+      inputArtifacts: [cards, draft],
+    })
+
+    expect(result.promptExtra).toContain('自动引用核验报告')
+    const verification = repos.artifacts
+      .listByWorkflow(workflow.id)
+      .find((artifact) => artifact.name === 'citation-verification.md')
+    expect(verification?.content).toContain('引用核验报告')
+    expect(events.some((event) => event.type === 'artifact.updated')).toBe(true)
   })
 })

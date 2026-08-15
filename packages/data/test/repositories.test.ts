@@ -98,4 +98,27 @@ describe('repositories', () => {
     const cleared = repos.steps.setPendingFeedback(step.id, null)
     expect(cleared?.pendingFeedback).toBeNull()
   })
+
+  it('persists paper full text', () => {
+    const db = createDb()
+    const repos = createRepositories(db)
+    const paper = repos.papers.upsert({
+      source: 'arxiv',
+      externalId: '1706.03762',
+      title: 'Attention Is All You Need',
+      abstract: 'abstract',
+      authors: ['Ashish Vaswani'],
+      year: 2017,
+      doi: null,
+      arxivId: '1706.03762',
+      url: 'https://arxiv.org/abs/1706.03762',
+      citationCount: 100000,
+      fullText: 'We propose a new architecture.',
+      raw: null,
+    })
+    expect(paper.fullText).toBe('We propose a new architecture.')
+    expect(
+      repos.papers.findByExternalId('arxiv', '1706.03762')?.fullText
+    ).toBe('We propose a new architecture.')
+  })
 })
