@@ -1,18 +1,38 @@
-export function extractCitationIds(md: string): number[] {
-  const ids: number[] = []
-  const pattern = /\[(\d{1,4})\]/g
+export type CitationKind = 'plain' | 'prefixed'
+
+export interface CitationRef {
+  id: number | null
+  raw: string
+  kind: CitationKind
+}
+
+export function extractCitationRefs(md: string): CitationRef[] {
+  const refs: CitationRef[] = []
+  const pattern = /\[(V\d+-)?(\d{1,4})\]/gi
   let match: RegExpExecArray | null
   while ((match = pattern.exec(md))) {
-    const id = Number(match[1])
-    if (Number.isFinite(id) && id > 0) {
-      ids.push(id)
-    }
+    const id = Number(match[2])
+    if (!Number.isFinite(id) || id <= 0) continue
+    refs.push({ id, raw: match[0], kind: match[1] ? 'prefixed' : 'plain' })
   }
-  return ids
+  return refs
+}
+
+export function extractCitationIds(md: string): number[] {
+  return extractCitationInfo(md).ids
+}
+
+export function extractCitationInfo(md: string): { ids: number[]; prefixed: boolean } {
+  const refs = extractCitationRefs(md)
+  return {
+    ids: refs.map((ref) => ref.id).filter((id): id is number => id !== null),
+    prefixed: refs.some((ref) => ref.kind === 'prefixed'),
+  }
 }
 
 export function buildCitationLint(draft: string, cardIds: number[]): string {
-  const ids = extractCitationIds(draft)
+  const info = extractCitationInfo(draft)
+  const ids = info.ids
   const cardSet = new Set(cardIds)
   const citedUnique = [...new Set(ids)]
   const valid = citedUnique.filter((id) => cardSet.has(id))
@@ -36,6 +56,7 @@ export function buildCitationLint(draft: string, cardIds: number[]): string {
     `- 证据卡片编号范围：${cardRange}`,
     `- 有效引用编号：${valid.join(', ') || '（无）'}`,
     `- 越界 / 缺失编号：${invalid.join(', ') || '（无）'}`,
+    info.prefixed ? '- 格式提示：检测到 [V1-n] 形式引用，已归一化为编号' : '',
     '',
     '## 引用频次',
     ...[...counts.entries()].map(([id, count]) => `- [${id}]：${count} 次`),
@@ -48,5 +69,5 @@ export function buildCitationLint(draft: string, cardIds: number[]): string {
         : `存在 ${invalid.length} 个不在卡片范围内的引用编号，请 Reviewer 核查。`,
   ]
 
-  return lines.join('\n')
+  return lines.filter((line) => line !== '').join('\n')
 }

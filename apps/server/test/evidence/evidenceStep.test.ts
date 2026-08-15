@@ -148,4 +148,40 @@ describe('EvidenceStepServiceImpl', () => {
     })
     expect(result.promptExtra).toContain('未发现 [编号] 引用')
   })
+
+  it('generates citation-verification.md and injects it when verifier deps are provided', async () => {
+    const db = createDb()
+    const repos = createRepositories(db)
+    const bus = createEventBus()
+    const events: ServerEvent[] = []
+    bus.on((event) => events.push(event))
+    const workflow = repos.workflows.create('调研')
+    const step = repos.steps.create({
+      workflowId: workflow.id,
+      label: '审查引用',
+      role: 'reviewer',
+      position: 2,
+      requiresApproval: true,
+    })
+    const verifierDeps = {
+      lookupDoi: vi.fn().mockResolvedValue(null),
+      searchByTitleAuthor: vi.fn().mockResolvedValue(null),
+    }
+    const service = new EvidenceStepServiceImpl(repos, bus, verifierDeps)
+    const cards = makeArtifact('research-cards.md', '### [1] Paper A')
+    const draft = makeArtifact('03-draft.md', 'draft uses [1]')
+
+    const result = await service.prepareReviewer({
+      workflowId: workflow.id,
+      stepId: step.id,
+      inputArtifacts: [cards, draft],
+    })
+
+    expect(result.promptExtra).toContain('自动引用核验报告')
+    const verification = repos.artifacts
+      .listByWorkflow(workflow.id)
+      .find((artifact) => artifact.name === 'citation-verification.md')
+    expect(verification?.content).toContain('引用核验报告')
+    expect(events.some((event) => event.type === 'artifact.updated')).toBe(true)
+  })
 })

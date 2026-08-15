@@ -8,12 +8,14 @@ import { createEventBus } from './engine/eventBus'
 import { EngineError, WorkflowEngine } from './engine/WorkflowEngine'
 import type { StepRunner } from './engine/StepRunner'
 import { EvidenceStepServiceImpl } from './evidence/EvidenceStepService'
+import { createCrossrefVerifierDeps } from './evidence/citationVerifier'
 import { MockStepRunner } from './runtime/MockStepRunner'
 import { PiRuntimeProvider } from './runtime/PiRuntimeProvider'
 import { PiStepRunner } from './runtime/PiStepRunner'
 import { PiConfigError, loadPiConfig } from './runtime/piConfig'
 import { AcademicSearchService } from './search/AcademicSearchService'
 import { loadSearchConfig } from './search/config'
+import { CrossrefClient } from './search/crossref'
 import { ResearcherStepServiceImpl } from './search/researcherStep'
 import { buildSourceRegistry } from './search/sources'
 import { attachWebSocket } from './ws'
@@ -132,7 +134,15 @@ function createDefaultStepRunner(
   const searchConfig = loadSearchConfig()
   const searchService = new AcademicSearchService(buildSourceRegistry(searchConfig), searchConfig)
   const researcher = new ResearcherStepServiceImpl(searchService, repos, bus, searchConfig)
-  const evidence = new EvidenceStepServiceImpl(repos, bus)
+  const crossref = new CrossrefClient({
+    mailto: searchConfig.crossrefMailto,
+    timeoutMs: searchConfig.timeoutMs,
+  })
+  const evidence = new EvidenceStepServiceImpl(
+    repos,
+    bus,
+    createCrossrefVerifierDeps(crossref)
+  )
   return new PiStepRunner(
     provider,
     (usage) => {

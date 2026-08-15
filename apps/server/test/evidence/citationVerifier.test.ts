@@ -1,0 +1,131 @@
+import { describe, expect, it } from 'vitest'
+import { verifyCitations } from '../../src/evidence/citationVerifier'
+import type { CitationVerifierDeps } from '../../src/evidence/citationVerifier'
+import type { EvidencePoolCard } from '../../src/evidence/evidencePool'
+import type { SearchPaper } from '../../src/search/types'
+
+function card(overrides: Partial<EvidencePoolCard> = {}): EvidencePoolCard {
+  return {
+    key: overrides.doi ? `doi:${overrides.doi}` : `title:${overrides.title ?? 'paper'}`,
+    title: overrides.title ?? 'Attention Is All You Need',
+    doi: overrides.doi ?? null,
+    arxivId: overrides.arxivId ?? null,
+    url: overrides.url ?? null,
+    citationCount: overrides.citationCount ?? 0,
+    authors: overrides.authors ?? 'Ashish Vaswani, Noam Shazeer',
+    year: overrides.year ?? 2017,
+    abstract: overrides.abstract ?? '',
+    versions: overrides.versions ?? [1],
+  }
+}
+
+function paper(overrides: Partial<SearchPaper> = {}): SearchPaper {
+  return {
+    source: 'crossref',
+    externalId: overrides.doi ?? 'x',
+    title: overrides.title ?? 'Attention Is All You Need',
+    abstract: overrides.abstract ?? null,
+    authors: overrides.authors ?? ['Ashish Vaswani', 'Noam Shazeer'],
+    year: overrides.year ?? 2017,
+    doi: overrides.doi ?? '10.1000/a',
+    arxivId: overrides.arxivId ?? null,
+    url: overrides.url ?? null,
+    citationCount: overrides.citationCount ?? null,
+    raw: overrides.raw ?? null,
+  }
+}
+
+function deps(overrides: Partial<CitationVerifierDeps> = {}): CitationVerifierDeps {
+  return {
+    lookupDoi: async () => null,
+    searchByTitleAuthor: async () => null,
+    ...overrides,
+  }
+}
+
+describe('verifyCitations', () => {
+  it('marks a DOI that resolves to a different paper as needs_fix', async () => {
+    const report = await verifyCitations({
+      draft: 'see [1]',
+      cards: [card({ doi: '10.1000/a', title: 'Attention Is All You Need' })],
+      deps: deps({
+        lookupDoi: async () =>
+          paper({ title: 'BERT: Pre-training of Deep Bidirectional Transformers', year: 2018, authors: ['Jacob Devlin'] }),
+      }),
+    })
+
+    expect(report.items).toHaveLength(1)
+    expect(report.items[0].status).toBe('needs_fix')
+    expect(report.items[0].level).toBe('critical')
+  })
+
+  it('flags year and first-author mismatch as check_suggested', async () => {
+    const report = await verifyCitations({
+      draft: 'see [1]',
+      cards: [card({ doi: '10.1000/a', authors: 'Ashish Vaswani', year: 2017 })],
+      deps: deps({
+        lookupDoi: async () => paper({ authors: ['Noam Shazeer'], year: 2019 }),
+      }),
+    })
+
+    expect(report.items[0].status).toBe('check_suggested')
+    expect(report.items[0].level).toBe('warning')
+    expect(report.items[0].issues.join('；')).toContain('年份不一致')
+    expect(report.items[0].issues.join('；')).toContain('第一作者不一致')
+  })
+
+  it('marks an unresolvable DOI as unverifiable', async () => {
+    const report = await verifyCitations({
+      draft: 'see [1]',
+      cards: [card({ doi: '10.1000/missing' })],
+      deps: deps({ lookupDoi: async () => null, searchByTitleAuthor: async () => null }),
+    })
+
+    expect(report.items[0].status).toBe('unverifiable')
+    expect(report.items[0].level).toBe('info')
+  })
+
+  it('falls back to title+author search when the card has no DOI', async () => {
+    let searched = false
+    const report = await verifyCitations({
+      draft: 'see [1]',
+      cards: [card({ doi: null, title: 'Attention Is All You Need', authors: 'Ashish Vaswani' })],
+      deps: deps({
+        lookupDoi: async () => null,
+        searchByTitleAuthor: async () => {
+          searched = true
+          return paper()
+        },
+      }),
+    })
+
+    expect(searched).toBe(true)
+    expect(report.items[0].status).toBe('verified')
+    expect(report.items[0].resolvedVia).toBe('search')
+  })
+
+  it('verifies a matching paper resolved by DOI', async () => {
+    const report = await verifyCitations({
+      draft: 'see [1]',
+      cards: [card({ doi: '10.1000/a' })],
+      deps: deps({ lookupDoi: async () => paper() }),
+    })
+
+    expect(report.items[0].status).toBe('verified')
+    expect(report.items[0].level).toBe('info')
+    expect(report.items[0].resolvedVia).toBe('doi')
+    expect(report.md).toContain('引用核验报告')
+  })
+
+  it('flags an out-of-range citation id as needs_fix', async () => {
+    const report = await verifyCitations({
+      draft: 'see [3]',
+      cards: [card()],
+      deps: deps(),
+    })
+
+    expect(report.items[0].status).toBe('needs_fix')
+    expect(report.items[0].level).toBe('critical')
+    expect(report.items[0].issues.join('；')).toContain('超出证据池范围')
+  })
+})

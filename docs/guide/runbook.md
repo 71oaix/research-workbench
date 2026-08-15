@@ -2,7 +2,7 @@
 title: 本地运行手册（runbook）
 status: active
 created: 2026-08-14
-updated: 2026-08-14
+updated: 2026-08-16
 ---
 
 # 本地运行手册
@@ -174,6 +174,22 @@ M2-8 全文与证据闭环验证（真实模型）：
 ```bash
 node scripts/verify-m2-8.mjs
 ```
+
+## M2-9 引用核验配置与验证
+
+引用核验默认使用 Crossref DOI lookup 做字段级交叉（标题 / 年份 / 第一作者）；卡片无 DOI 时回退标题 + 第一作者检索。
+
+```bash
+CROSSREF_MAILTO=you@example.com  # 可选，进入 Crossref polite pool
+```
+
+引用核验验证（真实模型）：
+
+```bash
+node scripts/verify-m2-9.mjs
+```
+
+脚本会检查：reviewer 阶段生成 `citation-verification.md`（含汇总与逐条核验），且 `citation-lint.md` 仍在。
 
 ## 常见问题
 

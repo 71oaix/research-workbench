@@ -3,6 +3,8 @@ import type { Repositories } from '@research-workbench/data'
 import { findLatestArtifact } from '../artifacts'
 import { buildCitationLint } from '../citations/lint'
 import type { WorkflowEventBus } from '../engine/eventBus'
+import { verifyCitations } from './citationVerifier'
+import type { CitationVerifierDeps } from './citationVerifier'
 import { buildEvidencePool } from './evidencePool'
 
 export interface EvidenceStepService {
@@ -21,7 +23,8 @@ export interface EvidenceStepService {
 export class EvidenceStepServiceImpl implements EvidenceStepService {
   constructor(
     private readonly repos: Repositories,
-    private readonly bus: WorkflowEventBus
+    private readonly bus: WorkflowEventBus,
+    private readonly verifierDeps?: CitationVerifierDeps
   ) {}
 
   async prepareWriter(input: {
@@ -50,14 +53,34 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
       throw new Error('缺少 03-draft.md 或 research-cards.md，无法审查引用')
     }
     const lintMd = buildCitationLint(draft.content, pool.cardIds)
-    const artifact = this.repos.artifacts.create({
+    const lintArtifact = this.repos.artifacts.create({
       workflowId: input.workflowId,
       stepId: input.stepId,
       name: 'citation-lint.md',
       content: lintMd,
     })
-    this.bus.emit({ type: 'artifact.updated', artifact })
-    return { promptExtra: buildReviewerSection({ draft, cardsMd: pool.cardsMd, lintMd }) }
+    this.bus.emit({ type: 'artifact.updated', artifact: lintArtifact })
+
+    let verificationMd: string | null = null
+    if (this.verifierDeps) {
+      const report = await verifyCitations({
+        draft: draft.content,
+        cards: pool.cards,
+        deps: this.verifierDeps,
+      })
+      const verificationArtifact = this.repos.artifacts.create({
+        workflowId: input.workflowId,
+        stepId: input.stepId,
+        name: 'citation-verification.md',
+        content: report.md,
+      })
+      this.bus.emit({ type: 'artifact.updated', artifact: verificationArtifact })
+      verificationMd = report.md
+    }
+
+    return {
+      promptExtra: buildReviewerSection({ draft, cardsMd: pool.cardsMd, lintMd, verificationMd }),
+    }
   }
 }
 
@@ -83,8 +106,9 @@ function buildReviewerSection(input: {
   draft: Artifact
   cardsMd: string
   lintMd: string
+  verificationMd: string | null
 }): string {
-  return [
+  const sections = [
     '## 待审查草稿',
     input.draft.content,
     '',
@@ -93,10 +117,16 @@ function buildReviewerSection(input: {
     '',
     '## 自动引用检查报告',
     input.lintMd,
+  ]
+  if (input.verificationMd) {
+    sections.push('', '## 自动引用核验报告（Crossref 字段级交叉）', input.verificationMd)
+  }
+  sections.push(
     '',
     '审查要求：',
     '1. 输出“可信引用清单 / 存疑引用与原因 / 覆盖不足的方向 / 总体结论”；',
     '2. 以自动检查报告为计数依据，不要自行数引用；',
     '3. 只对证据池中存在的论文做判断，证据不足时写 Not assessable。',
-  ].join('\n')
+  )
+  return sections.join('\n')
 }

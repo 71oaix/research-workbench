@@ -1,7 +1,7 @@
 import type { Artifact } from '@research-workbench/shared'
 import { normalizeArxiv, normalizeDoi, normalizeTitle } from '../search/merge'
 
-interface PoolCard {
+export interface EvidencePoolCard {
   key: string
   title: string
   doi: string | null
@@ -9,6 +9,7 @@ interface PoolCard {
   url: string | null
   citationCount: number
   authors: string
+  year: number | null
   abstract: string
   versions: number[]
 }
@@ -16,8 +17,9 @@ interface PoolCard {
 export function buildEvidencePool(artifacts: Artifact[]): {
   cardsMd: string
   cardIds: number[]
+  cards: EvidencePoolCard[]
 } {
-  const byKey = new Map<string, PoolCard>()
+  const byKey = new Map<string, EvidencePoolCard>()
   const cardArtifacts = artifacts
     .filter((artifact) => artifact.name === 'research-cards.md')
     .sort((a, b) => a.version - b.version)
@@ -58,11 +60,15 @@ export function buildEvidencePool(artifacts: Artifact[]): {
     lines.push('')
   })
 
-  return { cardsMd: lines.join('\n'), cardIds: cards.map((_, index) => index + 1) }
+  return {
+    cardsMd: lines.join('\n'),
+    cardIds: cards.map((_, index) => index + 1),
+    cards,
+  }
 }
 
-function splitCards(content: string): PoolCard[] {
-  const cards: PoolCard[] = []
+function splitCards(content: string): EvidencePoolCard[] {
+  const cards: EvidencePoolCard[] = []
   const blocks = content.split(/^###\s*\[(\d+)\]\s+/gm)
   for (let i = 1; i < blocks.length; i += 2) {
     const segment = blocks[i + 1] ?? ''
@@ -75,6 +81,7 @@ function splitCards(content: string): PoolCard[] {
     const url = match(body, /链接[：:]\s*([^\s|]+)/)
     const citation = Number(match(body, /引用数[：:]\s*(\d+)/) ?? '0')
     const authors = match(body, /作者[：:]\s*(.+)/) ?? ''
+    const yearMatch = match(body, /年份[：:]\s*(\d{4})/)
     const abstract = match(body, /摘要[：:]\s*(.+)/) ?? ''
     cards.push({
       key: dedupKey({ doi: doi ?? null, arxiv: arxiv ?? null, title }),
@@ -84,6 +91,7 @@ function splitCards(content: string): PoolCard[] {
       url: url ?? null,
       citationCount: Number.isFinite(citation) ? citation : 0,
       authors,
+      year: yearMatch !== null ? Number(yearMatch) : null,
       abstract,
       versions: [],
     })

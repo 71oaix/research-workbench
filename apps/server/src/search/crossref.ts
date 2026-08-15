@@ -1,4 +1,4 @@
-import { fetchJson } from './http'
+import { fetchJson, SearchHttpError } from './http'
 import { normalizeDoi } from './merge'
 import { RateLimiter } from './rateLimiter'
 import type { AcademicSearchClient, SearchPaper } from './types'
@@ -40,6 +40,34 @@ export class CrossrefClient implements AcademicSearchClient {
     return items
       .map((raw, index) => normalizeCrossrefWork(raw, index))
       .filter((paper) => paper.title.length > 0)
+  }
+
+  async lookup(doi: string): Promise<SearchPaper | null> {
+    const normalized = normalizeDoi(doi)
+    if (!normalized) return null
+    const base = this.options.baseUrl ?? 'https://api.crossref.org'
+    const url = new URL(`${base}/works/${encodeURIComponent(normalized)}`)
+    if (this.options.mailto) {
+      url.searchParams.set('mailto', this.options.mailto)
+    }
+
+    try {
+      const data = await fetchJson(url.toString(), {
+        timeoutMs: this.options.timeoutMs ?? 30_000,
+        maxRetries: this.options.maxRetries ?? 3,
+        rateLimiter: this.rateLimiter,
+        retryDelayMs: (attempt) => 1000 * 2 ** attempt,
+      })
+      const message = (data as { message?: unknown }).message
+      if (!message) return null
+      const paper = normalizeCrossrefWork(message, 0)
+      return paper.title.length > 0 ? paper : null
+    } catch (error) {
+      if (error instanceof SearchHttpError && error.status === 404) {
+        return null
+      }
+      throw error
+    }
   }
 }
 

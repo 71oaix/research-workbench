@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildCitationLint, extractCitationIds } from '../../src/citations/lint'
+import { buildCitationLint, extractCitationIds, extractCitationRefs } from '../../src/citations/lint'
 import { extractCardIds } from '../../src/search/cards'
 
 describe('extractCitationIds', () => {
@@ -13,6 +13,21 @@ describe('extractCitationIds', () => {
 
   it('returns an empty array for text without citations', () => {
     expect(extractCitationIds('no citations here')).toEqual([])
+  })
+})
+
+describe('extractCitationRefs', () => {
+  it('normalizes [V1-n] references to plain ids and marks them prefixed', () => {
+    expect(extractCitationRefs('see [V1-1] and [2]')).toEqual([
+      { id: 1, raw: '[V1-1]', kind: 'prefixed' },
+      { id: 2, raw: '[2]', kind: 'plain' },
+    ])
+  })
+
+  it('ignores invalid markers', () => {
+    expect(extractCitationRefs('ref [abc], [0], [12345] and [7]')).toEqual([
+      { id: 7, raw: '[7]', kind: 'plain' },
+    ])
   })
 })
 
@@ -41,5 +56,11 @@ describe('buildCitationLint', () => {
   it('flags a draft without any citations', () => {
     const lint = buildCitationLint('no citations', [1, 2])
     expect(lint).toContain('草稿中未发现 [编号] 引用')
+  })
+
+  it('reports a format hint for prefixed [V1-n] citations', () => {
+    const lint = buildCitationLint('draft [V1-1] and [2]', [1, 2])
+    expect(lint).toContain('检测到 [V1-n] 形式引用')
+    expect(lint).toContain('有效引用编号：1, 2')
   })
 })
