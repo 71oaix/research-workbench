@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ArxivClient } from '../../src/search/arxiv'
+import { CrossrefClient } from '../../src/search/crossref'
 import { OpenAlexClient } from '../../src/search/openAlex'
+import { RateLimiter } from '../../src/search/rateLimiter'
 import { SemanticScholarClient } from '../../src/search/semanticScholar'
 
 function jsonResponse(body: unknown, status = 200, headers: Record<string, string> = {}) {
@@ -135,5 +138,76 @@ describe('OpenAlexClient', () => {
     const client = new OpenAlexClient({ retryDelayMs: () => 0 })
     await expect(client.search('query', 5)).resolves.toEqual([])
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('ArxivClient', () => {
+  it('parses the Atom feed and normalizes metadata', async () => {
+    const xml = [
+      '<feed xmlns="http://www.w3.org/2005/Atom" xmlns:arxiv="http://arxiv.org/schemas/atom">',
+      '<entry>',
+      '<id>http://arxiv.org/abs/1706.03762v7</id>',
+      '<title>Attention Is All You Need</title>',
+      '<summary>We propose a new architecture.</summary>',
+      '<published>2017-06-12T00:00:00Z</published>',
+      '<arxiv:doi>10.48550/arXiv.1706.03762</arxiv:doi>',
+      '<author><name>Ashish Vaswani</name></author>',
+      '<link rel="alternate" href="https://arxiv.org/abs/1706.03762"/>',
+      '</entry>',
+      '</feed>',
+    ].join('')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, text: async () => xml } as unknown as Response)
+    )
+    const client = new ArxivClient({ rateLimiter: new RateLimiter(0) })
+    const papers = await client.search('attention', 5)
+    expect(papers[0]).toMatchObject({
+      source: 'arxiv',
+      externalId: '1706.03762',
+      arxivId: '1706.03762',
+      title: 'Attention Is All You Need',
+      year: 2017,
+      authors: ['Ashish Vaswani'],
+      doi: '10.48550/arxiv.1706.03762',
+    })
+  })
+})
+
+describe('CrossrefClient', () => {
+  it('normalizes works from the JSON response', async () => {
+    const body = {
+      message: {
+        items: [
+          {
+            DOI: '10.1000/xyz',
+            title: ['A Test Paper'],
+            author: [{ given: 'Alice', family: 'Smith' }],
+            issued: { 'date-parts': [[2021]] },
+            'is-referenced-by-count': 42,
+            URL: 'https://doi.org/10.1000/xyz',
+            abstract: '<jats:p>Hello world</jats:p>',
+          },
+        ],
+      },
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => JSON.stringify(body),
+      } as unknown as Response)
+    )
+    const client = new CrossrefClient({ rateLimiter: new RateLimiter(0) })
+    const papers = await client.search('test', 5)
+    expect(papers[0]).toMatchObject({
+      source: 'crossref',
+      externalId: '10.1000/xyz',
+      title: 'A Test Paper',
+      year: 2021,
+      authors: ['Alice Smith'],
+      citationCount: 42,
+      abstract: 'Hello world',
+    })
   })
 })

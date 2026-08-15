@@ -113,3 +113,13 @@ reject  → step rejected → workflow: cancelled（记录 decision）
 - 反馈传递：`steps.pending_feedback` 持久化，随 `StepRunInput.feedback` 注入 prompt，执行成功后清空
 - 产物版本：重跑生成同名 artifact 新版本（v1 / v2 ...），runner 一律读取最新版本（`findLatestArtifact`）
 - 默认模板：四步全部 `requiresApproval=true`，逐步检查
+
+## 规划与检索质量（M2-7）
+
+- Planner 保持默认 `deepseek-v4-flash`（`PI_MODEL_PLANNER` 可覆盖，Pro 后续再测）；计划新增“锚定点”小节，打回时先“锚点修订”
+- 源分级：T1=OpenAlex/arXiv/Crossref/有 key 的 S2；T2=无 key 的 S2；按域选源，单源失败降级并记录 tier
+- 关键词：全部组（上限 10），组内中英文拆分多查询；命中为空时自动放宽
+- 去重：DOI 主键 + arXiv 去版本 + 标题/首作者 Jaccard ≥ 0.90 兜底，合并保留最富字段
+- 打回补偿：feedback 非空时提高 per-query、按引用数下限过滤
+- 规范片段：`apps/server/src/specs/` 的 `loadSpec` 按需加载检索片段，注入 researcher
+- 配置：`SEARCH_MAX_GROUPS` / `SEARCH_COMPENSATE_PER_QUERY` / `SEARCH_MIN_CITATIONS` / `CROSSREF_MAILTO`

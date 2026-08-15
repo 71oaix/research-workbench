@@ -33,12 +33,12 @@ updated: 2026-08-05
 | Plan: M2-3 学术检索 | archived | plans/close/2026-08-14-m2-3-academic-search.md | 已归档：实现完成 |
 | Issue: M2-4 Writer/Reviewer 证据引用 | archived | issues/close/2026-08-14-m2-4-evidence-citation.md | 已归档：证据引用实现完成 |
 | Plan: M2-4 Writer/Reviewer 证据引用 | archived | plans/close/2026-08-14-m2-4-evidence-citation.md | 已归档：实现完成 |
-| Issue: M2-5 工作流 UI | active | issues/open/2026-08-14-m2-5-workflow-ui.md | 列表 / 时间线 / 产物 / 审批 / 实时事件 |
-| Plan: M2-5 工作流 UI | active | plans/open/2026-08-14-m2-5-workflow-ui.md | 已实现，待合并 |
-| Issue: M2-6 工作流多轮迭代 | active | issues/open/2026-08-15-m2-6-workflow-iteration.md | 打回修改 / 逐步检查 / 反馈注入 |
-| Plan: M2-6 工作流多轮迭代 | active | plans/open/2026-08-15-m2-6-workflow-iteration.md | 已实现，待合并 |
+| Issue: M2-5 工作流 UI | archived | issues/close/2026-08-14-m2-5-workflow-ui.md | 已归档：工作流 UI 实现完成 |
+| Plan: M2-5 工作流 UI | archived | plans/close/2026-08-14-m2-5-workflow-ui.md | 已归档：实现完成 |
+| Issue: M2-6 工作流多轮迭代 | archived | issues/close/2026-08-15-m2-6-workflow-iteration.md | 已归档：多轮迭代实现完成 |
+| Plan: M2-6 工作流多轮迭代 | archived | plans/close/2026-08-15-m2-6-workflow-iteration.md | 已归档：实现完成 |
 | Issue: M2-7 规划与检索质量 | active | issues/open/2026-08-15-m2-7-search-iteration-evidence-loop.md | 问题锚点 + 分级检索 + 补偿 |
-| Plan: M2-7 规划与检索质量 | active | plans/open/2026-08-15-m2-7-search-iteration-evidence-loop.md | 旧草案，待按拆分后的 issue 重写 |
+| Plan: M2-7 规划与检索质量 | active | plans/open/2026-08-15-m2-7-search-iteration-evidence-loop.md | 已实现，待合并 |
 | Issue: M2-8 全文获取与证据闭环 | active | issues/open/2026-08-16-m2-8-fulltext-evidence.md | 下载校验 + 证据池 + 全文写作 |
 | Issue: M2-9 引用核验升级 | active | issues/open/2026-08-16-m2-9-citation-verification.md | 字段级多源交叉 + 分级报告 |
 | Issue: M2-10 审查与评估 | active | issues/open/2026-08-16-m2-10-review-evaluation.md | concern ledger + evaluation-report + UI |

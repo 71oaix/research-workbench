@@ -19,14 +19,16 @@ export function buildResearchCards(
     '# 检索证据卡片（确定性管道）',
     '',
     '## 检索概览',
-    `- 检索关键词：${groups.map((g) => g.query).join('；')}`,
+    `- 检索关键词：${groups.map((group) => group.query).join('；')}`,
     `- 数据源：${stats.sources.join('、')}`,
     `- 命中 / 去重：${stats.totalHits} / ${stats.uniquePapers}（取前 ${stats.topN}）`,
+    `- 关键词组 / 查询数：${stats.keywordsUsed} / ${stats.queries}`,
+    stats.minCitations > 0 ? `- 引用数下限：${stats.minCitations}` : '',
     `- 失败源：${stats.failedSources.length > 0 ? stats.failedSources.join('、') : '无'}`,
     '',
     '## 论文卡片',
     '',
-  ]
+  ].filter((line) => line !== '')
 
   if (papers.length === 0) {
     lines.push('（未检索到论文）')

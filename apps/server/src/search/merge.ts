@@ -25,10 +25,11 @@ export function mergeAndRank(
     }
   }
 
-  const ranked = [...merged].sort(compare).slice(0, topN)
+  const clustered = clusterNearDuplicates(merged)
+  const ranked = [...clustered].sort(compare).slice(0, topN)
   return {
     papers: ranked,
-    stats: { totalHits: papers.length, uniquePapers: merged.length },
+    stats: { totalHits: papers.length, uniquePapers: clustered.length },
   }
 }
 
@@ -120,4 +121,56 @@ function preferUrl(a: string | null, b: string | null): string | null {
   if (a.includes('doi.org')) return a
   if (b.includes('doi.org')) return b
   return longer(a, b)
+}
+
+function clusterNearDuplicates(list: MergedPaper[]): MergedPaper[] {
+  const removed = new Set<number>()
+  for (let i = 0; i < list.length; i++) {
+    if (removed.has(i)) continue
+    const a = list[i]
+    if (a.doi || a.arxivId) continue
+    for (let j = i + 1; j < list.length; j++) {
+      if (removed.has(j)) continue
+      const b = list[j]
+      if (b.doi || b.arxivId) continue
+      if (
+        firstAuthorSurname(a.authors) !== '' &&
+        firstAuthorSurname(a.authors) === firstAuthorSurname(b.authors) &&
+        jaccard(a.title, b.title) >= 0.9
+      ) {
+        list[i] = mergePair(a, b)
+        removed.add(j)
+      }
+    }
+  }
+  return list.filter((_, index) => !removed.has(index))
+}
+
+function firstAuthorSurname(authors: string[]): string {
+  const first = authors[0]?.trim().toLowerCase()
+  if (!first) return ''
+  const parts = first.split(/\s+/)
+  return parts[parts.length - 1] ?? first
+}
+
+const STOPWORDS = new Set([
+  'a', 'an', 'the', 'in', 'of', 'for', 'on', 'to', 'and', 'with', 'by', 'et', 'al',
+])
+
+function jaccard(titleA: string, titleB: string): number {
+  const tokens = (title: string): Set<string> => {
+    const set = new Set<string>()
+    for (const token of title.toLowerCase().split(/[^a-z0-9]+/)) {
+      if (token && !STOPWORDS.has(token)) set.add(token)
+    }
+    return set
+  }
+  const a = tokens(titleA)
+  const b = tokens(titleB)
+  if (a.size === 0 || b.size === 0) return 0
+  let intersection = 0
+  for (const token of a) {
+    if (b.has(token)) intersection++
+  }
+  return intersection / (a.size + b.size - intersection)
 }

@@ -1,6 +1,6 @@
 ---
 title: M2-6 工作流多轮迭代与审批（打回修改、逐步检查、反馈注入）（plan）
-status: active
+status: archived
 created: 2026-08-15
 updated: 2026-08-15
 issue: 2026-08-15-m2-6-workflow-iteration

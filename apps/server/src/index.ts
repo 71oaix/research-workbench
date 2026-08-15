@@ -14,9 +14,8 @@ import { PiStepRunner } from './runtime/PiStepRunner'
 import { PiConfigError, loadPiConfig } from './runtime/piConfig'
 import { AcademicSearchService } from './search/AcademicSearchService'
 import { loadSearchConfig } from './search/config'
-import { OpenAlexClient } from './search/openAlex'
 import { ResearcherStepServiceImpl } from './search/researcherStep'
-import { SemanticScholarClient } from './search/semanticScholar'
+import { buildSourceRegistry } from './search/sources'
 import { attachWebSocket } from './ws'
 
 const ROLES: Role[] = ['planner', 'researcher', 'writer', 'reviewer']
@@ -131,19 +130,7 @@ function createDefaultStepRunner(
   const config = loadPiConfig()
   const provider = new PiRuntimeProvider(config)
   const searchConfig = loadSearchConfig()
-  const searchService = new AcademicSearchService(
-    [
-      new SemanticScholarClient({
-        apiKey: searchConfig.semanticScholarApiKey,
-        timeoutMs: searchConfig.timeoutMs,
-      }),
-      new OpenAlexClient({
-        mailto: searchConfig.openAlexMailto,
-        timeoutMs: searchConfig.timeoutMs,
-      }),
-    ],
-    searchConfig
-  )
+  const searchService = new AcademicSearchService(buildSourceRegistry(searchConfig), searchConfig)
   const researcher = new ResearcherStepServiceImpl(searchService, repos, bus)
   const evidence = new EvidenceStepServiceImpl(repos, bus)
   return new PiStepRunner(

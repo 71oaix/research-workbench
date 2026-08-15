@@ -20,7 +20,7 @@ resolution_plan: "docs/plans/open/2026-08-15-m2-7-search-iteration-evidence-loop
 
 ## 目标
 
-- 规划：默认 deepseek-v4-pro 深度拆解，产出“锚定点”，打回时先修订锚点再重查
+- 规划：保持默认 deepseek-v4-flash（稳定），产出“锚定点”，打回时先修订锚点再重查；`PI_MODEL_PLANNER` 覆盖入口保留，Pro 稳定后再切换
 - 检索：按源分级路由、关键词用足、查询构造有数量反馈、去重稳健、限流与错误可见
 - 打回：真正改变检索策略（提高条数、引用数下限、补用未用关键词组），结果不劣于上一版
 
@@ -28,7 +28,7 @@ resolution_plan: "docs/plans/open/2026-08-15-m2-7-search-iteration-evidence-loop
 
 ### 规划
 
-- Planner 默认模型 `deepseek-v4-pro`（`PI_MODEL_PLANNER` 可覆盖）
+- Planner 保持默认 `deepseek-v4-flash`（`PI_MODEL_PLANNER` 可覆盖，Pro 后续再测）
 - 计划新增“锚定点”小节（核心概念 / 方法 / 场景 / 时间范围）；打回时输出“锚点修订”再生成新计划
 
 ### 检索
@@ -50,7 +50,7 @@ resolution_plan: "docs/plans/open/2026-08-15-m2-7-search-iteration-evidence-loop
 
 ## 验收标准
 
-- [ ] Planner 默认 v4-pro，输出含“锚定点”，打回后生成“锚点修订”
+- [ ] Planner 保持 flash 默认，输出含“锚定点”，打回后生成“锚点修订”
 - [ ] 检索按源分级路由，单源失败降级并记录
 - [ ] 打回后使用全部关键词组 + 补偿参数，结果数量与相关度不劣于上一版
 - [ ] 去重通过 DOI + 标题/作者兜底，多 DOI 版本合并正确
