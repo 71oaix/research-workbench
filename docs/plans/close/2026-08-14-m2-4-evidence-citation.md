@@ -1,6 +1,6 @@
 ---
 title: M2-4 Writer / Reviewer 证据引用（基于检索卡片写稿与核查）（plan）
-status: active
+status: archived
 created: 2026-08-14
 updated: 2026-08-14
 issue: 2026-08-14-m2-4-evidence-citation

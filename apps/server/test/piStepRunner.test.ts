@@ -16,6 +16,7 @@ function makeStep(role: Step['role']): Step {
     inputArtifacts: [],
     outputArtifact: null,
     agentRuntimeId: null,
+    pendingFeedback: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }
@@ -74,5 +75,28 @@ describe('PiStepRunner', () => {
     expect(onUsage).toHaveBeenCalledWith(
       expect.objectContaining({ workflowId: 'wf-1', stepId: 'step-1', role: 'planner' })
     )
+  })
+
+  it('injects the previous round feedback into the prompt', async () => {
+    const handle = {
+      id: 'h1',
+      send: vi.fn().mockResolvedValue('ok'),
+      close: vi.fn().mockResolvedValue(undefined),
+    }
+    const provider = {
+      createRuntime: vi.fn().mockResolvedValue(handle),
+      takeUsage: vi.fn().mockReturnValue(null),
+    } as unknown as PiRuntimeProvider
+    const runner = new PiStepRunner(provider)
+
+    await runner.run({
+      step: makeStep('planner'),
+      goal: 'g',
+      inputArtifacts: [],
+      feedback: '补充上下文工程方向',
+    })
+
+    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('上一轮修改意见'))
+    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('补充上下文工程方向'))
   })
 })

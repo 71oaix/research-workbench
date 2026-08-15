@@ -1,42 +1,63 @@
-import { useEffect, useState } from 'react'
-
-interface Health {
-  status: string
-  db: string
-}
+import { useEffect } from 'react'
+import { ApprovalPanel } from './components/ApprovalPanel'
+import { ArtifactTabs } from './components/ArtifactTabs'
+import { EvidencePanel } from './components/EvidencePanel'
+import { StepTimeline } from './components/StepTimeline'
+import { WorkflowList } from './components/WorkflowList'
+import { useWorkflowStore } from './store'
 
 export default function App() {
-  const [health, setHealth] = useState<Health | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const detail = useWorkflowStore((state) => state.detail)
+  const wsStatus = useWorkflowStore((state) => state.wsStatus)
+  const error = useWorkflowStore((state) => state.error)
+  const refreshList = useWorkflowStore((state) => state.refreshList)
+  const connectWs = useWorkflowStore((state) => state.connectWs)
+  const startWorkflow = useWorkflowStore((state) => state.startWorkflow)
+  const decide = useWorkflowStore((state) => state.decide)
 
   useEffect(() => {
-    fetch('/api/health')
-      .then((res) => res.json())
-      .then(setHealth)
-      .catch(() => setError('后端未连接'))
-  }, [])
+    void refreshList()
+    return connectWs()
+  }, [refreshList, connectWs])
 
-  const healthText = health
-    ? `后端状态: ● ${health.status} / db ${health.db}`
-    : error ?? '后端状态: 检测中…'
+  const awaitingStep =
+    detail?.steps.find((step) => step.status === 'awaiting_approval') ?? null
+  const canStart = detail !== null && detail.workflow.status === 'planning'
 
   return (
     <div className="app">
-      <header className="titlebar">研镜 Research Workbench</header>
+      <header className="titlebar">
+        <span>研镜 Research Workbench</span>
+        <span className={`ws-badge ws-${wsStatus}`}>WS {wsStatus}</span>
+      </header>
       <div className="body">
-        <aside className="left">
-          <h2>工作流列表</h2>
-          <p className="placeholder">（占位）</p>
-        </aside>
+        <WorkflowList />
         <main className="center">
-          <h1>研镜</h1>
-          <p className="subtitle">透明学术调研智能体工作台 · M1 骨架</p>
-          <p className={health?.status === 'ok' ? 'health-ok' : 'health-bad'}>{healthText}</p>
+          {error && <p className="error-banner">{error}</p>}
+          {detail ? (
+            <>
+              <h1>{detail.workflow.goal}</h1>
+              <p className="workflow-status">状态：{detail.workflow.status}</p>
+              {canStart && (
+                <button className="start-button" onClick={() => void startWorkflow()}>
+                  启动工作流
+                </button>
+              )}
+              <StepTimeline steps={detail.steps} />
+              <ArtifactTabs artifacts={detail.artifacts} />
+              {awaitingStep && (
+                <ApprovalPanel
+                  step={awaitingStep}
+                  decisions={detail.decisions}
+                  onDecide={(type, note) => void decide(awaitingStep.id, type, note)}
+                />
+              )}
+            </>
+          ) : (
+            <p className="placeholder">选择或新建一个工作流</p>
+          )}
         </main>
-        <aside className="right">
-          <h2>引用 / 证据</h2>
-          <p className="placeholder">（占位）</p>
-        </aside>
+        <EvidencePanel artifacts={detail?.artifacts ?? []} />
       </div>
     </div>
   )

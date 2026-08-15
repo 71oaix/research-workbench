@@ -1,4 +1,5 @@
 import type { UsageRecord } from '@research-workbench/shared'
+import { findLatestArtifact } from '../artifacts'
 import type { StepRunInput, StepRunResult, StepRunner } from '../engine/StepRunner'
 import type { EvidenceStepService } from '../evidence/EvidenceStepService'
 import type { ResearcherStepService } from '../search/types'
@@ -13,13 +14,13 @@ export class PiStepRunner implements StepRunner {
     private readonly evidence?: EvidenceStepService
   ) {}
 
-  async run({ step, goal, inputArtifacts }: StepRunInput): Promise<StepRunResult> {
+  async run({ step, goal, inputArtifacts, feedback }: StepRunInput): Promise<StepRunResult> {
     const systemPrompt = ROLE_SYSTEM_PROMPTS[step.role]
     const handle = await this.provider.createRuntime(step.role, systemPrompt)
     try {
-      let prompt = buildStepPrompt({ goal, step, inputArtifacts })
+      let prompt = buildStepPrompt({ goal, step, inputArtifacts, feedback })
       if (step.role === 'researcher' && this.researcher) {
-        const plan = inputArtifacts.find((artifact) => artifact.name === '01-plan.md')
+        const plan = findLatestArtifact(inputArtifacts, '01-plan.md')
         if (!plan) {
           throw new Error('缺少 01-plan.md，无法执行学术检索')
         }
@@ -28,7 +29,7 @@ export class PiStepRunner implements StepRunner {
           stepId: step.id,
           planContent: plan.content,
         })
-        prompt = buildResearcherPrompt({ goal, step, inputArtifacts, cardsMd })
+        prompt = buildResearcherPrompt({ goal, step, inputArtifacts, cardsMd, feedback })
       }
       if (step.role === 'writer' && this.evidence) {
         const { promptExtra } = await this.evidence.prepareWriter({
@@ -69,14 +70,18 @@ function buildStepPrompt(input: StepRunInput): string {
           .map((artifact) => `### ${artifact.name}（v${artifact.version}）\n${artifact.content}`)
           .join('\n\n')
       : '（暂无输入产物）'
-  return [
+  const sections = [
     `研究问题（工作流目标）：${input.goal}`,
     '',
     `## 工作流目标\n${input.goal}`,
     `## 当前步骤\n${input.step.label}（${input.step.role}）`,
     `## 已有产物\n${artifactSummary}`,
-    '请完成当前步骤，输出 Markdown 产物。',
-  ].join('\n\n')
+  ]
+  if (input.feedback) {
+    sections.push(`## 上一轮修改意见\n${input.feedback}`)
+  }
+  sections.push('请完成当前步骤，输出 Markdown 产物；如有上一轮修改意见，先逐条响应。')
+  return sections.join('\n\n')
 }
 
 function buildResearcherPrompt(input: {
@@ -84,9 +89,15 @@ function buildResearcherPrompt(input: {
   step: StepRunInput['step']
   inputArtifacts: StepRunInput['inputArtifacts']
   cardsMd: string
+  feedback?: string | null
 }): string {
   return [
-    buildStepPrompt({ goal: input.goal, step: input.step, inputArtifacts: input.inputArtifacts }),
+    buildStepPrompt({
+      goal: input.goal,
+      step: input.step,
+      inputArtifacts: input.inputArtifacts,
+      feedback: input.feedback,
+    }),
     '',
     '## 检索证据卡片（仅以此为事实来源）',
     input.cardsMd,

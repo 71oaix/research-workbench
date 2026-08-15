@@ -19,6 +19,7 @@ function makeStep(role: Step['role']): Step {
     inputArtifacts: [],
     outputArtifact: null,
     agentRuntimeId: null,
+    pendingFeedback: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }

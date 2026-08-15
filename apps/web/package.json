@@ -12,7 +12,8 @@
   "dependencies": {
     "@research-workbench/shared": "*",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "zustand": "^5.0.2"
   },
   "devDependencies": {
     "@testing-library/react": "^16.1.0",

@@ -71,6 +71,7 @@ PI_MODEL_PLANNER=...         # 可选，每角色覆盖（仅模型 ID）
 PI_MODEL_RESEARCHER=...
 PI_MODEL_WRITER=...
 PI_MODEL_REVIEWER=...
+PI_WORKBENCH_AGENT_DIR=...   # 可选，pi 会话隔离目录（默认 <项目根>/.pi/agent）
 ```
 
 真实调用验证（服务已启动且进程带 key）：
@@ -81,6 +82,9 @@ node scripts/verify-m2-2.mjs
 
 > 说明：角色 system prompt 通过 pi SDK 的 `resourceLoaderOptions.systemPromptOverride`
 > 注入（0.80.3 直接改 `agent.state.systemPrompt` 会被覆盖）；运行时禁用编码工具（`noTools: 'all'`）。
+>
+> 会话隔离：研镜的 pi 会话默认写入项目内 `.pi/agent`，与个人 PI 的 `~/.pi/agent` 完全隔离，
+> 不会出现在 PI coding agent 的会话列表里；如需换位置，设置 `PI_WORKBENCH_AGENT_DIR`。
 
 ## M2-3 学术检索配置与验证
 
@@ -112,6 +116,40 @@ node scripts/verify-m2-4.mjs
 ```
 
 脚本在 M2-3 检查基础上增加：`03-draft.md` 引用编号数不少于 5 且全部在卡片范围内、包含参考文献列表；`citation-lint.md` 自动生成；`04-review.md` 包含可信引用清单、存疑引用与原因、覆盖不足的方向。
+
+## M2-5 工作流 UI 启动与验证
+
+普通模式（需要 OPENCODE_GO_API_KEY）：
+
+```bash
+npm.cmd run dev
+```
+
+访问 http://localhost:5173。
+
+演示模式（无需 key）：
+
+```powershell
+$env:DEMO_MODE='1'
+npm.cmd run dev
+```
+
+WebSocket 通道为 `ws://localhost:3000/ws`，开发时经 Vite 代理 `/ws` 到 5173。
+
+验证路径：浏览器新建工作流 → 启动 → 步骤时间线推进 → 产物标签预览 → 审批 → completed。
+
+## 审批操作说明（M2-6）
+
+- 通过：接受当前产物，进入下一步
+- 打回修改：必须填写修改意见；目标步骤及其后续步骤会用新版本重跑，意见注入模型 prompt；Reviewer 打回时回到 Writer 改稿再重审
+- 取消任务：显式放弃整个任务（有确认提示），与“打回修改”无关
+- 迭代产物以 v1 / v2 累积，标签页可回看历史版本
+
+迭代闭环验证（真实模型）：
+
+```bash
+node scripts/verify-m2-6.mjs
+```
 
 ## 常见问题
 

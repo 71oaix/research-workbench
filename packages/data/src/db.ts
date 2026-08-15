@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS steps (
   position INTEGER NOT NULL DEFAULT 0,
   requires_approval INTEGER NOT NULL DEFAULT 0,
   input_artifacts TEXT NOT NULL DEFAULT '[]',
+  pending_feedback TEXT,
   output_artifact TEXT,
   agent_runtime_id TEXT,
   created_at TEXT NOT NULL,
@@ -100,6 +101,9 @@ function migrate(db: Db): void {
   }
   if (!stepCols.has('requires_approval')) {
     db.exec('ALTER TABLE steps ADD COLUMN requires_approval INTEGER NOT NULL DEFAULT 0')
+  }
+  if (!stepCols.has('pending_feedback')) {
+    db.exec('ALTER TABLE steps ADD COLUMN pending_feedback TEXT')
   }
   const paperCols = new Set(
     (db.prepare('PRAGMA table_info(papers)').all() as { name: string }[]).map((c) => c.name)

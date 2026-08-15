@@ -1,12 +1,14 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import type { Context } from 'hono'
+import type { Server } from 'node:http'
 import { createDb, createRepositories } from '@research-workbench/data'
 import type { Role, StepSpec } from '@research-workbench/shared'
 import { createEventBus } from './engine/eventBus'
 import { EngineError, WorkflowEngine } from './engine/WorkflowEngine'
-import { FakeStepRunner } from './engine/StepRunner'
 import type { StepRunner } from './engine/StepRunner'
+import { EvidenceStepServiceImpl } from './evidence/EvidenceStepService'
+import { MockStepRunner } from './runtime/MockStepRunner'
 import { PiRuntimeProvider } from './runtime/PiRuntimeProvider'
 import { PiStepRunner } from './runtime/PiStepRunner'
 import { PiConfigError, loadPiConfig } from './runtime/piConfig'
@@ -15,18 +17,33 @@ import { loadSearchConfig } from './search/config'
 import { OpenAlexClient } from './search/openAlex'
 import { ResearcherStepServiceImpl } from './search/researcherStep'
 import { SemanticScholarClient } from './search/semanticScholar'
-import { wsRoutes } from './ws'
-import { EvidenceStepServiceImpl } from './evidence/EvidenceStepService'
+import { attachWebSocket } from './ws'
 
 const ROLES: Role[] = ['planner', 'researcher', 'writer', 'reviewer']
+
+export interface AppBundle {
+  app: Hono
+  bus: ReturnType<typeof createEventBus>
+}
 
 export function createApp(
   db: ReturnType<typeof createDb> = createDb(),
   stepRunner?: StepRunner
 ) {
+  return createAppBundle(db, stepRunner).app
+}
+
+export function createAppBundle(
+  db: ReturnType<typeof createDb> = createDb(),
+  stepRunner?: StepRunner
+): AppBundle {
   const repos = createRepositories(db)
   const bus = createEventBus()
-  const runner = stepRunner ?? createDefaultStepRunner(repos, bus)
+  const runner =
+    stepRunner ??
+    (process.env.DEMO_MODE === '1'
+      ? new MockStepRunner(repos, bus)
+      : createDefaultStepRunner(repos, bus))
   const engine = new WorkflowEngine(repos, runner, bus)
   const app = new Hono()
 
@@ -37,6 +54,10 @@ export function createApp(
     } catch {
       return c.json({ status: 'error', db: 'error' }, 503)
     }
+  })
+
+  app.get('/workflows', (c) => {
+    return c.json(repos.workflows.list())
   })
 
   app.post('/workflows', async (c) => {
@@ -81,7 +102,10 @@ export function createApp(
 
   app.post('/workflows/:id/steps/:stepId/decision', async (c) => {
     const body = await c.req.json().catch(() => null)
-    if (!body || (body.type !== 'approve' && body.type !== 'reject')) {
+    if (
+      !body ||
+      (body.type !== 'approve' && body.type !== 'modify' && body.type !== 'reject')
+    ) {
       return c.json({ error: 'invalid_decision' }, 400)
     }
     try {
@@ -97,8 +121,7 @@ export function createApp(
     }
   })
 
-  app.route('/', wsRoutes)
-  return app
+  return { app, bus }
 }
 
 function createDefaultStepRunner(
@@ -148,8 +171,9 @@ function handleError(c: Context, e: unknown) {
 if (process.env.NODE_ENV !== 'test') {
   const port = Number(process.env.PORT ?? 3000)
   const db = createDb(process.env.DB_PATH ?? 'data/app.db')
-  const app = createApp(db)
-  serve({ fetch: app.fetch, port }, (info) => {
+  const { app, bus } = createAppBundle(db)
+  const server = serve({ fetch: app.fetch, port }, (info) => {
     console.log(`[server] listening on http://localhost:${info.port}`)
   })
+  attachWebSocket(bus, server as Server)
 }

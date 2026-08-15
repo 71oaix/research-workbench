@@ -77,4 +77,25 @@ describe('repositories', () => {
     expect(second.citationCount).toBe(5)
     expect(second.arxivId).toBe('2401.12345v2')
   })
+
+  it('reads and writes pending feedback on steps', () => {
+    const db = createDb()
+    const repos = createRepositories(db)
+    const workflow = repos.workflows.create('调研')
+    const step = repos.steps.create({
+      workflowId: workflow.id,
+      label: '规划',
+      role: 'planner',
+      position: 0,
+      requiresApproval: true,
+    })
+    expect(step.pendingFeedback).toBeNull()
+
+    const updated = repos.steps.setPendingFeedback(step.id, '补充方向')
+    expect(updated?.pendingFeedback).toBe('补充方向')
+    expect(repos.steps.listByWorkflow(workflow.id)[0].pendingFeedback).toBe('补充方向')
+
+    const cleared = repos.steps.setPendingFeedback(step.id, null)
+    expect(cleared?.pendingFeedback).toBeNull()
+  })
 })

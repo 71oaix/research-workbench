@@ -1,8 +1,27 @@
-import { Hono } from 'hono'
+import type { Server } from 'node:http'
+import type { ServerEvent } from '@research-workbench/shared'
+import { WebSocket, WebSocketServer } from 'ws'
+import type { WorkflowEventBus } from './engine/eventBus'
 
-export const wsRoutes = new Hono()
+export function attachWebSocket(
+  bus: WorkflowEventBus,
+  server: Server
+): WebSocketServer {
+  const wss = new WebSocketServer({ server, path: '/ws' })
+  const unsubscribe = bus.on((event: ServerEvent) => {
+    const payload = JSON.stringify(event)
+    for (const client of wss.clients) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(payload)
+      }
+    }
+  })
 
-// M1 占位：协议类型已在 packages/shared 定义，真实 WS 通道在 M2 接入。
-wsRoutes.get('/ws', (c) =>
-  c.json({ error: 'websocket_not_ready', message: 'WS 通道将在 M2 接入' }, 426)
-)
+  wss.on('connection', (socket) => {
+    socket.send(JSON.stringify({ type: 'hello' } satisfies ServerEvent))
+  })
+  wss.on('close', () => {
+    unsubscribe()
+  })
+  return wss
+}

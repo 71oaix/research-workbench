@@ -58,6 +58,7 @@ updated: 2026-08-14
 - 角色 system prompt 通过 `resourceLoaderOptions.systemPromptOverride` 注入（0.80.3 的正确入口）
 - 运行时禁用工具（`noTools: 'all'`），角色只做规划/检索/撰写/审查文本
 - 每次调用的 token / 成本写入 `usage_records` 并广播 `usage.recorded`
+- 会话隔离：pi agent 目录默认 `<项目根>/.pi/agent`（可用 `PI_WORKBENCH_AGENT_DIR` 覆盖），与个人 PI 的 `~/.pi/agent` 互不干扰
 
 ## 工作流状态机（M2-1）
 
@@ -96,3 +97,19 @@ reject  → step rejected → workflow: cancelled（记录 decision）
 - Reviewer 基于草稿 + 卡片 + lint 报告输出 `04-review.md`：可信引用清单、存疑引用与原因、覆盖不足的方向、总体结论
 - 组件：`EvidenceStepServiceImpl`（writer / reviewer 前置准备 + lint artifact 落库与广播）
 - 中间产物：`citation-lint.md`（引用总数、有效编号、越界 / 缺失编号、引用频次）
+
+## 工作流 UI 与 WebSocket（M2-5）
+
+- REST 新增 `GET /workflows` 列表端点
+- WebSocket：`ws` 包挂在 @hono/node-server 的 HTTP server 上（path `/ws`），事件总线广播 `ServerEvent` JSON；连接即发 `hello`；客户端断线自动重连
+- 前端：React + Zustand store（REST 初始化 + WS 增量更新），三栏布局：工作流列表 / 步骤时间线与产物预览与审批 / 证据引用摘要
+- 产物标签页覆盖：01-plan / research-cards / 02-research / citation-lint / 03-draft / 04-review
+- 演示模式：`DEMO_MODE=1` 使用 MockStepRunner，产出结构与真实一致的产物，无需模型 key
+
+## 工作流多轮迭代（M2-6）
+
+- 审批语义：`approve` = 通过；`modify` = 打回修改（带意见重跑目标步骤及后续）；`reject` = 显式取消任务
+- 打回目标：planner / researcher / writer 打回当前步骤；reviewer 打回 writer，随后 reviewer 自动重审
+- 反馈传递：`steps.pending_feedback` 持久化，随 `StepRunInput.feedback` 注入 prompt，执行成功后清空
+- 产物版本：重跑生成同名 artifact 新版本（v1 / v2 ...），runner 一律读取最新版本（`findLatestArtifact`）
+- 默认模板：四步全部 `requiresApproval=true`，逐步检查
