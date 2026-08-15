@@ -38,3 +38,4 @@ updated: 2026-08-05
 | Plan: M2-6 工作流多轮迭代 | active | plans/open/2026-08-15-m2-6-workflow-iteration.md | 已实现，待合并 |
 | Issue: M2-7 检索迭代与证据版本闭环 | active | issues/open/2026-08-15-m2-7-search-iteration-evidence-loop.md | 真实运行自评：检索补偿 / 证据合并 / 引用格式 |
 | Plan: M2-7 检索迭代与证据版本闭环 | active | plans/open/2026-08-15-m2-7-search-iteration-evidence-loop.md | 待用户确认后实现 |
+| Issue: M2-8 科研 Skill 流程内化 | active | issues/open/2026-08-15-m2-8-skill-internalization.md | 借鉴 nature/science-skills：规范包 + 分级路由 + 全文 + 核验 + 评估 |
