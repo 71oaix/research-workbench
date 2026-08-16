@@ -44,5 +44,5 @@ updated: 2026-08-16
 | Issue: M2-9 引用核验升级 | archived | issues/close/2026-08-16-m2-9-citation-verification.md | 已归档：实现完成并合并 |
 | Plan: M2-9 引用核验升级 | archived | plans/close/2026-08-16-m2-9-citation-verification.md | 已归档：实现完成并合并 |
 | Issue: M2-10 审查与评估 | active | issues/open/2026-08-16-m2-10-review-evaluation.md | concern ledger + evaluation-report + UI |
-| Plan: M2-10 审查与评估 | active | plans/open/2026-08-16-m2-10-review-evaluation.md | 已确认，实现中 |
+| Plan: M2-10 审查与评估 | active | plans/open/2026-08-16-m2-10-review-evaluation.md | 已实现，待合并 |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |

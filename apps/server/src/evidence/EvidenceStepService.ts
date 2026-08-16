@@ -5,6 +5,7 @@ import { buildCitationLint } from '../citations/lint'
 import type { WorkflowEventBus } from '../engine/eventBus'
 import { verifyCitations } from './citationVerifier'
 import type { CitationVerifierDeps } from './citationVerifier'
+import { buildEvaluationReport } from './evaluation'
 import { buildEvidencePool } from './evidencePool'
 
 export interface EvidenceStepService {
@@ -48,6 +49,7 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
     inputArtifacts: Artifact[]
   }): Promise<{ promptExtra: string }> {
     const draft = findLatestArtifact(input.inputArtifacts, '03-draft.md')
+    const plan = findLatestArtifact(input.inputArtifacts, '01-plan.md')
     const pool = buildEvidencePool(input.inputArtifacts)
     if (!draft || pool.cardIds.length === 0) {
       throw new Error('缺少 03-draft.md 或 research-cards.md，无法审查引用')
@@ -78,8 +80,28 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
       verificationMd = report.md
     }
 
+    const evaluation = buildEvaluationReport({
+      planMd: plan?.content ?? '',
+      draftMd: draft.content,
+      cardsMd: pool.cardsMd,
+      cards: pool.cards,
+    })
+    const evaluationArtifact = this.repos.artifacts.create({
+      workflowId: input.workflowId,
+      stepId: input.stepId,
+      name: 'evaluation-report.md',
+      content: evaluation.md,
+    })
+    this.bus.emit({ type: 'artifact.updated', artifact: evaluationArtifact })
+
     return {
-      promptExtra: buildReviewerSection({ draft, cardsMd: pool.cardsMd, lintMd, verificationMd }),
+      promptExtra: buildReviewerSection({
+        draft,
+        cardsMd: pool.cardsMd,
+        lintMd,
+        verificationMd,
+        evaluationMd: evaluation.md,
+      }),
     }
   }
 }
@@ -107,6 +129,7 @@ function buildReviewerSection(input: {
   cardsMd: string
   lintMd: string
   verificationMd: string | null
+  evaluationMd: string
 }): string {
   const sections = [
     '## 待审查草稿',
@@ -121,6 +144,7 @@ function buildReviewerSection(input: {
   if (input.verificationMd) {
     sections.push('', '## 自动引用核验报告（Crossref 字段级交叉）', input.verificationMd)
   }
+  sections.push('', '## 自动评估报告（主题 / 相关度 / 覆盖 / 来源）', input.evaluationMd)
   sections.push(
     '',
     '审查要求：',

@@ -89,6 +89,11 @@ describe('EvidenceStepServiceImpl', () => {
       .listByWorkflow(workflow.id)
       .find((artifact) => artifact.name === 'citation-lint.md')
     expect(lint?.content).toContain('引用检查报告')
+    const evaluation = repos.artifacts
+      .listByWorkflow(workflow.id)
+      .find((artifact) => artifact.name === 'evaluation-report.md')
+    expect(evaluation?.content).toContain('评估报告')
+    expect(result.promptExtra).toContain('自动评估报告')
     expect(events.some((event) => event.type === 'artifact.updated')).toBe(true)
   })
 

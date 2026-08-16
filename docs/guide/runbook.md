@@ -191,6 +191,20 @@ node scripts/verify-m2-9.mjs
 
 脚本会检查：reviewer 阶段生成 `citation-verification.md`（含汇总与逐条核验），且 `citation-lint.md` 仍在。
 
+## M2-10 审查与评估配置与验证
+
+```bash
+EVALUATION_TOPIC_GATE=0.4  # 可选，主题匹配门禁阈值（0-1），默认 0.4
+```
+
+审查与评估验证（真实模型）：
+
+```bash
+node scripts/verify-m2-10.mjs
+```
+
+脚本会检查：`04-review.md` 含 Concern Ledger（`### C{n}` 五要素），`evaluation-report.md` 含主题匹配 / 平均相关度 / 大纲覆盖 / 来源失败。
+
 ## 常见问题
 
 - 端口被占用：设置环境变量 `PORT`（server）或修改

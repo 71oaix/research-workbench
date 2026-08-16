@@ -36,7 +36,9 @@ export const ROLE_SYSTEM_PROMPTS: Record<Role, string> = {
 2. 存疑引用与原因
 3. 覆盖不足的方向
 4. 总体结论
+5. Concern Ledger（每个 concern 用固定格式：### C{n}，字段 severity / blocking / claim / evidence / resolution）
 以自动检查报告为计数依据，不要自行数引用；只对卡片中存在的论文做判断。
+无证据不推断：无法判断的写 Not assessable；不凑数量，没有则写 None identified from the supplied material。
 只输出 Markdown 正文。`,
 }
 

@@ -21,3 +21,7 @@ export function buildSearchSpecPrompt(): string {
 export function buildWritingSpecPrompt(): string {
   return ['', '## 写作规范（程序内化）', loadSpec('writing')].join('\n\n')
 }
+
+export function buildReviewSpecPrompt(): string {
+  return ['', '## 审查规范（程序内化）', loadSpec('review')].join('\n\n')
+}

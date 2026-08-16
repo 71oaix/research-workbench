@@ -83,6 +83,9 @@ beforeEach(() => {
       if (url.endsWith('/api/workflows/wf-1/start')) {
         return Promise.resolve({ ok: true, json: async () => currentDetail })
       }
+      if (url.includes('/decision')) {
+        return Promise.resolve({ ok: true, json: async () => currentDetail })
+      }
       if (url.endsWith('/api/workflows/wf-1')) {
         return Promise.resolve({ ok: true, json: async () => currentDetail })
       }
@@ -138,5 +141,56 @@ describe('App workflow UI', () => {
     expect(await screen.findByText('打回修改')).toBeTruthy()
     expect(screen.getByText('取消任务')).toBeTruthy()
     expect(screen.getByText('补充上下文工程方向')).toBeTruthy()
+  })
+
+  it('pre-fills blocking concerns when sending a review back to the writer', async () => {
+    currentDetail = {
+      workflow,
+      steps: [
+        steps[0],
+        {
+          ...steps[1],
+          id: 's3',
+          role: 'reviewer',
+          label: '审查引用',
+          status: 'awaiting_approval',
+          position: 2,
+        },
+      ],
+      artifacts: [
+        {
+          id: 'a-review',
+          workflowId: 'wf-1',
+          stepId: 's3',
+          name: '04-review.md',
+          content: [
+            '## Concern Ledger',
+            '### C1',
+            '- severity: major',
+            '- blocking: yes',
+            '- claim: 结论缺乏支撑',
+            '- evidence: [1]',
+            '- resolution: 补充证据',
+          ].join('\n'),
+          version: 1,
+          createdAt: '2026-08-15T00:00:00.000Z',
+          updatedAt: '2026-08-15T00:00:00.000Z',
+        },
+      ],
+      decisions: [],
+    }
+    render(<App />)
+    const item = await screen.findByText('调研大模型测试')
+    item.click()
+    const sendBack = await screen.findByText('打回 Writer')
+    sendBack.click()
+    await waitFor(() => {
+      const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls
+      const decisionCall = calls.find((call) => String(call[0]).includes('/decision'))
+      expect(decisionCall).toBeTruthy()
+      const body = JSON.parse(String(decisionCall?.[1]?.body))
+      expect(body.type).toBe('modify')
+      expect(body.note).toContain('C1 [blocking]')
+    })
   })
 })

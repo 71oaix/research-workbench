@@ -136,3 +136,9 @@ reject  → step rejected → workflow: cancelled（记录 decision）
 - DOI 交叉：`CrossrefClient.lookup(doi)` 命中 `/works/{doi}`；无 DOI 时回退“标题 + 第一作者”检索
 - 字段比对：标题核心词（Jaccard）、年份、第一作者逐字段比对，输出 Critical / Warning / Info 与 Verified / Check suggested / Needs fix / Unverifiable
 - 接入 Reviewer：`EvidenceStepServiceImpl.prepareReviewer` 生成 `citation-verification.md` artifact 并注入 reviewer prompt，与 `citation-lint.md` 并列
+
+## 审查与评估（M2-10）
+
+- Concern Ledger：reviewer 按固定格式（`### C{n}` + severity / blocking / claim / evidence / resolution）输出，`@research-workbench/shared` 的 `parseConcernLedger` 解析并计数，UI 展示 Blocking / Major / Minor
+- 评估报告：`evidence/evaluation.ts` 确定性词元匹配（英文词 + 中文 bigram），在 `prepareReviewer` 生成 `evaluation-report.md` 并注入 reviewer；四指标：主题匹配门禁（默认 0.4，`EVALUATION_TOPIC_GATE` 可配置）、平均相关度、大纲覆盖、来源失败
+- 一键打回 Writer：`ApprovalPanel` 在 reviewer 步骤解析 blocking concerns，点击“打回 Writer”自动预填意见并发 `modify`（复用 reviewer→writer 语义）
