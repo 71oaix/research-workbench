@@ -25,6 +25,7 @@ export function buildEvaluationReport(input: {
   planMd: string
   draftMd: string
   cardsMd: string
+  rawCardsMd: string
   cards: EvidencePoolCard[]
 }): EvaluationReport {
   const theme = extractThemeTokens(input.planMd)
@@ -34,7 +35,7 @@ export function buildEvaluationReport(input: {
     : { hitRate: 0, relevanceAvg: 0 }
   const gatePassed = !assessable ? null : hitRate >= TOPIC_GATE_THRESHOLD
   const outline = outlineCoverage(input.planMd, input.draftMd)
-  const sources = failedSources(input.cardsMd)
+  const sources = failedSources(input.rawCardsMd)
 
   const summary: EvaluationSummary = {
     assessable,
@@ -84,21 +85,22 @@ function topicStats(
   cards: EvidencePoolCard[]
 ): { hitRate: number; relevanceAvg: number } {
   let hits = 0
-  let relevanceSum = 0
+  let coverageSum = 0
   for (const card of cards) {
     const cardTokens = tokenize(`${card.title} ${card.abstract ?? ''}`.slice(0, 400))
     if (hasIntersection(cardTokens, theme)) hits++
-    relevanceSum += jaccard(cardTokens, theme)
+    coverageSum += intersectionSize(cardTokens, theme) / theme.size
   }
-  return { hitRate: hits / cards.length, relevanceAvg: relevanceSum / cards.length }
+  return { hitRate: hits / cards.length, relevanceAvg: coverageSum / cards.length }
 }
 
 function outlineCoverage(planMd: string, draftMd: string): OutlineCoverage {
   const outline = extractSection(planMd, '综述大纲')
   const planned = outline
     .split('\n')
-    .map((line) => line.replace(/^\s*(?:[-*•]|\d+[.、)])\s*/, '').trim())
-    .filter((line) => line.length > 0 && !/^#{1,4}\s/.test(line))
+    .filter((line) => !/^\s/.test(line) && /^\d+[.、]\s*/.test(line))
+    .map((line) => line.replace(/^\d+[.、]\s*/, '').replace(/\*\*/g, '').trim())
+    .filter((line) => line.length > 0)
   const draftHeadings = (draftMd.match(/^#{2,3}\s+.+$/gm) ?? []).map((heading) =>
     heading.replace(/^#+\s*/, '').trim()
   )
@@ -139,7 +141,7 @@ function extractSection(md: string, header: string): string {
   return body.join('\n')
 }
 
-function tokenize(text: string): Set<string> {
+export function tokenize(text: string): Set<string> {
   const tokens = new Set<string>()
   const lower = text.toLowerCase()
   for (const match of lower.matchAll(/[a-z0-9]+/g)) {
@@ -167,11 +169,19 @@ function jaccard(a: Set<string>, b: Set<string>): number {
   return intersection / (a.size + b.size - intersection)
 }
 
-function hasIntersection(a: Set<string>, b: Set<string>): boolean {
+export function hasIntersection(a: Set<string>, b: Set<string>): boolean {
   for (const token of a) {
     if (b.has(token)) return true
   }
   return false
+}
+
+function intersectionSize(a: Set<string>, b: Set<string>): number {
+  let count = 0
+  for (const token of a) {
+    if (b.has(token)) count++
+  }
+  return count
 }
 
 function round2(value: number): number {

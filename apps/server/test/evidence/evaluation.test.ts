@@ -50,6 +50,7 @@ describe('buildEvaluationReport', () => {
       planMd,
       draftMd: '# 综述\n## 引言\n## 大语言模型智能体\n内容 [1]',
       cardsMd: '# cards\n- 失败源：无\n### [1] A',
+      rawCardsMd: '- 失败源：无',
       cards: [
         card('大语言模型多智能体记忆架构研究', 'multi-agent memory architecture'),
         card('另一篇无关论文', 'unrelated topic'),
@@ -67,6 +68,7 @@ describe('buildEvaluationReport', () => {
       planMd,
       draftMd: '',
       cardsMd: '',
+      rawCardsMd: '',
       cards: [card('completely unrelated paper', 'nothing in common')],
     })
     expect(report.summary.topicGatePassed).toBe(false)
@@ -78,6 +80,7 @@ describe('buildEvaluationReport', () => {
       planMd: '# 计划\n没有关键词小节',
       draftMd: '',
       cardsMd: '',
+      rawCardsMd: '',
       cards: [card('x')],
     })
     expect(report.summary.assessable).toBe(false)
@@ -85,11 +88,12 @@ describe('buildEvaluationReport', () => {
     expect(report.md).toContain('无法评估')
   })
 
-  it('parses failed sources from cards', () => {
+  it('parses failed sources from raw research cards', () => {
     const report = buildEvaluationReport({
       planMd,
       draftMd: '',
-      cardsMd: '- 失败源：Semantic Scholar、OpenAlex',
+      cardsMd: '# 证据池（合并去重）',
+      rawCardsMd: '- 失败源：Semantic Scholar、OpenAlex',
       cards: [card('大语言模型')],
     })
     expect(report.summary.failedSources).toEqual(['Semantic Scholar', 'OpenAlex'])

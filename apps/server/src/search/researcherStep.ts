@@ -2,6 +2,7 @@ import path from 'node:path'
 import type { Repositories } from '@research-workbench/data'
 import type { WorkflowEventBus } from '../engine/eventBus'
 import { acquireFullText, fullTextKey } from '../evidence/fullText'
+import { extractThemeTokens, hasIntersection, tokenize } from '../evidence/evaluation'
 import type { AcademicSearchService } from './AcademicSearchService'
 import { buildResearchCards } from './cards'
 import type { SearchConfig } from './config'
@@ -24,6 +25,7 @@ export class ResearcherStepServiceImpl implements ResearcherStepService {
     const output = await this.search.search(input.planContent, {
       compensate: input.compensate ?? false,
     })
+    output.papers = filterRelevantPapers(output.papers, input.planContent)
 
     const fullTextByKey = new Map<string, string>()
     for (const paper of output.papers.slice(0, this.config.readTop)) {
@@ -70,6 +72,18 @@ export class ResearcherStepServiceImpl implements ResearcherStepService {
 
     return { cardsMd }
   }
+}
+
+function filterRelevantPapers<T extends { title: string; abstract: string | null }>(
+  papers: T[],
+  planMd: string
+): T[] {
+  const theme = extractThemeTokens(planMd)
+  if (theme.size === 0 || papers.length === 0) return papers
+  const relevant = papers.filter((paper) =>
+    hasIntersection(tokenize(`${paper.title} ${paper.abstract ?? ''}`.slice(0, 400)), theme)
+  )
+  return relevant.length > 0 ? relevant : papers
 }
 
 function buildFullTextMd(papers: { title: string; fullText?: string | null }[]): string {

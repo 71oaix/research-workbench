@@ -41,6 +41,9 @@ export function WorkflowList() {
             >
               <span className="workflow-goal">{workflow.goal}</span>
               <span className={`badge badge-${workflow.status}`}>{workflow.status}</span>
+              <span className="workflow-meta">
+                {workflow.createdAt.slice(0, 10)} · {workflow.id.slice(0, 8)}
+              </span>
             </button>
           </li>
         ))}

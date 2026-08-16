@@ -132,7 +132,19 @@ export class PiRuntimeHandle {
 
   async send(prompt: string): Promise<string> {
     const before = this.runtime.session.messages.length
-    await this.runtime.session.prompt(prompt)
+    const timeoutMs = Number(process.env.PI_STEP_TIMEOUT_MS ?? 300_000)
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new EngineError(`模型调用超时（${timeoutMs / 1000}s），已中断当前步骤`, 504)),
+        timeoutMs
+      )
+    })
+    try {
+      await Promise.race([this.runtime.session.prompt(prompt), timeout])
+    } finally {
+      if (timer) clearTimeout(timer)
+    }
     this.usage = extractUsage(this.runtime.session.messages.slice(before))
     return extractLatestAssistantText(this.runtime.session.messages)
   }

@@ -50,6 +50,7 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
   }): Promise<{ promptExtra: string }> {
     const draft = findLatestArtifact(input.inputArtifacts, '03-draft.md')
     const plan = findLatestArtifact(input.inputArtifacts, '01-plan.md')
+    const rawCards = findLatestArtifact(input.inputArtifacts, 'research-cards.md')
     const pool = buildEvidencePool(input.inputArtifacts)
     if (!draft || pool.cardIds.length === 0) {
       throw new Error('缺少 03-draft.md 或 research-cards.md，无法审查引用')
@@ -84,6 +85,7 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
       planMd: plan?.content ?? '',
       draftMd: draft.content,
       cardsMd: pool.cardsMd,
+      rawCardsMd: rawCards?.content ?? '',
       cards: pool.cards,
     })
     const evaluationArtifact = this.repos.artifacts.create({

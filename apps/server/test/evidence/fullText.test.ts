@@ -66,4 +66,24 @@ describe('fullText', () => {
     )
     expect(result).toBeNull()
   })
+
+  it('loads the pdf-parse implementation without the debug-module crash', async () => {
+    const mod = await import('pdf-parse/lib/pdf-parse.js')
+    expect(typeof mod.default).toBe('function')
+  })
+
+  it('returns null when text extraction fails instead of crashing the pipeline', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        arrayBuffer: async () => Buffer.from('%PDF-1.4\n% not a real pdf body').buffer,
+      } as unknown as Response)
+    )
+    const result = await acquireFullText(
+      paper({ arxivId: '1706.03762' }),
+      { dir: 'data/pdfs-test', maxChars: 1000 }
+    )
+    expect(result).toBeNull()
+  })
 })

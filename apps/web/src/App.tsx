@@ -52,7 +52,9 @@ export default function App() {
                   step={awaitingStep}
                   decisions={detail.decisions}
                   reviewContent={reviewArtifact?.content ?? null}
-                  onDecide={(type, note) => void decide(awaitingStep.id, type, note)}
+                  onDecide={(type, note) =>
+                    void decide(awaitingStep.workflowId, awaitingStep.id, type, note)
+                  }
                 />
               )}
             </>

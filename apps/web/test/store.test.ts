@@ -88,7 +88,7 @@ describe('workflow store', () => {
       detail: { workflow, steps: [], artifacts: [], decisions: [] },
     })
 
-    await useWorkflowStore.getState().decide('s1', 'modify', '补充上下文工程方向')
+    await useWorkflowStore.getState().decide('wf-1', 's1', 'modify', '补充上下文工程方向')
 
     const call = fetchMock.mock.calls.find((entry) => String(entry[0]).includes('/decision'))
     expect(call).toBeTruthy()

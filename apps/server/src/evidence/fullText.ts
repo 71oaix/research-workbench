@@ -66,7 +66,10 @@ export async function acquireFullText(
 
 async function extractPdfText(buffer: Buffer): Promise<string> {
   try {
-    const { default: pdfParse } = await import('pdf-parse')
+    // pdf-parse 的入口（index.js）在 ESM 动态导入下 module.parent 为空，
+    // 会触发其自带调试分支读取不存在的 test/data PDF 而抛错；
+    // 直接加载实现模块（lib/pdf-parse.js）绕过该分支。
+    const { default: pdfParse } = await import('pdf-parse/lib/pdf-parse.js')
     const result = await pdfParse(buffer)
     return result.text?.trim() ?? ''
   } catch {

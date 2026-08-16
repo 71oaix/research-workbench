@@ -171,6 +171,7 @@ describe('EvidenceStepServiceImpl', () => {
     const verifierDeps = {
       lookupDoi: vi.fn().mockResolvedValue(null),
       searchByTitleAuthor: vi.fn().mockResolvedValue(null),
+      lookupArxiv: vi.fn().mockResolvedValue(null),
     }
     const service = new EvidenceStepServiceImpl(repos, bus, verifierDeps)
     const cards = makeArtifact('research-cards.md', '### [1] Paper A')

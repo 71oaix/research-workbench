@@ -1,4 +1,5 @@
 import { extractCitationRefs, type CitationRef } from '../citations/lint'
+import { ArxivClient } from '../search/arxiv'
 import { CrossrefClient } from '../search/crossref'
 import { normalizeTitle } from '../search/merge'
 import type { SearchPaper } from '../search/types'
@@ -14,6 +15,7 @@ export type VerificationStatus =
 export interface CitationVerifierDeps {
   lookupDoi(doi: string): Promise<SearchPaper | null>
   searchByTitleAuthor(title: string, firstAuthor: string): Promise<SearchPaper | null>
+  lookupArxiv(id: string): Promise<SearchPaper | null>
 }
 
 export interface CitationFieldComparison {
@@ -26,7 +28,7 @@ export interface CitationVerificationItem {
   ref: CitationRef
   pool: EvidencePoolCard | null
   resolved: SearchPaper | null
-  resolvedVia: 'doi' | 'search' | null
+  resolvedVia: 'doi' | 'search' | 'arxiv' | null
   level: VerificationLevel
   status: VerificationStatus
   confidence: number
@@ -61,8 +63,12 @@ export async function verifyCitations(input: {
   return { items, md: buildReportMd(items) }
 }
 
-export function createCrossrefVerifierDeps(client?: CrossrefClient): CitationVerifierDeps {
-  const crossref = client ?? new CrossrefClient()
+export function createVerifierDeps(options?: {
+  crossref?: CrossrefClient
+  arxiv?: ArxivClient
+}): CitationVerifierDeps {
+  const crossref = options?.crossref ?? new CrossrefClient()
+  const arxiv = options?.arxiv ?? new ArxivClient()
   return {
     async lookupDoi(doi) {
       return crossref.lookup(doi)
@@ -71,6 +77,9 @@ export function createCrossrefVerifierDeps(client?: CrossrefClient): CitationVer
       const query = [title, firstAuthor].filter(Boolean).join(' ')
       const papers = await crossref.search(query, 1)
       return papers[0] ?? null
+    },
+    async lookupArxiv(id) {
+      return arxiv.lookup(id)
     },
   }
 }
@@ -94,11 +103,16 @@ async function verifyOne(
   }
 
   let resolved: SearchPaper | null = null
-  let via: 'doi' | 'search' | null = null
+  let via: 'doi' | 'search' | 'arxiv' | null = null
   let resolveError: string | null = null
 
   try {
-    if (card.doi) {
+    const arxivId = card.arxivId ?? arxivIdFromDoi(card.doi)
+    if (arxivId) {
+      resolved = await deps.lookupArxiv(arxivId)
+      via = 'arxiv'
+    }
+    if (!resolved && card.doi && !arxivId) {
       resolved = await deps.lookupDoi(card.doi)
       via = 'doi'
     }
@@ -131,7 +145,7 @@ function compareFields(
   ref: CitationRef,
   card: EvidencePoolCard,
   resolved: SearchPaper,
-  via: 'doi' | 'search' | null
+  via: 'doi' | 'search' | 'arxiv' | null
 ): CitationVerificationItem {
   const similarity = titleSimilarity(card.title, resolved.title)
   const poolYear = card.year
@@ -216,7 +230,7 @@ function buildItem(
   ref: CitationRef,
   pool: EvidencePoolCard | null,
   resolved: SearchPaper | null,
-  resolvedVia: 'doi' | 'search' | null,
+  resolvedVia: 'doi' | 'search' | 'arxiv' | null,
   level: VerificationLevel,
   status: VerificationStatus,
   confidence: number,
@@ -256,8 +270,8 @@ function buildReportMd(items: CitationVerificationItem[]): string {
     '',
     '## 汇总',
     `- 引用条数：${items.length}`,
-    `- 状态：Verified ${statusCounts.verified} / Check suggested ${statusCounts.check_suggested} / Needs fix ${statusCounts.needs_fix} / Unverifiable ${statusCounts.unverifiable}`,
-    `- 级别：Critical ${levelCounts.critical} / Warning ${levelCounts.warning} / Info ${levelCounts.info}`,
+    `- 状态：Verified ${statusCounts.verified ?? 0} / Check suggested ${statusCounts.check_suggested ?? 0} / Needs fix ${statusCounts.needs_fix ?? 0} / Unverifiable ${statusCounts.unverifiable ?? 0}`,
+    `- 级别：Critical ${levelCounts.critical ?? 0} / Warning ${levelCounts.warning ?? 0} / Info ${levelCounts.info ?? 0}`,
     `- 平均置信度：${confidence.toFixed(2)}`,
     '',
     '## 逐条核验',
@@ -274,7 +288,7 @@ function buildReportMd(items: CitationVerificationItem[]): string {
 function detailLines(item: CitationVerificationItem): string[] {
   const lines = [
     `### ${refLabel(item.ref)}`,
-    `- 状态：${item.status}｜级别：${item.level}｜置信度：${item.confidence.toFixed(2)}${item.resolvedVia ? `｜解析：${item.resolvedVia === 'doi' ? 'DOI lookup' : '标题+作者检索'}` : ''}`,
+    `- 状态：${item.status}｜级别：${item.level}｜置信度：${item.confidence.toFixed(2)}${item.resolvedVia ? `｜解析：${viaLabel(item.resolvedVia)}` : ''}`,
     `- 证据池：${item.fields.title.pool ?? '（无）'}｜年份 ${item.fields.year.pool ?? '未知'}｜第一作者 ${item.fields.firstAuthor.pool ?? '未知'}`,
     `- Crossref：${item.fields.title.resolved ?? '（无）'}｜年份 ${item.fields.year.resolved ?? '未知'}｜第一作者 ${item.fields.firstAuthor.resolved ?? '未知'}`,
     `- 问题：${item.issues.length > 0 ? item.issues.join('；') : '无'}`,
@@ -306,6 +320,18 @@ function firstAuthorOf(authors: string): string | null {
   if (!authors || authors === '未知') return null
   const first = authors.split(/[,，;；、]/)[0]?.trim()
   return first || null
+}
+
+function arxivIdFromDoi(doi: string | null): string | null {
+  if (!doi) return null
+  const match = doi.match(/10\.48550\/arxiv\.([\d.]+)/i)
+  return match ? match[1] : null
+}
+
+function viaLabel(via: 'doi' | 'search' | 'arxiv'): string {
+  if (via === 'doi') return 'DOI lookup'
+  if (via === 'arxiv') return 'arXiv lookup'
+  return '标题+作者检索'
 }
 
 function surname(name: string): string {

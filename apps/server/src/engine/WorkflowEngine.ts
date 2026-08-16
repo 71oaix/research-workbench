@@ -68,6 +68,19 @@ export class WorkflowEngine {
     return this.requireWorkflow(workflowId)
   }
 
+  recoverInterrupted(): void {
+    for (const workflow of this.repos.workflows.list()) {
+      const running = this.stepsSorted(workflow.id).find(
+        (step) => step.status === 'running'
+      )
+      if (!running) continue
+      const step = this.repos.steps.updateStatus(running.id, 'failed')
+      if (step) this.emit({ type: 'step.updated', step })
+      const updated = this.repos.workflows.updateStatus(workflow.id, 'failed')
+      if (updated) this.emit({ type: 'workflow.updated', workflow: updated })
+    }
+  }
+
   async decide(
     workflowId: string,
     stepId: string,

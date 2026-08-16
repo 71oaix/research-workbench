@@ -205,6 +205,20 @@ node scripts/verify-m2-10.mjs
 
 脚本会检查：`04-review.md` 含 Concern Ledger（`### C{n}` 五要素），`evaluation-report.md` 含主题匹配 / 平均相关度 / 大纲覆盖 / 来源失败。
 
+## M2-11 真实案例修复配置与验证
+
+```bash
+PI_STEP_TIMEOUT_MS=300000  # 可选，单步模型调用超时（毫秒），默认 300000
+```
+
+真实流程验证（全文进库 + 核验无误报）：
+
+```bash
+node scripts/verify-m2-11.mjs
+```
+
+脚本会检查：research-cards 标注“全文：已读 ≥ 1”、存在 `paper-fulltext.md`、`citation-verification.md` 不含 undefined。
+
 ## 常见问题
 
 - 端口被占用：设置环境变量 `PORT`（server）或修改

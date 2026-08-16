@@ -113,4 +113,22 @@ describe('WorkflowEngine', () => {
       engine.decide(workflow.id, detail.steps[0].id, 'approve')
     ).rejects.toMatchObject({ status: 400 })
   })
+
+  it('clears interrupted running steps to failed on recovery', () => {
+    const { engine, repos, events } = setup()
+    const workflow = engine.createWorkflow({
+      goal: '调研',
+      steps: [{ label: '生成计划', role: 'planner', requiresApproval: true }],
+    })
+    const step = repos.steps.listByWorkflow(workflow.id)[0]
+    repos.steps.updateStatus(step.id, 'running')
+    repos.workflows.updateStatus(workflow.id, 'executing')
+
+    engine.recoverInterrupted()
+
+    const after = engine.getDetail(workflow.id)
+    expect(after.workflow.status).toBe('failed')
+    expect(after.steps[0].status).toBe('failed')
+    expect(events.some((event) => event.type === 'workflow.updated')).toBe(true)
+  })
 })

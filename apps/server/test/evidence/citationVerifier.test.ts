@@ -39,6 +39,7 @@ function deps(overrides: Partial<CitationVerifierDeps> = {}): CitationVerifierDe
   return {
     lookupDoi: async () => null,
     searchByTitleAuthor: async () => null,
+    lookupArxiv: async () => null,
     ...overrides,
   }
 }
@@ -127,5 +128,31 @@ describe('verifyCitations', () => {
     expect(report.items[0].status).toBe('needs_fix')
     expect(report.items[0].level).toBe('critical')
     expect(report.items[0].issues.join('；')).toContain('超出证据池范围')
+  })
+
+  it('uses arxiv lookup for arxiv papers instead of crossref', async () => {
+    const report = await verifyCitations({
+      draft: 'see [1]',
+      cards: [
+        card({
+          doi: '10.48550/arxiv.2310.02172',
+          arxivId: '2310.02172',
+          title: 'Lyfe Agents: Generative agents for low-cost real-time social interactions',
+          authors: 'Zhao Kaiya',
+          year: 2023,
+        }),
+      ],
+      deps: deps({
+        lookupArxiv: async () =>
+          paper({
+            title: 'Lyfe Agents: Generative agents for low-cost real-time social interactions',
+            authors: ['Zhao Kaiya'],
+            year: 2023,
+          }),
+      }),
+    })
+
+    expect(report.items[0].status).toBe('verified')
+    expect(report.items[0].resolvedVia).toBe('arxiv')
   })
 })

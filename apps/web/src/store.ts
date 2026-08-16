@@ -15,7 +15,12 @@ interface WorkflowState {
   createWorkflow: (goal: string) => Promise<void>
   selectWorkflow: (id: string) => Promise<void>
   startWorkflow: () => Promise<void>
-  decide: (stepId: string, type: 'approve' | 'modify' | 'reject', note?: string) => Promise<void>
+  decide: (
+    workflowId: string,
+    stepId: string,
+    type: 'approve' | 'modify' | 'reject',
+    note?: string
+  ) => Promise<void>
   applyServerEvent: (event: ServerEvent) => void
   connectWs: () => () => void
 }
@@ -74,9 +79,8 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     }
   },
 
-  async decide(stepId, type, note) {
-    const workflowId = get().selectedId
-    if (!workflowId) return
+  async decide(workflowId, stepId, type, note) {
+    if (!workflowId || !stepId) return
     try {
       const detail = await api.decide(workflowId, stepId, type, note)
       const workflows = await api.listWorkflows()
