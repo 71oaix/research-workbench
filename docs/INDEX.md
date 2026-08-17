@@ -30,6 +30,7 @@ updated: 2026-08-17
 | Issue: M2-3 学术检索 | archived | issues/close/2026-08-14-m2-3-academic-search.md | 已归档：双源检索实现完成 |
 | 调研：学术检索最佳实践 | active | research/2026-08-14-academic-search-best-practices.md | M2-3 方案定稿依据 |
 | 调研：M2-8 内化清单逐项论证 | active | research/2026-08-15-m2-8-skill-internalization-rationale.md | 每项为什么用 / 为什么这么做 + MVP/M3 切分 |
+| 调研：M2-13 效果评审（真实运行复盘） | active | research/2026-08-17-m2-13-effect-audit.md | 逐文件审计 + 评估失真分析 + M3 效果路线 |
 | Plan: M2-3 学术检索 | archived | plans/close/2026-08-14-m2-3-academic-search.md | 已归档：实现完成 |
 | Issue: M2-4 Writer/Reviewer 证据引用 | archived | issues/close/2026-08-14-m2-4-evidence-citation.md | 已归档：证据引用实现完成 |
 | Plan: M2-4 Writer/Reviewer 证据引用 | archived | plans/close/2026-08-14-m2-4-evidence-citation.md | 已归档：实现完成 |
@@ -49,4 +50,5 @@ updated: 2026-08-17
 | Plan: M2-11 真实案例复盘修复 | active | plans/open/2026-08-16-m2-11-runtime-review-fixes.md | 已实现，待合并 |
 | Issue: M2-12 可靠性与性能加固 | active | issues/open/2026-08-17-m2-12-reliability-performance.md | 下载 / 检索并发 / Writer 思考与上下文 / 核验稳健 |
 | Plan: M2-12 可靠性与性能加固 | active | plans/open/2026-08-17-m2-12-reliability-performance.md | 已实现，待合并 |
+| Issue: M2-13 效果修复 | active | issues/open/2026-08-17-m2-13-effect-audit-fixes.md | 核验批量/兜底 + 评估重设计 + 检索下载覆盖 |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |
