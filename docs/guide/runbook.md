@@ -2,7 +2,7 @@
 title: 本地运行手册（runbook）
 status: active
 created: 2026-08-14
-updated: 2026-08-16
+updated: 2026-08-17
 ---
 
 # 本地运行手册
@@ -155,7 +155,8 @@ node scripts/verify-m2-6.mjs
 
 ```bash
 PI_MODEL_PLANNER=...        # 可选，覆盖 planner 模型；默认 flash
-SEARCH_MAX_GROUPS=10        # 可选，关键词组上限，默认 10
+SEARCH_MAX_GROUPS=8         # 可选，关键词组上限，默认 8（M2-12 起）
+SEARCH_SOURCE_CONCURRENCY=3 # 可选，每数据源并发请求数，默认 3（M2-12 起）
 SEARCH_COMPENSATE_PER_QUERY=50  # 可选，打回后每查询条数，默认 50
 SEARCH_MIN_CITATIONS=0      # 可选，打回后引用数下限，默认 0
 CROSSREF_MAILTO=you@example.com  # 可选，进入 Crossref polite pool
@@ -177,7 +178,7 @@ node scripts/verify-m2-8.mjs
 
 ## M2-9 引用核验配置与验证
 
-引用核验默认使用 Crossref DOI lookup 做字段级交叉（标题 / 年份 / 第一作者）；卡片无 DOI 时回退标题 + 第一作者检索。
+引用核验使用多源交叉：DOI 走 Crossref lookup、arXiv 论文走 arXiv lookup（6s/次限流 + 429 退避），无 DOI 时回退标题 + 第一作者检索（Crossref → Semantic Scholar 兜底）；结果按 DOI/arXiv 内存缓存（TTL 24h，负结果 1h），逐条核验并发 ≤ 3。
 
 ```bash
 CROSSREF_MAILTO=you@example.com  # 可选，进入 Crossref polite pool
@@ -190,6 +191,63 @@ node scripts/verify-m2-9.mjs
 ```
 
 脚本会检查：reviewer 阶段生成 `citation-verification.md`（含汇总与逐条核验），且 `citation-lint.md` 仍在。
+
+## M2-10 审查与评估配置与验证
+
+```bash
+EVALUATION_TOPIC_GATE=0.4  # 可选，主题匹配门禁阈值（0-1），默认 0.4
+```
+
+审查与评估验证（真实模型）：
+
+```bash
+node scripts/verify-m2-10.mjs
+```
+
+脚本会检查：`04-review.md` 含 Concern Ledger（`### C{n}` 五要素），`evaluation-report.md` 含主题匹配 / 平均相关度 / 大纲覆盖 / 来源失败。
+
+## M2-11 真实案例修复配置与验证
+
+```bash
+PI_STEP_TIMEOUT_MS=300000  # 可选，单步模型调用超时（毫秒），默认 300000
+```
+
+真实流程验证（全文进库 + 核验无误报）：
+
+```bash
+node scripts/verify-m2-11.mjs
+```
+
+脚本会检查：research-cards 标注“全文：已读 ≥ 1”、存在 `paper-fulltext.md`、`citation-verification.md` 不含 undefined。
+
+## M2-12 可靠性与性能加固配置与验证
+
+```bash
+PI_THINKING_LEVEL=xhigh      # 可选，角色思考强度，默认 xhigh（DeepSeek reasoning_effort=max）
+PI_THINKING_PLANNER=...      # 可选，按角色覆盖（off/minimal/low/medium/high/xhigh）
+PI_THINKING_RESEARCHER=...
+PI_THINKING_WRITER=...
+PI_THINKING_REVIEWER=...
+SEARCH_SOURCE_CONCURRENCY=3  # 可选，每数据源并发请求数，默认 3
+SEARCH_MAX_GROUPS=8          # 可选，关键词组上限，默认 8
+```
+
+说明：
+
+- 思考强度默认全部角色 `xhigh`（映射 DeepSeek `reasoning_effort=max`）。pi-ai 0.80.3 需要模型声明
+  `thinkingLevelMap: { high: 'high', xhigh: 'max' }` 才会放行 xhigh，本项目已注册；成本较高时可用
+  `PI_THINKING_<ROLE>` 按角色降级。
+- 全文下载改为多候选依次尝试（arXiv → 期刊 OA），并发 ≤ 3，提取文本 ≥ 500 字符才算成功；
+  每篇独立持久化 `download_status`（ok / no_oa / failed）与原因。
+- Writer 只注入前 3 篇全文摘录（首 70% + 末 30%），其余论文仅摘要；打回重跑时草稿只注入结构摘要，控制上下文。
+- 审批决策带乐观锁：重复/并发点击第二次返回 409 `step_not_awaiting_approval`。
+
+验证（先跑离线检查，本地服务启动后加 `--live`）：
+
+```bash
+node scripts/verify-m2-12.mjs
+node scripts/verify-m2-12.mjs --live
+```
 
 ## 常见问题
 

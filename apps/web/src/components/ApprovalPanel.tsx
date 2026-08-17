@@ -1,16 +1,35 @@
 import { useState } from 'react'
 import type { Decision, Step } from '@research-workbench/shared'
+import { parseConcernLedger } from '@research-workbench/shared'
 
 export function ApprovalPanel({
   step,
   decisions,
   onDecide,
+  reviewContent,
 }: {
   step: Step
   decisions: Decision[]
   onDecide: (type: 'approve' | 'modify' | 'reject', note?: string) => void
+  reviewContent?: string | null
 }) {
   const [note, setNote] = useState('')
+  const isReviewer = step.role === 'reviewer'
+  const blockingConcerns = reviewContent
+    ? parseConcernLedger(reviewContent).filter((concern) => concern.blocking)
+    : []
+
+  function handleModify() {
+    const trimmed = note.trim()
+    if (isReviewer && blockingConcerns.length > 0 && !trimmed) {
+      const autoNote = blockingConcerns
+        .map((concern) => `${concern.id} [blocking] ${concern.claim}`)
+        .join('\n')
+      onDecide('modify', autoNote)
+      return
+    }
+    onDecide('modify', trimmed || undefined)
+  }
 
   function handleCancel() {
     if (window.confirm('确定取消整个任务吗？')) {
@@ -32,10 +51,10 @@ export function ApprovalPanel({
         </button>
         <button
           className="modify"
-          onClick={() => onDecide('modify', note.trim() || undefined)}
-          disabled={note.trim().length === 0}
+          onClick={handleModify}
+          disabled={!note.trim() && !(isReviewer && blockingConcerns.length > 0)}
         >
-          打回修改
+          {isReviewer && blockingConcerns.length > 0 ? '打回 Writer' : '打回修改'}
         </button>
         <button className="cancel" onClick={handleCancel}>
           取消任务

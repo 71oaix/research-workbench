@@ -1,6 +1,6 @@
 ---
 title: M2-8 全文获取与证据闭环（下载校验 + 证据池 + 全文写作）
-status: active
+status: archived
 created: 2026-08-16
 updated: 2026-08-16
 kind: feature
@@ -8,8 +8,8 @@ priority: high
 triage: actionable
 areas: [server, data, shared]
 depends_on:
-  - "docs/issues/open/2026-08-15-m2-7-search-iteration-evidence-loop.md"
-resolution_plan: "docs/plans/open/2026-08-16-m2-8-fulltext-evidence.md"
+  - "docs/issues/close/2026-08-15-m2-7-search-iteration-evidence-loop.md"
+resolution_plan: "docs/plans/close/2026-08-16-m2-8-fulltext-evidence.md"
 ---
 
 # M2-8 全文获取与证据闭环

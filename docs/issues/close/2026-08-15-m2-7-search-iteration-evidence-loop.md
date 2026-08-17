@@ -1,6 +1,6 @@
 ---
 title: M2-7 规划与检索质量（问题锚点 + 分级检索 + 补偿）
-status: active
+status: archived
 created: 2026-08-15
 updated: 2026-08-16
 kind: feature
@@ -9,7 +9,7 @@ triage: actionable
 areas: [server, data, shared]
 depends_on:
   - "docs/issues/close/2026-08-14-m2-4-evidence-citation.md"
-resolution_plan: "docs/plans/open/2026-08-15-m2-7-search-iteration-evidence-loop.md"
+resolution_plan: "docs/plans/close/2026-08-15-m2-7-search-iteration-evidence-loop.md"
 ---
 
 # M2-7 规划与检索质量

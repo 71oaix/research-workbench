@@ -111,6 +111,48 @@ describe('WorkflowEngine', () => {
     await engine.decide(workflow.id, detail.steps[0].id, 'approve')
     await expect(
       engine.decide(workflow.id, detail.steps[0].id, 'approve')
-    ).rejects.toMatchObject({ status: 400 })
+    ).rejects.toMatchObject({ status: 409, message: 'step_not_awaiting_approval' })
+  })
+
+  it('allows only one of two concurrent approves to succeed', async () => {
+    const { engine } = setup()
+    const workflow = engine.createWorkflow({
+      goal: '调研',
+      steps: [{ label: '生成计划', role: 'planner', requiresApproval: true }],
+    })
+    await engine.start(workflow.id)
+    const stepId = engine.getDetail(workflow.id).steps[0].id
+
+    const results = await Promise.allSettled([
+      engine.decide(workflow.id, stepId, 'approve'),
+      engine.decide(workflow.id, stepId, 'approve'),
+    ])
+
+    const fulfilled = results.filter((result) => result.status === 'fulfilled')
+    const rejected = results.filter((result) => result.status === 'rejected')
+    expect(fulfilled).toHaveLength(1)
+    expect(rejected).toHaveLength(1)
+    expect(rejected[0]).toMatchObject({
+      reason: expect.objectContaining({ status: 409 }),
+    })
+    expect(engine.getDetail(workflow.id).workflow.status).toBe('completed')
+  })
+
+  it('clears interrupted running steps to failed on recovery', () => {
+    const { engine, repos, events } = setup()
+    const workflow = engine.createWorkflow({
+      goal: '调研',
+      steps: [{ label: '生成计划', role: 'planner', requiresApproval: true }],
+    })
+    const step = repos.steps.listByWorkflow(workflow.id)[0]
+    repos.steps.updateStatus(step.id, 'running')
+    repos.workflows.updateStatus(workflow.id, 'executing')
+
+    engine.recoverInterrupted()
+
+    const after = engine.getDetail(workflow.id)
+    expect(after.workflow.status).toBe('failed')
+    expect(after.steps[0].status).toBe('failed')
+    expect(events.some((event) => event.type === 'workflow.updated')).toBe(true)
   })
 })

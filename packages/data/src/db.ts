@@ -53,6 +53,8 @@ CREATE TABLE IF NOT EXISTS papers (
   url TEXT,
   citation_count INTEGER,
   full_text TEXT,
+  download_status TEXT,
+  download_error TEXT,
   raw TEXT,
   created_at TEXT NOT NULL,
   UNIQUE(source, external_id)
@@ -114,5 +116,11 @@ function migrate(db: Db): void {
   }
   if (!paperCols.has('full_text')) {
     db.exec('ALTER TABLE papers ADD COLUMN full_text TEXT')
+  }
+  if (!paperCols.has('download_status')) {
+    db.exec('ALTER TABLE papers ADD COLUMN download_status TEXT')
+  }
+  if (!paperCols.has('download_error')) {
+    db.exec('ALTER TABLE papers ADD COLUMN download_error TEXT')
   }
 }

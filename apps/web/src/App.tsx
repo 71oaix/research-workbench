@@ -22,6 +22,8 @@ export default function App() {
 
   const awaitingStep =
     detail?.steps.find((step) => step.status === 'awaiting_approval') ?? null
+  const reviewArtifact =
+    detail?.artifacts.find((artifact) => artifact.name === '04-review.md') ?? null
   const canStart = detail !== null && detail.workflow.status === 'planning'
 
   return (
@@ -49,7 +51,10 @@ export default function App() {
                 <ApprovalPanel
                   step={awaitingStep}
                   decisions={detail.decisions}
-                  onDecide={(type, note) => void decide(awaitingStep.id, type, note)}
+                  reviewContent={reviewArtifact?.content ?? null}
+                  onDecide={(type, note) =>
+                    void decide(awaitingStep.workflowId, awaitingStep.id, type, note)
+                  }
                 />
               )}
             </>

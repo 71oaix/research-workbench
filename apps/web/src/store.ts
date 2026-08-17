@@ -4,6 +4,7 @@ import { api } from './api'
 import type { WorkflowDetail } from './api'
 
 type WsStatus = 'connecting' | 'open' | 'closed'
+let wsDropped = false
 
 interface WorkflowState {
   workflows: Workflow[]
@@ -15,7 +16,12 @@ interface WorkflowState {
   createWorkflow: (goal: string) => Promise<void>
   selectWorkflow: (id: string) => Promise<void>
   startWorkflow: () => Promise<void>
-  decide: (stepId: string, type: 'approve' | 'modify' | 'reject', note?: string) => Promise<void>
+  decide: (
+    workflowId: string,
+    stepId: string,
+    type: 'approve' | 'modify' | 'reject',
+    note?: string
+  ) => Promise<void>
   applyServerEvent: (event: ServerEvent) => void
   connectWs: () => () => void
 }
@@ -74,9 +80,8 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     }
   },
 
-  async decide(stepId, type, note) {
-    const workflowId = get().selectedId
-    if (!workflowId) return
+  async decide(workflowId, stepId, type, note) {
+    if (!workflowId || !stepId) return
     try {
       const detail = await api.decide(workflowId, stepId, type, note)
       const workflows = await api.listWorkflows()
@@ -132,7 +137,14 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     const socket = new WebSocket(url)
     let closed = false
 
-    socket.onopen = () => set({ wsStatus: 'open', error: null })
+    socket.onopen = () => {
+      set({ wsStatus: 'open', error: null })
+      // 断线重连后与服务器对账，避免 WS 增量事件漏掉的陈旧状态
+      if (wsDropped) {
+        wsDropped = false
+        void get().refreshList()
+      }
+    }
     socket.onmessage = (message) => {
       try {
         const event = JSON.parse(String(message.data)) as ServerEvent
@@ -143,6 +155,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     }
     socket.onclose = () => {
       set({ wsStatus: 'closed' })
+      wsDropped = true
       if (!closed) {
         setTimeout(() => {
           if (!closed) get().connectWs()

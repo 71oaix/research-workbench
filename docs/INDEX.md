@@ -2,7 +2,7 @@
 title: 文档索引
 status: active
 created: 2026-08-05
-updated: 2026-08-16
+updated: 2026-08-17
 ---
 
 # 文档索引
@@ -37,11 +37,16 @@ updated: 2026-08-16
 | Plan: M2-5 工作流 UI | archived | plans/close/2026-08-14-m2-5-workflow-ui.md | 已归档：实现完成 |
 | Issue: M2-6 工作流多轮迭代 | archived | issues/close/2026-08-15-m2-6-workflow-iteration.md | 已归档：多轮迭代实现完成 |
 | Plan: M2-6 工作流多轮迭代 | archived | plans/close/2026-08-15-m2-6-workflow-iteration.md | 已归档：实现完成 |
-| Issue: M2-7 规划与检索质量 | active | issues/open/2026-08-15-m2-7-search-iteration-evidence-loop.md | 问题锚点 + 分级检索 + 补偿 |
-| Plan: M2-7 规划与检索质量 | active | plans/open/2026-08-15-m2-7-search-iteration-evidence-loop.md | 已实现，待合并 |
-| Issue: M2-8 全文获取与证据闭环 | active | issues/open/2026-08-16-m2-8-fulltext-evidence.md | 下载校验 + 证据池 + 全文写作 |
-| Plan: M2-8 全文获取与证据闭环 | active | plans/open/2026-08-16-m2-8-fulltext-evidence.md | 待用户确认后实现 |
-| Issue: M2-9 引用核验升级 | active | issues/open/2026-08-16-m2-9-citation-verification.md | 字段级多源交叉 + 分级报告 |
-| Plan: M2-9 引用核验升级 | active | plans/open/2026-08-16-m2-9-citation-verification.md | 已实现，待合并 |
+| Issue: M2-7 规划与检索质量 | archived | issues/close/2026-08-15-m2-7-search-iteration-evidence-loop.md | 已归档：实现完成并合并 |
+| Plan: M2-7 规划与检索质量 | archived | plans/close/2026-08-15-m2-7-search-iteration-evidence-loop.md | 已归档：实现完成并合并 |
+| Issue: M2-8 全文获取与证据闭环 | archived | issues/close/2026-08-16-m2-8-fulltext-evidence.md | 已归档：实现完成并合并 |
+| Plan: M2-8 全文获取与证据闭环 | archived | plans/close/2026-08-16-m2-8-fulltext-evidence.md | 已归档：实现完成并合并 |
+| Issue: M2-9 引用核验升级 | archived | issues/close/2026-08-16-m2-9-citation-verification.md | 已归档：实现完成并合并 |
+| Plan: M2-9 引用核验升级 | archived | plans/close/2026-08-16-m2-9-citation-verification.md | 已归档：实现完成并合并 |
 | Issue: M2-10 审查与评估 | active | issues/open/2026-08-16-m2-10-review-evaluation.md | concern ledger + evaluation-report + UI |
+| Plan: M2-10 审查与评估 | active | plans/open/2026-08-16-m2-10-review-evaluation.md | 已实现，待合并 |
+| Issue: M2-11 真实案例复盘修复 | active | issues/open/2026-08-16-m2-11-runtime-review-fixes.md | 全文提取 / 流程恢复 / 核验误报 / 评估指标 / 产物呈现 |
+| Plan: M2-11 真实案例复盘修复 | active | plans/open/2026-08-16-m2-11-runtime-review-fixes.md | 已实现，待合并 |
+| Issue: M2-12 可靠性与性能加固 | active | issues/open/2026-08-17-m2-12-reliability-performance.md | 下载 / 检索并发 / Writer 思考与上下文 / 核验稳健 |
+| Plan: M2-12 可靠性与性能加固 | active | plans/open/2026-08-17-m2-12-reliability-performance.md | 已实现，待合并 |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |

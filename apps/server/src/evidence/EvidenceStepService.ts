@@ -5,6 +5,7 @@ import { buildCitationLint } from '../citations/lint'
 import type { WorkflowEventBus } from '../engine/eventBus'
 import { verifyCitations } from './citationVerifier'
 import type { CitationVerifierDeps } from './citationVerifier'
+import { buildEvaluationReport } from './evaluation'
 import { buildEvidencePool } from './evidencePool'
 
 export interface EvidenceStepService {
@@ -38,7 +39,10 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
     }
     const fullText = findLatestArtifact(input.inputArtifacts, 'paper-fulltext.md')
     return {
-      promptExtra: buildWriterSection(pool.cardsMd, fullText?.content ?? null),
+      promptExtra: buildWriterSection(
+        pool.cardsMd,
+        fullText ? buildFullTextExcerpts(fullText.content) : null
+      ),
     }
   }
 
@@ -48,6 +52,8 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
     inputArtifacts: Artifact[]
   }): Promise<{ promptExtra: string }> {
     const draft = findLatestArtifact(input.inputArtifacts, '03-draft.md')
+    const plan = findLatestArtifact(input.inputArtifacts, '01-plan.md')
+    const rawCards = findLatestArtifact(input.inputArtifacts, 'research-cards.md')
     const pool = buildEvidencePool(input.inputArtifacts)
     if (!draft || pool.cardIds.length === 0) {
       throw new Error('缺少 03-draft.md 或 research-cards.md，无法审查引用')
@@ -78,16 +84,37 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
       verificationMd = report.md
     }
 
+    const evaluation = buildEvaluationReport({
+      planMd: plan?.content ?? '',
+      draftMd: draft.content,
+      cardsMd: pool.cardsMd,
+      rawCardsMd: rawCards?.content ?? '',
+      cards: pool.cards,
+    })
+    const evaluationArtifact = this.repos.artifacts.create({
+      workflowId: input.workflowId,
+      stepId: input.stepId,
+      name: 'evaluation-report.md',
+      content: evaluation.md,
+    })
+    this.bus.emit({ type: 'artifact.updated', artifact: evaluationArtifact })
+
     return {
-      promptExtra: buildReviewerSection({ draft, cardsMd: pool.cardsMd, lintMd, verificationMd }),
+      promptExtra: buildReviewerSection({
+        draft,
+        cardsMd: pool.cardsMd,
+        lintMd,
+        verificationMd,
+        evaluationMd: evaluation.md,
+      }),
     }
   }
 }
 
-function buildWriterSection(cardsMd: string, fullTextMd: string | null): string {
+function buildWriterSection(cardsMd: string, fullTextExcerpts: string | null): string {
   const sections = ['## 证据池（仅以此为事实来源）', cardsMd]
-  if (fullTextMd) {
-    sections.push('## 论文全文（阅读证据）', fullTextMd)
+  if (fullTextExcerpts) {
+    sections.push('## 论文全文摘录（仅前 3 篇，其余论文只用摘要）', fullTextExcerpts)
   }
   sections.push(
     '',
@@ -95,11 +122,66 @@ function buildWriterSection(cardsMd: string, fullTextMd: string | null): string 
     '1. 先用一句话概括核心论点（一句话论点），再给出段落图（每段只做一件事）；',
     '2. 从证据向外写，每个论点用 [编号] 标注证据池中的卡片；',
     '3. 动词与证据强度匹配：只写“报告/表明/与…一致”，不要写成“证明/首次/前所未有”；',
-    '4. 未读全文的论文只能引其摘要可支撑的结论，不得展开；',
+    '4. 只有摘录区内提供全文摘录的论文可引用其细节；未提供摘录的论文只能引其摘要可支撑的结论；',
     '5. 文末附“参考文献”与“claim-evidence map”，每条格式为 Claim | Evidence | Status；',
     '6. 只使用证据池中的论文，不得编造引用。'
   )
   return sections.join('\n\n')
+}
+
+/**
+ * 从 paper-fulltext.md 中提取“标题 + 首尾摘录”，只保留排名最靠前的 3 篇全文摘录。
+ * 其余论文在证据池卡片中只有摘要，控制 writer 上下文规模。
+ */
+function buildFullTextExcerpts(
+  fullTextMd: string,
+  maxFullExcerpts = 3,
+  excerptChars = 5000
+): string {
+  const sections = splitFullTextSections(fullTextMd)
+  const excerpts = sections
+    .slice(0, maxFullExcerpts)
+    .map(({ number, title, body }) => {
+      const excerpt = excerptBody(body, excerptChars)
+      return [`### [${number}] ${title}`, '', excerpt, '', '> 以上为全文摘录（非全文），其余章节以卡片摘要为准。'].join('\n')
+    })
+  if (excerpts.length === 0) return ''
+  return [
+    `共 ${sections.length} 篇有全文，本区仅摘录排名前 ${Math.min(
+      maxFullExcerpts,
+      sections.length
+    )} 篇。`,
+    '',
+    ...excerpts,
+  ].join('\n\n')
+}
+
+function splitFullTextSections(fullTextMd: string): { number: number; title: string; body: string }[] {
+  const lines = fullTextMd.split('\n')
+  const sections: { number: number; title: string; body: string[] }[] = []
+  let current: { number: number; title: string; body: string[] } | null = null
+  for (const line of lines) {
+    const match = line.match(/^##\s*\[(\d{1,4})\]\s*(.*)$/)
+    if (match) {
+      current = { number: Number(match[1]), title: match[2].trim(), body: [] }
+      sections.push(current)
+      continue
+    }
+    current?.body.push(line)
+  }
+  return sections.map(({ number, title, body }) => ({
+    number,
+    title,
+    body: body.join('\n').trim(),
+  }))
+}
+
+function excerptBody(body: string, max: number): string {
+  const trimmed = body.trim()
+  if (trimmed.length <= max) return trimmed
+  const head = trimmed.slice(0, Math.floor(max * 0.7))
+  const tail = trimmed.slice(-Math.floor(max * 0.3))
+  return `${head}\n\n……（中间部分省略，共 ${trimmed.length} 字符）……\n\n${tail}`
 }
 
 function buildReviewerSection(input: {
@@ -107,6 +189,7 @@ function buildReviewerSection(input: {
   cardsMd: string
   lintMd: string
   verificationMd: string | null
+  evaluationMd: string
 }): string {
   const sections = [
     '## 待审查草稿',
@@ -121,6 +204,7 @@ function buildReviewerSection(input: {
   if (input.verificationMd) {
     sections.push('', '## 自动引用核验报告（Crossref 字段级交叉）', input.verificationMd)
   }
+  sections.push('', '## 自动评估报告（主题 / 相关度 / 覆盖 / 来源）', input.evaluationMd)
   sections.push(
     '',
     '审查要求：',

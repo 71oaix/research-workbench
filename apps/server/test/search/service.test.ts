@@ -110,4 +110,43 @@ describe('AcademicSearchService', () => {
     expect(record.queries).toContain('memory architecture')
     expect(output.rawPapers.map((paper) => paper.title)).toContain('Found')
   })
+
+  it('limits per-source concurrency to the configured bound', async () => {
+    let active = 0
+    let maxActive = 0
+    const client: AcademicSearchClient = {
+      source: 'mock',
+      async search() {
+        active++
+        maxActive = Math.max(maxActive, active)
+        await new Promise((resolve) => setTimeout(resolve, 30))
+        active--
+        return []
+      },
+    }
+    const spec: SourceSpec = {
+      source: 'mock',
+      tier: 'T1',
+      domains: ['cs', 'cross-disciplinary', 'exhaustive', 'medical'] as Domain[],
+      create: () => client,
+    }
+    const config = loadSearchConfig({ SEARCH_SOURCE_CONCURRENCY: '2' })
+    const service = new AcademicSearchService([spec], config)
+    const plan = [
+      '## 检索关键词',
+      '- g1',
+      '- g2',
+      '- g3',
+      '- g4',
+      '- g5',
+      '- g6',
+      '- g7',
+      '- g8',
+    ].join('\n')
+
+    await service.search(plan)
+
+    expect(maxActive).toBeGreaterThan(1)
+    expect(maxActive).toBeLessThanOrEqual(2)
+  })
 })

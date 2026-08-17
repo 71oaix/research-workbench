@@ -1,6 +1,6 @@
 ---
 title: M2-8 全文获取与证据闭环（下载校验 + 证据池 + 全文写作）（plan）
-status: active
+status: archived
 created: 2026-08-16
 updated: 2026-08-16
 issue: 2026-08-16-m2-8-fulltext-evidence

@@ -1,6 +1,6 @@
 ---
 title: M2-9 引用核验升级（字段级多源交叉 + 分级报告）（plan）
-status: active
+status: archived
 created: 2026-08-16
 updated: 2026-08-16
 issue: 2026-08-16-m2-9-citation-verification
@@ -61,3 +61,12 @@ areas: [server, shared]
 ## 不涉及 UI
 
 纯后端，不涉及 UI，按 artifacts 硬性要求无需线框图或 HTML 预览。
+
+## M2-12 修订注记（2026-08-17）
+
+本 plan 的“多源留 M3”决策在 M2-12 被部分提前：
+
+- 实现链路补回多源交叉语义：DOI 走 Crossref lookup、arXiv 论文走 arXiv lookup，无 DOI 时
+  标题 + 第一作者检索（Crossref → Semantic Scholar 兜底），与 issue 正文的“多源交叉”重新对齐；
+- 新增按 DOI/arXiv 的结果缓存（TTL 24h，负结果 1h）与逐条并发 ≤ 3；
+- 对应 issue 正文无需再改，M2-12 plan 的“实现复核”已记录本口径。

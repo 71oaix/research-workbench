@@ -2,7 +2,7 @@
 title: 系统架构（M1）
 status: active
 created: 2026-08-14
-updated: 2026-08-16
+updated: 2026-08-17
 ---
 
 # 系统架构（M1）
@@ -55,6 +55,8 @@ updated: 2026-08-16
 
 - Provider：`opencode-go`，base URL `https://opencode.ai/zen/go/v1`，Bearer key（`OPENCODE_GO_API_KEY`）
 - 默认模型：`deepseek-v4-flash`（已实测）；`PI_MODEL_<ROLE>` 可覆盖
+- 思考强度：默认全部角色 `xhigh`（映射 DeepSeek `reasoning_effort=max`）；模型注册声明
+  `thinkingLevelMap: { high: 'high', xhigh: 'max' }`，`PI_THINKING_LEVEL` / `PI_THINKING_<ROLE>` 可覆盖
 - 角色 system prompt 通过 `resourceLoaderOptions.systemPromptOverride` 注入（0.80.3 的正确入口）
 - 运行时禁用工具（`noTools: 'all'`），角色只做规划/检索/撰写/审查文本
 - 每次调用的 token / 成本写入 `usage_records` 并广播 `usage.recorded`
@@ -136,3 +138,35 @@ reject  → step rejected → workflow: cancelled（记录 decision）
 - DOI 交叉：`CrossrefClient.lookup(doi)` 命中 `/works/{doi}`；无 DOI 时回退“标题 + 第一作者”检索
 - 字段比对：标题核心词（Jaccard）、年份、第一作者逐字段比对，输出 Critical / Warning / Info 与 Verified / Check suggested / Needs fix / Unverifiable
 - 接入 Reviewer：`EvidenceStepServiceImpl.prepareReviewer` 生成 `citation-verification.md` artifact 并注入 reviewer prompt，与 `citation-lint.md` 并列
+
+## 审查与评估（M2-10）
+
+- Concern Ledger：reviewer 按固定格式（`### C{n}` + severity / blocking / claim / evidence / resolution）输出，`@research-workbench/shared` 的 `parseConcernLedger` 解析并计数，UI 展示 Blocking / Major / Minor
+- 评估报告：`evidence/evaluation.ts` 确定性词元匹配（英文词 + 中文 bigram），在 `prepareReviewer` 生成 `evaluation-report.md` 并注入 reviewer；四指标：主题匹配门禁（默认 0.4，`EVALUATION_TOPIC_GATE` 可配置）、平均相关度、大纲覆盖、来源失败
+- 一键打回 Writer：`ApprovalPanel` 在 reviewer 步骤解析 blocking concerns，点击“打回 Writer”自动预填意见并发 `modify`（复用 reviewer→writer 语义）
+
+## 真实案例修复（M2-11）
+
+- 全文提取：`fullText.ts` 导入 `pdf-parse/lib/pdf-parse.js`（绕过入口调试分支，修复 ESM 下全文提取全失败）
+- 流程恢复：`WorkflowEngine.recoverInterrupted()` 启动时把 running 步骤清为 failed；`PiRuntimeHandle.send` 5 分钟超时（`PI_STEP_TIMEOUT_MS` 可配置）
+- 引用核验：arXiv DOI（`10.48550/arxiv.*`）走 arXiv lookup，不再误报 Critical；报告计数缺省补 0
+- 评估口径：相关度改为主题词覆盖率、大纲覆盖只比章级、来源失败从原始 `research-cards.md` 解析
+- 产物呈现：`ArtifactTabs` 按“规划 / 检索证据 / 全文 / 引用核验 / 评估 / 草稿 / 审查”分组，每个产物带用途说明，多版本支持结构 diff，全文默认折叠
+- 检索过滤：researcher 用 plan 主题词剔除零交集论文
+- 状态解耦：前端 decide 使用步骤自带 workflowId，列表区分同名工作流
+
+## 可靠性与性能加固（M2-12）
+
+- 全文下载：`resolvePdfUrls` 返回去重候选数组（arXiv → 期刊 OA），依次尝试、任一成功即成功；
+  提取文本 ≥ 500 字符才算有效；每篇独立并发 ≤ 3；`papers` 表新增 `download_status` / `download_error`，
+  卡片与 `paper-fulltext.md` 头部展示成功 / 失败 / 无开放获取统计
+- 检索并发：`AcademicSearchService` 按数据源分桶并发（`SEARCH_SOURCE_CONCURRENCY` 默认 3），
+  仍走各源 RateLimiter；`SEARCH_MAX_GROUPS` 默认 8
+- Writer 上下文：只注入前 3 篇全文摘录（首 70% + 末 30%），其余论文仅摘要；
+  打回重跑时草稿一律只注入结构摘要（章节 + 引用 + 篇幅）
+- 引用核验：DOI/arXiv 结果内存缓存（TTL 24h，负结果 1h），逐条并发 ≤ 3，
+  arXiv 核验 6s/次限流 + 429 退避，标题检索 Crossref → Semantic Scholar 兜底
+- 审批防重入：`UPDATE steps SET status=? WHERE id=? AND status='awaiting_approval'` 原子抢占，
+  `changes=0` 抛 409
+- WS 对账：断线重连成功后前端自动 `refreshList()`，避免增量事件丢失造成陈旧状态
+- 评估：大纲标题词元 Jaccard ≥ 0.5 或包含核心词即视为覆盖；相关度输出均值 + 中位数

@@ -23,8 +23,22 @@ export class ArxivClient implements AcademicSearchClient {
     url.searchParams.set('search_query', `all:${encodeURIComponent(query)}`)
     url.searchParams.set('start', '0')
     url.searchParams.set('max_results', String(Math.min(Math.max(1, Math.floor(limit)), 100)))
+    const text = await this.fetchFeed(url)
+    return parseArxivFeed(text)
+  }
 
-    let text = ''
+  async lookup(id: string): Promise<SearchPaper | null> {
+    const normalized = normalizeArxiv(id)
+    if (!normalized) return null
+    const base = this.options.baseUrl ?? 'https://export.arxiv.org/api/query'
+    const url = new URL(base)
+    url.searchParams.set('id_list', normalized)
+    url.searchParams.set('max_results', '1')
+    const text = await this.fetchFeed(url)
+    return parseArxivFeed(text)[0] ?? null
+  }
+
+  private async fetchFeed(url: URL): Promise<string> {
     for (let attempt = 0; ; attempt++) {
       await this.rateLimiter.acquire()
       try {
@@ -32,14 +46,15 @@ export class ArxivClient implements AcademicSearchClient {
           signal: AbortSignal.timeout(this.options.timeoutMs ?? 30_000),
         })
         if (!response.ok && attempt < (this.options.maxRetries ?? 2)) {
-          await sleep(1000 * 2 ** attempt)
+          // 429 用更长的退避，尊重 arXiv 限流
+          await sleep((response.status === 429 ? 6000 : 1000) * 2 ** attempt)
           continue
         }
         if (!response.ok) {
           throw new Error(`arxiv http ${response.status}`)
         }
-        text = await response.text()
-        break
+        const text = await response.text()
+        return text
       } catch (error) {
         if (attempt >= (this.options.maxRetries ?? 2)) {
           throw error
@@ -47,8 +62,6 @@ export class ArxivClient implements AcademicSearchClient {
         await sleep(1000 * 2 ** attempt)
       }
     }
-
-    return parseArxivFeed(text)
   }
 }
 

@@ -46,6 +46,7 @@ export class PiRuntimeProvider {
     if (!model) {
       throw new EngineError(`模型未找到: ${this.config.provider}/${modelId}`, 500)
     }
+    const thinkingLevel = this.config.roleThinkingLevel[role] ?? this.config.thinkingLevel
 
     const cwd = process.cwd()
     const sessionDir = resolveSessionDir(this.config.agentDir, cwd)
@@ -66,6 +67,7 @@ export class PiRuntimeProvider {
           sessionManager,
           sessionStartEvent,
           model,
+          thinkingLevel,
           noTools: 'all',
         })
         return { ...result, services, diagnostics: services.diagnostics }
@@ -102,6 +104,7 @@ export class PiRuntimeProvider {
         id,
         name: id,
         reasoning: true,
+        thinkingLevelMap: { high: 'high', xhigh: 'max' },
         input: ['text'] as ('text' | 'image')[],
         cost: { input: 0.14, output: 0.28, cacheRead: 0.0028, cacheWrite: 0 },
         contextWindow: 1_000_000,
@@ -132,7 +135,19 @@ export class PiRuntimeHandle {
 
   async send(prompt: string): Promise<string> {
     const before = this.runtime.session.messages.length
-    await this.runtime.session.prompt(prompt)
+    const timeoutMs = Number(process.env.PI_STEP_TIMEOUT_MS ?? 300_000)
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new EngineError(`模型调用超时（${timeoutMs / 1000}s），已中断当前步骤`, 504)),
+        timeoutMs
+      )
+    })
+    try {
+      await Promise.race([this.runtime.session.prompt(prompt), timeout])
+    } finally {
+      if (timer) clearTimeout(timer)
+    }
     this.usage = extractUsage(this.runtime.session.messages.slice(before))
     return extractLatestAssistantText(this.runtime.session.messages)
   }

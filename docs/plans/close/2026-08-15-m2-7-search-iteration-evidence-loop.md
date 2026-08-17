@@ -1,6 +1,6 @@
 ---
 title: M2-7 规划与检索质量（问题锚点 + 分级检索 + 补偿）（plan）
-status: active
+status: archived
 created: 2026-08-15
 updated: 2026-08-16
 issue: 2026-08-15-m2-7-search-iteration-evidence-loop

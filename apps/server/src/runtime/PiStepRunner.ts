@@ -1,9 +1,9 @@
-import type { UsageRecord } from '@research-workbench/shared'
+import type { Artifact, UsageRecord } from '@research-workbench/shared'
 import { findLatestArtifact } from '../artifacts'
 import type { StepRunInput, StepRunResult, StepRunner } from '../engine/StepRunner'
 import type { EvidenceStepService } from '../evidence/EvidenceStepService'
 import type { ResearcherStepService } from '../search/types'
-import { buildSearchSpecPrompt, buildWritingSpecPrompt } from '../specs'
+import { buildReviewSpecPrompt, buildSearchSpecPrompt, buildWritingSpecPrompt } from '../specs'
 import { PiRuntimeProvider } from './PiRuntimeProvider'
 import { ARTIFACT_NAMES, ROLE_SYSTEM_PROMPTS } from './prompts'
 
@@ -22,6 +22,8 @@ export class PiStepRunner implements StepRunner {
         ? buildSearchSpecPrompt()
         : step.role === 'writer'
           ? buildWritingSpecPrompt()
+          : step.role === 'reviewer'
+            ? buildReviewSpecPrompt()
           : '')
     const handle = await this.provider.createRuntime(step.role, systemPrompt)
     try {
@@ -72,10 +74,24 @@ export class PiStepRunner implements StepRunner {
 }
 
 function buildStepPrompt(input: StepRunInput): string {
+  const latestDraftVersion = Math.max(
+    0,
+    ...input.inputArtifacts
+      .filter((artifact) => artifact.name === '03-draft.md')
+      .map((artifact) => artifact.version)
+  )
+  const hasFeedback = Boolean(input.feedback)
   const artifactSummary =
     input.inputArtifacts.length > 0
       ? input.inputArtifacts
-          .map((artifact) => `### ${artifact.name}（v${artifact.version}）\n${artifact.content}`)
+          .map(
+            (artifact) =>
+              `### ${artifact.name}（v${artifact.version}）\n${compactArtifact(
+                artifact,
+                latestDraftVersion,
+                hasFeedback
+              )}`
+          )
           .join('\n\n')
       : '（暂无输入产物）'
   const sections = [
@@ -90,6 +106,41 @@ function buildStepPrompt(input: StepRunInput): string {
   }
   sections.push('请完成当前步骤，输出 Markdown 产物；如有上一轮修改意见，先逐条响应。')
   return sections.join('\n\n')
+}
+
+/**
+ * 控制步骤上下文规模：
+ * - paper-fulltext.md 由写作证据区以摘录形式单独注入，不在通用产物区重复全量注入；
+ * - 打回重跑时，草稿一律只注入结构摘要（章节 + 引用 + 篇幅）；无打回时历史版本草稿同样只注入结构摘要，
+ *   避免 prompt 随迭代翻倍。
+ */
+function compactArtifact(
+  artifact: Artifact,
+  latestDraftVersion: number,
+  hasFeedback: boolean
+): string {
+  if (artifact.name === 'paper-fulltext.md') {
+    return '（全文摘录由写作证据区单独注入，此处省略全文，避免上下文膨胀）'
+  }
+  if (
+    artifact.name === '03-draft.md' &&
+    (hasFeedback || artifact.version < latestDraftVersion)
+  ) {
+    return digestDraft(artifact.content)
+  }
+  return artifact.content
+}
+
+function digestDraft(content: string): string {
+  const headings = content.match(/^#{1,4}\s+.+$/gm) ?? []
+  const refs = [...new Set([...content.matchAll(/\[(\d{1,4})\]/g)].map((match) => match[1]))]
+  return [
+    '【历史版本结构摘要，供打回重写参考】',
+    `- 章节：${headings.length > 0 ? headings.join(' / ') : '（无标题）'}`,
+    `- 引用编号：${refs.length > 0 ? refs.join(', ') : '（无）'}`,
+    `- 篇幅：约 ${content.length} 字符`,
+    '请结合“上一轮修改意见”重写，不要整段复制历史版本。',
+  ].join('\n')
 }
 
 function buildResearcherPrompt(input: {

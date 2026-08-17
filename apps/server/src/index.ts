@@ -8,12 +8,13 @@ import { createEventBus } from './engine/eventBus'
 import { EngineError, WorkflowEngine } from './engine/WorkflowEngine'
 import type { StepRunner } from './engine/StepRunner'
 import { EvidenceStepServiceImpl } from './evidence/EvidenceStepService'
-import { createCrossrefVerifierDeps } from './evidence/citationVerifier'
+import { createVerifierDeps } from './evidence/citationVerifier'
 import { MockStepRunner } from './runtime/MockStepRunner'
 import { PiRuntimeProvider } from './runtime/PiRuntimeProvider'
 import { PiStepRunner } from './runtime/PiStepRunner'
 import { PiConfigError, loadPiConfig } from './runtime/piConfig'
 import { AcademicSearchService } from './search/AcademicSearchService'
+import { ArxivClient } from './search/arxiv'
 import { loadSearchConfig } from './search/config'
 import { CrossrefClient } from './search/crossref'
 import { ResearcherStepServiceImpl } from './search/researcherStep'
@@ -46,6 +47,7 @@ export function createAppBundle(
       ? new MockStepRunner(repos, bus)
       : createDefaultStepRunner(repos, bus))
   const engine = new WorkflowEngine(repos, runner, bus)
+  engine.recoverInterrupted()
   const app = new Hono()
 
   app.get('/health', (c) => {
@@ -138,10 +140,11 @@ function createDefaultStepRunner(
     mailto: searchConfig.crossrefMailto,
     timeoutMs: searchConfig.timeoutMs,
   })
+  const arxiv = new ArxivClient()
   const evidence = new EvidenceStepServiceImpl(
     repos,
     bus,
-    createCrossrefVerifierDeps(crossref)
+    createVerifierDeps({ crossref, arxiv })
   )
   return new PiStepRunner(
     provider,

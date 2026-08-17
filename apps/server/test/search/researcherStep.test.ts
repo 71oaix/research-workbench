@@ -108,4 +108,73 @@ describe('ResearcherStepServiceImpl', () => {
       stats: output.stats,
     })
   })
+
+  it('filters out papers with zero theme overlap before building cards', async () => {
+    const db = createDb()
+    const repos = createRepositories(db)
+    const workflow = repos.workflows.create('调研主题')
+    const step = repos.steps.create({
+      workflowId: workflow.id,
+      label: '检索文献',
+      role: 'researcher',
+      position: 1,
+      requiresApproval: false,
+    })
+    const output: SearchOutput = {
+      rawPapers: [],
+      papers: [
+        {
+          source: 'semantic-scholar',
+          externalId: 'a',
+          title: 'Multi-Agent Memory Architecture Research',
+          abstract: null,
+          authors: [],
+          year: 2024,
+          doi: null,
+          arxivId: null,
+          url: null,
+          citationCount: 10,
+          raw: null,
+          sources: ['semantic-scholar'],
+        },
+        {
+          source: 'semantic-scholar',
+          externalId: 'b',
+          title: 'Completely Unrelated GUI Testing',
+          abstract: null,
+          authors: [],
+          year: 2024,
+          doi: null,
+          arxivId: null,
+          url: null,
+          citationCount: 100,
+          raw: null,
+          sources: ['semantic-scholar'],
+        },
+      ],
+      stats: {
+        queryGroups: 1,
+        sources: ['semantic-scholar'],
+        keywordsUsed: 1,
+        queries: 1,
+        minCitations: 0,
+        totalHits: 2,
+        uniquePapers: 2,
+        failedSources: [],
+        topN: 15,
+      },
+      groups: [],
+    }
+    const search = { search: vi.fn().mockResolvedValue(output) } as unknown as AcademicSearchService
+    const service = new ResearcherStepServiceImpl(search, repos, createEventBus(), loadSearchConfig({}))
+
+    const result = await service.prepare({
+      workflowId: workflow.id,
+      stepId: step.id,
+      planContent: '## 检索关键词\nmulti-agent memory architecture',
+    })
+
+    expect(result.cardsMd).toContain('Multi-Agent Memory Architecture Research')
+    expect(result.cardsMd).not.toContain('Completely Unrelated GUI Testing')
+  })
 })

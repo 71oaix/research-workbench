@@ -1,6 +1,6 @@
 ---
 title: M2-9 引用核验升级（字段级多源交叉 + 分级报告）
-status: active
+status: archived
 created: 2026-08-16
 updated: 2026-08-16
 kind: feature
@@ -8,8 +8,8 @@ priority: high
 triage: actionable
 areas: [server, shared]
 depends_on:
-  - "docs/issues/open/2026-08-16-m2-8-fulltext-evidence.md"
-resolution_plan: "docs/plans/open/2026-08-16-m2-9-citation-verification.md"
+  - "docs/issues/close/2026-08-16-m2-8-fulltext-evidence.md"
+resolution_plan: "docs/plans/close/2026-08-16-m2-9-citation-verification.md"
 ---
 
 # M2-9 引用核验升级
