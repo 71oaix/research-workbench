@@ -41,7 +41,14 @@ export class PiStepRunner implements StepRunner {
         })
         prompt = buildResearcherPrompt({ goal, step, inputArtifacts, cardsMd, feedback })
       }
-      if (step.role === 'writer' && this.evidence) {
+      if (step.role === 'evaluator' && this.evidence) {
+        const { promptExtra } = await this.evidence.prepareEvaluator({
+          workflowId: step.workflowId,
+          stepId: step.id,
+          inputArtifacts,
+        })
+        prompt = `${prompt}\n\n${promptExtra}`
+      } else if (step.role === 'writer' && this.evidence) {
         const { promptExtra } = await this.evidence.prepareWriter({
           workflowId: step.workflowId,
           stepId: step.id,

@@ -1,4 +1,5 @@
 import type { SearchStats } from '@research-workbench/shared'
+import { extractThemeTokens } from '../evidence/evaluation'
 import type { SearchConfig } from './config'
 import { SearchError } from './errors'
 import { expandKeywordQueries, extractKeywordGroups } from './keywords'
@@ -54,7 +55,11 @@ export class AcademicSearchService {
       throw new SearchError(`所有检索源失败：${failed.join('、')}`)
     }
 
-    const merged = mergeAndRank(rawPapers, this.config.topN)
+    const theme = extractThemeTokens(planMd)
+    const merged = mergeAndRank(rawPapers, this.config.topN, {
+      themeTokens: theme.size > 0 ? theme : undefined,
+      relevanceWeight: this.config.relevanceWeight,
+    })
     let ranked = merged.papers
     if (options.compensate && minCitations > 0) {
       const qualified = ranked.filter(
@@ -74,6 +79,7 @@ export class AcademicSearchService {
       totalHits: merged.stats.totalHits,
       uniquePapers: merged.stats.uniquePapers,
       failedSources: [...new Set(failed)],
+      skippedPapers: merged.stats.skippedPapers,
       topN: this.config.topN,
     }
 

@@ -5,10 +5,15 @@ import { buildCitationLint } from '../citations/lint'
 import type { WorkflowEventBus } from '../engine/eventBus'
 import { verifyCitations } from './citationVerifier'
 import type { CitationVerifierDeps } from './citationVerifier'
-import { buildEvaluationReport } from './evaluation'
+import { buildEvaluationInputs } from './evaluation'
 import { buildEvidencePool } from './evidencePool'
 
 export interface EvidenceStepService {
+  prepareEvaluator(input: {
+    workflowId: string
+    stepId: string
+    inputArtifacts: Artifact[]
+  }): Promise<{ promptExtra: string }>
   prepareWriter(input: {
     workflowId: string
     stepId: string
@@ -42,6 +47,34 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
       promptExtra: buildWriterSection(
         pool.cardsMd,
         fullText ? buildFullTextExcerpts(fullText.content) : null
+      ),
+    }
+  }
+
+  async prepareEvaluator(input: {
+    workflowId: string
+    stepId: string
+    inputArtifacts: Artifact[]
+  }): Promise<{ promptExtra: string }> {
+    const pool = buildEvidencePool(input.inputArtifacts)
+    if (pool.cardIds.length === 0) {
+      throw new Error('缺少 research-cards.md，无法评估')
+    }
+    const draft = findLatestArtifact(input.inputArtifacts, '03-draft.md')
+    const plan = findLatestArtifact(input.inputArtifacts, '01-plan.md')
+    const rawCards = findLatestArtifact(input.inputArtifacts, 'research-cards.md')
+    const references = buildEvaluationInputs({
+      planMd: plan?.content ?? '',
+      draftMd: draft?.content ?? '',
+      cardsMd: pool.cardsMd,
+      rawCardsMd: rawCards?.content ?? '',
+      cards: pool.cards,
+    })
+    return {
+      promptExtra: buildEvaluatorSection(
+        pool.cardsMd,
+        draft?.content ?? '（缺少草稿）',
+        references.md
       ),
     }
   }
@@ -84,20 +117,9 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
       verificationMd = report.md
     }
 
-    const evaluation = buildEvaluationReport({
-      planMd: plan?.content ?? '',
-      draftMd: draft.content,
-      cardsMd: pool.cardsMd,
-      rawCardsMd: rawCards?.content ?? '',
-      cards: pool.cards,
-    })
-    const evaluationArtifact = this.repos.artifacts.create({
-      workflowId: input.workflowId,
-      stepId: input.stepId,
-      name: 'evaluation-report.md',
-      content: evaluation.md,
-    })
-    this.bus.emit({ type: 'artifact.updated', artifact: evaluationArtifact })
+    const evaluation = findLatestArtifact(input.inputArtifacts, 'evaluation-report.md')
+    const fullText = findLatestArtifact(input.inputArtifacts, 'paper-fulltext.md')
+    const fullTextExcerpts = fullText ? buildFullTextExcerpts(fullText.content) : null
 
     return {
       promptExtra: buildReviewerSection({
@@ -105,10 +127,28 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
         cardsMd: pool.cardsMd,
         lintMd,
         verificationMd,
-        evaluationMd: evaluation.md,
+        evaluationMd: evaluation?.content ?? '（缺少评估报告，本次未执行模型评估）',
+        fullTextExcerpts,
       }),
     }
   }
+}
+
+function buildEvaluatorSection(cardsMd: string, draftMd: string, referencesMd: string): string {
+  return [
+    '## 评估材料',
+    '',
+    '### 证据池卡片',
+    cardsMd,
+    '',
+    '### 综述草稿（评估对象）',
+    draftMd,
+    '',
+    referencesMd,
+    '',
+    '评估要求：按系统提示词输出结构化评估报告；每项判定必须给理由；',
+    '至少列出 2 条覆盖不足方向；不要顺着草稿说好话。',
+  ].join('\n\n')
 }
 
 function buildWriterSection(cardsMd: string, fullTextExcerpts: string | null): string {
@@ -147,10 +187,10 @@ function buildFullTextExcerpts(
     })
   if (excerpts.length === 0) return ''
   return [
-    `共 ${sections.length} 篇有全文，本区仅摘录排名前 ${Math.min(
+    `全文已读 ${sections.length} 篇，本区仅注入前 ${Math.min(
       maxFullExcerpts,
       sections.length
-    )} 篇。`,
+    )} 篇摘录，其余论文仅可引摘要。`,
     '',
     ...excerpts,
   ].join('\n\n')
@@ -190,6 +230,7 @@ function buildReviewerSection(input: {
   lintMd: string
   verificationMd: string | null
   evaluationMd: string
+  fullTextExcerpts: string | null
 }): string {
   const sections = [
     '## 待审查草稿',
@@ -204,7 +245,10 @@ function buildReviewerSection(input: {
   if (input.verificationMd) {
     sections.push('', '## 自动引用核验报告（Crossref 字段级交叉）', input.verificationMd)
   }
-  sections.push('', '## 自动评估报告（主题 / 相关度 / 覆盖 / 来源）', input.evaluationMd)
+  if (input.fullTextExcerpts) {
+    sections.push('', '## 关键全文摘录（供全文级核验）', input.fullTextExcerpts)
+  }
+  sections.push('', '## 模型评估报告（逐概念 / 相关度 / 大纲覆盖 / gap）', input.evaluationMd)
   sections.push(
     '',
     '审查要求：',

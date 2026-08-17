@@ -56,7 +56,7 @@ describe('EvidenceStepServiceImpl', () => {
     expect(repos.artifacts.listByWorkflow('wf-1')).toHaveLength(0)
   })
 
-  it('prepareReviewer creates citation-lint.md and includes it in the prompt', async () => {
+  it('prepareReviewer creates citation-lint.md and includes the model evaluation report', async () => {
     const db = createDb()
     const repos = createRepositories(db)
     const bus = createEventBus()
@@ -76,25 +76,53 @@ describe('EvidenceStepServiceImpl', () => {
       ['# cards', '', '### [1] Paper A', '### [2] Paper B'].join('\n')
     )
     const draft = makeArtifact('03-draft.md', 'draft uses [1] and [99]')
+    const evaluation = makeArtifact('evaluation-report.md', '# 评估报告（模型生成）\n- gap：共享记忆专项缺失')
 
     const result = await service.prepareReviewer({
       workflowId: workflow.id,
       stepId: step.id,
-      inputArtifacts: [cards, draft],
+      inputArtifacts: [cards, draft, evaluation],
     })
 
     expect(result.promptExtra).toContain('自动引用检查报告')
     expect(result.promptExtra).toContain('越界 / 缺失编号：99')
+    expect(result.promptExtra).toContain('模型评估报告')
+    expect(result.promptExtra).toContain('共享记忆专项缺失')
     const lint = repos.artifacts
       .listByWorkflow(workflow.id)
       .find((artifact) => artifact.name === 'citation-lint.md')
     expect(lint?.content).toContain('引用检查报告')
-    const evaluation = repos.artifacts
-      .listByWorkflow(workflow.id)
-      .find((artifact) => artifact.name === 'evaluation-report.md')
-    expect(evaluation?.content).toContain('评估报告')
-    expect(result.promptExtra).toContain('自动评估报告')
+    expect(
+      repos.artifacts
+        .listByWorkflow(workflow.id)
+        .filter((artifact) => artifact.name === 'evaluation-report.md')
+    ).toHaveLength(0)
     expect(events.some((event) => event.type === 'artifact.updated')).toBe(true)
+  })
+
+  it('prepareEvaluator builds reference data for the model evaluator', async () => {
+    const repos = createRepositories(createDb())
+    const service = new EvidenceStepServiceImpl(repos, createEventBus())
+    const plan = makeArtifact(
+      '01-plan.md',
+      ['## 锚定点', '### 核心概念', '- 多智能体共享记忆', '## 综述大纲', '1. 引言', '2. 共享记忆机制'].join('\n')
+    )
+    const cards = makeArtifact(
+      'research-cards.md',
+      ['# cards', '', '### [1] Paper A', '- 摘要：shared memory 多智能体'].join('\n')
+    )
+    const draft = makeArtifact('03-draft.md', '草稿使用 [1]')
+
+    const result = await service.prepareEvaluator({
+      workflowId: 'wf-1',
+      stepId: 'step-1',
+      inputArtifacts: [plan, cards, draft],
+    })
+
+    expect(result.promptExtra).toContain('评估材料')
+    expect(result.promptExtra).toContain('规则统计参考')
+    expect(result.promptExtra).toContain('多智能体共享记忆')
+    expect(result.promptExtra).toContain('综述草稿（评估对象）')
   })
 
   it('throws when required artifacts are missing', async () => {

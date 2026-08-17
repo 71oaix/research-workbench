@@ -3,15 +3,18 @@ import type { MergedPaper, SearchPaper } from './types'
 export interface MergeStats {
   totalHits: number
   uniquePapers: number
+  skippedPapers: number
 }
 
 export function mergeAndRank(
   papers: SearchPaper[],
-  topN: number
+  topN: number,
+  options: { themeTokens?: Set<string>; relevanceWeight?: number } = {}
 ): { papers: MergedPaper[]; stats: MergeStats } {
+  const filtered = filterBrokenPapers(papers)
   const merged: MergedPaper[] = []
   const index = new Map<string, MergedPaper>()
-  for (const paper of papers) {
+  for (const paper of filtered.papers) {
     const keys = dedupKeys(paper)
     const existing = keys.map((key) => index.get(key)).find(Boolean)
     if (!existing) {
@@ -26,11 +29,65 @@ export function mergeAndRank(
   }
 
   const clustered = clusterNearDuplicates(merged)
-  const ranked = [...clustered].sort(compare).slice(0, topN)
+  const ranked = [...clustered]
+    .sort((a, b) => compareWithRelevance(a, b, options))
+    .slice(0, topN)
   return {
     papers: ranked,
-    stats: { totalHits: papers.length, uniquePapers: clustered.length },
+    stats: {
+      totalHits: papers.length,
+      uniquePapers: clustered.length,
+      skippedPapers: filtered.skipped,
+    },
   }
+}
+
+/**
+ * 剔除元数据损坏且无法定位权威记录的论文（无年份 && 无 DOI && 无 arXiv），
+ * 避免其稀释相关度并误导 writer。
+ */
+function filterBrokenPapers(papers: SearchPaper[]): { papers: SearchPaper[]; skipped: number } {
+  const kept: SearchPaper[] = []
+  let skipped = 0
+  for (const paper of papers) {
+    const broken =
+      paper.title.trim().length === 0 ||
+      (paper.year === null && !paper.doi && !paper.arxivId && paper.authors.length === 0) ||
+      paper.authors.some((author) => author.length > 40)
+    if (broken) {
+      skipped++
+      continue
+    }
+    kept.push(paper)
+  }
+  return { papers: kept, skipped }
+}
+
+function compareWithRelevance(
+  a: MergedPaper,
+  b: MergedPaper,
+  options: { themeTokens?: Set<string>; relevanceWeight?: number }
+): number {
+  const weight = options.relevanceWeight ?? 0
+  if (weight > 0 && options.themeTokens && options.themeTokens.size > 0) {
+    const scoreA = relevanceScore(a, options.themeTokens, weight)
+    const scoreB = relevanceScore(b, options.themeTokens, weight)
+    if (scoreA !== scoreB) return scoreB - scoreA
+  }
+  return compare(a, b)
+}
+
+function relevanceScore(
+  paper: MergedPaper,
+  theme: Set<string>,
+  weight: number
+): number {
+  const text = `${paper.title} ${paper.abstract ?? ''}`.slice(0, 400).toLowerCase()
+  let hits = 0
+  for (const token of theme) {
+    if (text.includes(token)) hits++
+  }
+  return Math.log2(1 + (paper.citationCount ?? 0)) + weight * hits
 }
 
 export function normalizeDoi(doi: string | null): string | null {

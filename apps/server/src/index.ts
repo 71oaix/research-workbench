@@ -21,7 +21,7 @@ import { ResearcherStepServiceImpl } from './search/researcherStep'
 import { buildSourceRegistry } from './search/sources'
 import { attachWebSocket } from './ws'
 
-const ROLES: Role[] = ['planner', 'researcher', 'writer', 'reviewer']
+const ROLES: Role[] = ['planner', 'researcher', 'writer', 'evaluator', 'reviewer']
 
 export interface AppBundle {
   app: Hono

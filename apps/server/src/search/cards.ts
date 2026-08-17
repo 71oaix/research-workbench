@@ -30,6 +30,7 @@ export function buildResearchCards(
     `- 全文：已读 ${fullTextCount} / 失败 ${failedCount} / 无开放获取 ${noOaCount} / 仅摘要 ${
       papers.length - fullTextCount
     }`,
+    stats.skippedPapers ? `- 过滤损坏元数据：${stats.skippedPapers} 篇` : '',
     `- 失败源：${stats.failedSources.length > 0 ? stats.failedSources.join('、') : '无'}`,
     '',
     '## 论文卡片',

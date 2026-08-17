@@ -4,6 +4,7 @@ const ROLE_LABELS: Record<Step['role'], string> = {
   planner: '规划',
   researcher: '检索',
   writer: '写作',
+  evaluator: '评估',
   reviewer: '审查',
 }
 

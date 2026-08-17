@@ -23,6 +23,7 @@ export interface CitationVerifierDeps {
   lookupDoi(doi: string): Promise<SearchPaper | null>
   searchByTitleAuthor(title: string, firstAuthor: string): Promise<SearchPaper | null>
   lookupArxiv(id: string): Promise<SearchPaper | null>
+  lookupArxivMany?(ids: string[]): Promise<Map<string, SearchPaper | null>>
 }
 
 export interface CitationFieldComparison {
@@ -66,6 +67,7 @@ export async function verifyCitations(input: {
     seen.add(dedupKey)
     refs.push(ref)
   }
+  await warmArxivCache(refs, input.cards, input.deps)
   const results: CitationVerificationItem[] = new Array(refs.length)
   await runWithLimit(refs, 3, async (ref, index) => {
     results[index] = await verifyOne(ref, input.cards, input.deps)
@@ -102,6 +104,42 @@ export function createVerifierDeps(options?: {
     async lookupArxiv(id) {
       return cachedLookup(`arxiv:${normalizeArxivKey(id)}`, () => arxiv.lookup(id))
     },
+    async lookupArxivMany(ids) {
+      const map = await arxiv.lookupMany(ids)
+      const now = Date.now()
+      for (const [id, value] of map) {
+        verifierCache.set(`arxiv:${normalizeArxivKey(id)}`, {
+          value,
+          expiresAt: now + (value ? VERIFIER_CACHE_TTL_MS : VERIFIER_CACHE_NEGATIVE_TTL_MS),
+        })
+      }
+      return map
+    },
+  }
+}
+
+/**
+ * 先用一次批量请求预热 arXiv 缓存，逐条核验命中缓存后不再发请求。
+ */
+async function warmArxivCache(
+  refs: CitationRef[],
+  cards: EvidencePoolCard[],
+  deps: CitationVerifierDeps
+): Promise<void> {
+  if (!deps.lookupArxivMany) return
+  const ids: string[] = []
+  for (const ref of refs) {
+    if (ref.id === null || ref.id <= 0) continue
+    const card = cards[ref.id - 1]
+    if (!card) continue
+    const arxivId = card.arxivId ?? arxivIdFromDoi(card.doi)
+    if (arxivId && !ids.includes(arxivId)) ids.push(arxivId)
+  }
+  if (ids.length === 0) return
+  try {
+    await deps.lookupArxivMany(ids)
+  } catch {
+    // 批量失败不阻塞：逐条核验的回退链会兜底
   }
 }
 
@@ -160,22 +198,30 @@ async function verifyOne(
   let via: 'doi' | 'search' | 'arxiv' | null = null
   let resolveError: string | null = null
 
-  try {
-    const arxivId = card.arxivId ?? arxivIdFromDoi(card.doi)
-    if (arxivId) {
+  const arxivId = card.arxivId ?? arxivIdFromDoi(card.doi)
+  if (arxivId) {
+    try {
       resolved = await deps.lookupArxiv(arxivId)
       via = 'arxiv'
+    } catch (error) {
+      resolveError = error instanceof Error ? error.message : String(error)
     }
-    if (!resolved && card.doi && !arxivId) {
+  }
+  if (!resolved && !arxivId && card.doi) {
+    try {
       resolved = await deps.lookupDoi(card.doi)
       via = 'doi'
+    } catch (error) {
+      resolveError ??= error instanceof Error ? error.message : String(error)
     }
-    if (!resolved) {
+  }
+  if (!resolved) {
+    try {
       resolved = await deps.searchByTitleAuthor(card.title, firstAuthorOf(card.authors) ?? '')
       via = 'search'
+    } catch (error) {
+      resolveError ??= error instanceof Error ? error.message : String(error)
     }
-  } catch (error) {
-    resolveError = error instanceof Error ? error.message : String(error)
   }
 
   if (!resolved) {
@@ -320,7 +366,7 @@ function buildReportMd(items: CitationVerificationItem[]): string {
       : 0
 
   const lines = [
-    '# 引用核验报告（Crossref 字段级交叉）',
+    '# 引用核验报告（多源交叉）',
     '',
     '## 汇总',
     `- 引用条数：${items.length}`,

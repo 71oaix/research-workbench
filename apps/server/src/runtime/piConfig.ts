@@ -37,7 +37,7 @@ export function loadPiConfig(env: NodeJS.ProcessEnv = process.env): PiConfig {
   const defaultModel = env.PI_DEFAULT_MODEL ?? 'deepseek-v4-flash'
   const roleModel: Partial<Record<Role, string>> = {}
   const roleThinkingLevel: Partial<Record<Role, ThinkingLevel>> = {}
-  for (const role of ['planner', 'researcher', 'writer', 'reviewer'] as const) {
+  for (const role of ['planner', 'researcher', 'writer', 'evaluator', 'reviewer'] as const) {
     const value = env[`PI_MODEL_${role.toUpperCase()}`]
     if (value) {
       if (value.includes('/')) {

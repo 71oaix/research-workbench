@@ -38,6 +38,35 @@ export class ArxivClient implements AcademicSearchClient {
     return parseArxivFeed(text)[0] ?? null
   }
 
+  /**
+   * 批量核验：arXiv 支持 id_list 一次查询多个 ID（≤10/请求），
+   * 把逐篇 12 次请求降到 1-2 次，显著降低 429 概率。
+   */
+  async lookupMany(ids: string[]): Promise<Map<string, SearchPaper | null>> {
+    const result = new Map<string, SearchPaper | null>()
+    const normalized: string[] = []
+    for (const id of ids) {
+      const key = normalizeArxiv(id)
+      if (key && !normalized.includes(key)) normalized.push(key)
+    }
+    const base = this.options.baseUrl ?? 'https://export.arxiv.org/api/query'
+    for (let i = 0; i < normalized.length; i += 10) {
+      const batch = normalized.slice(i, i + 10)
+      const url = new URL(base)
+      url.searchParams.set('id_list', batch.join(','))
+      url.searchParams.set('max_results', String(batch.length))
+      const text = await this.fetchFeed(url)
+      const papers = parseArxivFeed(text)
+      const byId = new Map<string, SearchPaper>()
+      for (const paper of papers) {
+        const key = normalizeArxiv(paper.arxivId ?? paper.externalId)
+        if (key) byId.set(key, paper)
+      }
+      for (const id of batch) result.set(id, byId.get(id) ?? null)
+    }
+    return result
+  }
+
   private async fetchFeed(url: URL): Promise<string> {
     for (let attempt = 0; ; attempt++) {
       await this.rateLimiter.acquire()

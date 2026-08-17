@@ -7,6 +7,17 @@ import { loadSearchConfig } from '../../src/search/config'
 import { ResearcherStepServiceImpl } from '../../src/search/researcherStep'
 import type { SearchOutput } from '../../src/search/types'
 
+const { acquireFullTextMock } = vi.hoisted(() => ({
+  acquireFullTextMock: vi.fn(),
+}))
+
+vi.mock('../../src/evidence/fullText', () => ({
+  acquireFullText: acquireFullTextMock,
+  fullTextKey: (paper: { title: string }) => paper.title,
+  resolvePdfUrls: (paper: { arxivId?: string | null }) =>
+    paper.arxivId ? [`https://arxiv.org/pdf/${paper.arxivId}`] : [],
+}))
+
 describe('ResearcherStepServiceImpl', () => {
   it('persists raw papers, creates research-cards.md and emits search events', async () => {
     const db = createDb()
@@ -176,5 +187,127 @@ describe('ResearcherStepServiceImpl', () => {
 
     expect(result.cardsMd).toContain('Multi-Agent Memory Architecture Research')
     expect(result.cardsMd).not.toContain('Completely Unrelated GUI Testing')
+  })
+
+  it('attempts downloads for every paper with an OA candidate', async () => {
+    const db = createDb()
+    const repos = createRepositories(db)
+    const workflow = repos.workflows.create('调研')
+    const step = repos.steps.create({
+      workflowId: workflow.id,
+      label: '检索文献',
+      role: 'researcher',
+      position: 1,
+      requiresApproval: false,
+    })
+    const papers = Array.from({ length: 12 }, (_, index) => ({
+      source: 'semantic-scholar',
+      externalId: `s2-${index}`,
+      title: `Paper ${index}`,
+      abstract: null,
+      authors: ['A'],
+      year: 2024,
+      doi: null,
+      arxivId: `2401.0000${index}`,
+      url: null,
+      citationCount: 10,
+      raw: null,
+      sources: ['semantic-scholar'],
+    }))
+    const output: SearchOutput = {
+      rawPapers: papers,
+      papers,
+      stats: {
+        queryGroups: 1,
+        sources: ['semantic-scholar'],
+        keywordsUsed: 1,
+        queries: 1,
+        minCitations: 0,
+        totalHits: 12,
+        uniquePapers: 12,
+        failedSources: [],
+        topN: 15,
+      },
+      groups: [],
+    }
+    acquireFullTextMock.mockReset()
+    acquireFullTextMock.mockResolvedValue({
+      result: { text: 'full text content '.repeat(100), url: 'https://x', source: 'oa' },
+      reason: 'ok',
+    })
+    const search = { search: vi.fn().mockResolvedValue(output) } as unknown as AcademicSearchService
+    const service = new ResearcherStepServiceImpl(search, repos, createEventBus(), loadSearchConfig({}))
+
+    await service.prepare({
+      workflowId: workflow.id,
+      stepId: step.id,
+      planContent: '## 检索关键词\n- paper',
+    })
+
+    expect(acquireFullTextMock).toHaveBeenCalledTimes(12)
+    expect(acquireFullTextMock.mock.calls.every((call) => call[0].arxivId)).toBe(true)
+  })
+
+  it('caps downloads at SEARCH_DOWNLOAD_MAX', async () => {
+    const db = createDb()
+    const repos = createRepositories(db)
+    const workflow = repos.workflows.create('调研')
+    const step = repos.steps.create({
+      workflowId: workflow.id,
+      label: '检索文献',
+      role: 'researcher',
+      position: 1,
+      requiresApproval: false,
+    })
+    const papers = Array.from({ length: 10 }, (_, index) => ({
+      source: 'semantic-scholar',
+      externalId: `s2-${index}`,
+      title: `Paper ${index}`,
+      abstract: null,
+      authors: ['A'],
+      year: 2024,
+      doi: null,
+      arxivId: `2401.0000${index}`,
+      url: null,
+      citationCount: 10,
+      raw: null,
+      sources: ['semantic-scholar'],
+    }))
+    const output: SearchOutput = {
+      rawPapers: papers,
+      papers,
+      stats: {
+        queryGroups: 1,
+        sources: ['semantic-scholar'],
+        keywordsUsed: 1,
+        queries: 1,
+        minCitations: 0,
+        totalHits: 10,
+        uniquePapers: 10,
+        failedSources: [],
+        topN: 15,
+      },
+      groups: [],
+    }
+    acquireFullTextMock.mockReset()
+    acquireFullTextMock.mockResolvedValue({
+      result: { text: 'full text content '.repeat(100), url: 'https://x', source: 'oa' },
+      reason: 'ok',
+    })
+    const search = { search: vi.fn().mockResolvedValue(output) } as unknown as AcademicSearchService
+    const service = new ResearcherStepServiceImpl(
+      search,
+      repos,
+      createEventBus(),
+      loadSearchConfig({ SEARCH_DOWNLOAD_MAX: '5' })
+    )
+
+    await service.prepare({
+      workflowId: workflow.id,
+      stepId: step.id,
+      planContent: '## 检索关键词\n- paper',
+    })
+
+    expect(acquireFullTextMock).toHaveBeenCalledTimes(5)
   })
 })

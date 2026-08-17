@@ -28,8 +28,15 @@ export class ResearcherStepServiceImpl implements ResearcherStepService {
     output.papers = filterRelevantPapers(output.papers, input.planContent)
 
     const fullTextByKey = new Map<string, string>()
-    const topPapers = output.papers.slice(0, this.config.readTop)
-    await mapWithConcurrency(topPapers, 3, async (paper) => {
+    const candidates = output.papers.filter((paper) => resolvePdfUrls(paper).length > 0)
+    const toDownload = candidates.slice(0, this.config.downloadMax)
+    const deadline = Date.now() + this.config.downloadTimeoutMs
+    await mapWithConcurrency(toDownload, 3, async (paper) => {
+      if (Date.now() > deadline) {
+        paper.downloadStatus = 'failed'
+        paper.downloadError = '下载时间预算耗尽'
+        return
+      }
       const acquired = await acquireFullText(paper, {
         dir: path.join(process.cwd(), 'data', 'pdfs'),
         maxChars: this.config.fullTextMaxChars,
@@ -47,7 +54,7 @@ export class ResearcherStepServiceImpl implements ResearcherStepService {
       const text = fullTextByKey.get(fullTextKey(paper))
       if (text) paper.fullText = text
       if (!paper.downloadStatus) {
-        const top = topPapers.find(
+        const top = candidates.find(
           (candidate) => fullTextKey(candidate) === fullTextKey(paper)
         )
         if (top) {

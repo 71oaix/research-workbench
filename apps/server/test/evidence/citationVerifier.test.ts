@@ -195,4 +195,64 @@ describe('verifyCitations', () => {
     expect(second?.doi).toBe('10.1000/a')
     expect(lookupCalls).toBe(1)
   })
+
+  it('batches arxiv lookups once and reuses the cache for per-item verification', async () => {
+    let lookupManyCalls = 0
+    let lookupCalls = 0
+    const arxiv = {
+      lookup: async () => {
+        lookupCalls++
+        return null
+      },
+      lookupMany: async (ids: string[]) => {
+        lookupManyCalls++
+        const map = new Map<string, SearchPaper>()
+        for (const id of ids) {
+          map.set(
+            id,
+            paper({
+              source: 'arxiv',
+              title: `Paper ${id}`,
+              authors: ['A'],
+              year: 2024,
+            })
+          )
+        }
+        return map
+      },
+    }
+    const deps = createVerifierDeps({
+      arxiv: arxiv as never,
+    })
+
+    const report = await verifyCitations({
+      draft: 'see [1] and [2]',
+      cards: [
+        card({ arxivId: '2401.00001', title: 'Paper 2401.00001' }),
+        card({ arxivId: '2401.00002', title: 'Paper 2401.00002' }),
+      ],
+      deps,
+    })
+
+    expect(lookupManyCalls).toBe(1)
+    expect(lookupCalls).toBe(0)
+    expect(report.items.every((item) => item.status !== 'unverifiable')).toBe(true)
+  })
+
+  it('falls back to title search when arxiv lookup throws', async () => {
+    const report = await verifyCitations({
+      draft: 'see [1]',
+      cards: [card({ arxivId: '2401.00001', title: 'Paper A' })],
+      deps: deps({
+        lookupArxiv: async () => {
+          throw new Error('arxiv http 429')
+        },
+        searchByTitleAuthor: async () =>
+          paper({ source: 'crossref', title: 'Paper A', authors: ['Ashish Vaswani'], year: 2017 }),
+      }),
+    })
+
+    expect(report.items[0].status).not.toBe('unverifiable')
+    expect(report.items[0].resolvedVia).toBe('search')
+  })
 })

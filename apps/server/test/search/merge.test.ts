@@ -42,7 +42,7 @@ describe('mergeAndRank', () => {
 
     const { papers, stats } = mergeAndRank([fromS2, fromOpenAlex], 15)
     expect(papers).toHaveLength(1)
-    expect(stats).toEqual({ totalHits: 2, uniquePapers: 1 })
+    expect(stats).toEqual({ totalHits: 2, uniquePapers: 1, skippedPapers: 0 })
     expect(papers[0].citationCount).toBe(100)
     expect(papers[0].abstract).toBe('this is a much longer abstract')
     expect(papers[0].authors).toEqual(['Alice', 'Bob'])
@@ -60,8 +60,16 @@ describe('mergeAndRank', () => {
   })
 
   it('merges by normalized title when no identifiers exist', () => {
-    const a = paper({ title: 'Attention Is All You Need!', source: 'semantic-scholar' })
-    const b = paper({ title: 'attention is all you need', source: 'openalex' })
+    const a = paper({
+      title: 'Attention Is All You Need!',
+      source: 'semantic-scholar',
+      authors: ['Alice'],
+    })
+    const b = paper({
+      title: 'attention is all you need',
+      source: 'openalex',
+      authors: ['Bob'],
+    })
     const { papers } = mergeAndRank([a, b], 15)
     expect(papers).toHaveLength(1)
   })
@@ -137,5 +145,26 @@ describe('mergeAndRank', () => {
     const { papers } = mergeAndRank([versionA, versionB], 15)
     expect(papers).toHaveLength(1)
     expect(papers[0].authors).toEqual(['Matthew Page', 'M. Page'])
+  })
+
+  it('filters broken metadata papers and reports skipped count', () => {
+    const broken = paper({
+      title: 'Multi-agent UAV anti-jamming',
+      source: 'semantic-scholar',
+      authors: [
+        '吴志娟',
+        '未知的动态环境和日趋复杂的作战任务需求促使无人机系统向着集群化自主化和智能化方向发展的一个非常长的异常作者字段内容用于触发元数据过滤',
+      ],
+    })
+    const ok = paper({
+      title: 'Normal Paper',
+      source: 'semantic-scholar',
+      authors: ['Alice'],
+      year: 2024,
+    })
+    const { papers, stats } = mergeAndRank([broken, ok], 15)
+    expect(papers).toHaveLength(1)
+    expect(papers[0].title).toBe('Normal Paper')
+    expect(stats.skippedPapers).toBe(1)
   })
 })

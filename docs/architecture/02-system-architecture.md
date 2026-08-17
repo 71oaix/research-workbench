@@ -170,3 +170,16 @@ reject  → step rejected → workflow: cancelled（记录 decision）
   `changes=0` 抛 409
 - WS 对账：断线重连成功后前端自动 `refreshList()`，避免增量事件丢失造成陈旧状态
 - 评估：大纲标题词元 Jaccard ≥ 0.5 或包含核心词即视为覆盖；相关度输出均值 + 中位数
+
+## 效果修复（M2-13）
+
+- 角色：新增 `evaluator`（writer 后、reviewer 前，`requiresApproval=false` 自动执行）；
+  评估报告由模型按固定模板生成（逐核心概念命中 / 逐卡相关度 / 大纲覆盖 / gap / 总体结论），
+  规则统计（`buildEvaluationInputs`）只作参考输入；reviewer 读取模型评估报告并注入关键全文摘录
+- 核验：`ArxivClient.lookupMany` 用 `id_list` 批量（≤10/请求），结果进内存缓存；
+  arXiv 失败回退 DOI / 标题搜索，Unverifiable 占比显著下降
+- 下载：取消 top-8 截断，有 OA 候选的论文全部尝试（并发 3），
+  `SEARCH_DOWNLOAD_MAX`（默认 25）与 `SEARCH_DOWNLOAD_TIMEOUT_MS`（默认 240s）兜底
+- 排序：`log2(1+引用数) + SEARCH_RELEVANCE_WEIGHT × 命中主题词数`（默认 2.0，可配 0 恢复纯引用）；
+  过滤元数据损坏卡片（无年份 && 无 DOI && 无 arXiv && 无作者，或作者字段异常超长），计入 `skippedPapers`
+- 摘录一致性：摘录区声明“已读 N 篇，仅注入前 M 篇，其余仅可引摘要”；reviewer 材料注入前 3 篇全文摘录

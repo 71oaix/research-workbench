@@ -21,6 +21,10 @@ export class MockStepRunner implements StepRunner {
       }
       case 'writer':
         return { artifactName, content: mockDraft(feedback ?? null) }
+      case 'evaluator': {
+        this.persist(step.workflowId, step.id, 'evaluation-report.md', mockEvaluation())
+        return { artifactName, content: mockEvaluation() }
+      }
       case 'reviewer': {
         this.persist(step.workflowId, step.id, 'citation-lint.md', mockLint())
         return { artifactName, content: mockReview() }
@@ -152,6 +156,33 @@ function mockLint(): string {
     '',
     '## 结论',
     '所有引用编号均在证据卡片范围内。',
+  ].join('\n')
+}
+
+function mockEvaluation(): string {
+  return [
+    '# 评估报告（演示）',
+    '',
+    '## 逐核心概念命中判定',
+    '| 概念 | 判定 | 依据卡片 | 理由 |',
+    '|------|------|----------|------|',
+    '| 智能体记忆分类 | 命中 | [1][2] | 摘要直接覆盖短期/长期记忆分类 |',
+    '',
+    '## 逐卡相关度评分',
+    '| 编号 | 标题 | 评分 | 依据 |',
+    '|------|------|------|------|',
+    '| [1] | 演示论文 1 | 5 | 与主题高度相关 |',
+    '',
+    '## 大纲覆盖',
+    '| 计划章节 | 判定 | 内容锚点 | 理由 |',
+    '|----------|------|----------|------|',
+    '| 引言 | 覆盖 | [1] | 章节引用了卡片 |',
+    '',
+    '## 覆盖不足方向与 gap 建议',
+    '- 建议补充近两年文献。',
+    '',
+    '## 总体结论',
+    '- 通过：证据与草稿一致。',
   ].join('\n')
 }
 

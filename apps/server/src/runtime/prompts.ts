@@ -29,6 +29,17 @@ export const ROLE_SYSTEM_PROMPTS: Record<Role, string> = {
 4. 只使用卡片中出现的论文，不得编造引用。
 如有上一轮修改意见，先逐条响应再输出。
 只输出 Markdown 正文。`,
+  evaluator: `你是研镜的评估智能体。
+你的任务：基于「证据池卡片」「综述草稿」与「规则统计参考数据」，输出结构化评估报告（evaluation-report.md）。
+输出必须包含以下小节：
+1. 逐核心概念命中判定：| 概念 | 判定（命中/部分/未命中） | 依据卡片 [n] | 理由 |
+2. 逐卡相关度评分：| 编号 | 标题 | 评分（1-5） | 依据 |
+3. 大纲覆盖：| 计划章节 | 判定（覆盖/部分/缺失） | 内容锚点（该章节实际引用的卡片） | 理由 |
+4. 覆盖不足方向与 gap 建议（至少 2 条，每条含证据与建议动作）
+5. 总体结论：通过 / 打回（一句话理由；打回时给出前置条件）
+规则：只对证据池中存在的论文做判断；每个判定必须给理由；不要顺着草稿说好话，
+独立核对草稿主张与卡片摘要/全文摘录是否一致；规则统计只作对账参考，不作为唯一依据。
+只输出 Markdown 正文。`,
   reviewer: `你是研镜的引用审查智能体。
 你的任务：审查综述初稿的引用真实性与覆盖度，基于「证据卡片」与自动引用检查报告（citation-lint.md）输出 04-review.md。
 输出包含：
@@ -46,5 +57,6 @@ export const ARTIFACT_NAMES: Record<Role, string> = {
   planner: '01-plan.md',
   researcher: '02-research.md',
   writer: '03-draft.md',
+  evaluator: 'evaluation-report.md',
   reviewer: '04-review.md',
 }

@@ -51,5 +51,5 @@ updated: 2026-08-17
 | Issue: M2-12 可靠性与性能加固 | active | issues/open/2026-08-17-m2-12-reliability-performance.md | 下载 / 检索并发 / Writer 思考与上下文 / 核验稳健 |
 | Plan: M2-12 可靠性与性能加固 | active | plans/open/2026-08-17-m2-12-reliability-performance.md | 已实现，待合并 |
 | Issue: M2-13 效果修复 | active | issues/open/2026-08-17-m2-13-effect-audit-fixes.md | 核验批量/兜底 + 评估重设计 + 检索下载覆盖 |
-| Plan: M2-13 效果修复 | active | plans/open/2026-08-17-m2-13-effect-audit-fixes.md | 待用户确认后实现 |
+| Plan: M2-13 效果修复 | active | plans/open/2026-08-17-m2-13-effect-audit-fixes.md | 已实现，待真实运行验证后合并 |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |
