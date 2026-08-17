@@ -119,9 +119,12 @@ function buildFullTextMd(
   const withText = papers.filter((paper) => Boolean(paper.fullText))
   const failed = papers.filter((paper) => paper.downloadStatus === 'failed')
   if (withText.length === 0) return ''
-  const sections = withText.map(
-    (paper, index) => `## [${index + 1}] ${paper.title}\n\n${paper.fullText}`
-  )
+  // 编号严格按卡片编号（index+1），下载失败的卡片不占编号
+  const sections = papers
+    .map((paper, index) =>
+      paper.fullText ? `## [${index + 1}] ${paper.title}\n\n${paper.fullText}` : null
+    )
+    .filter((section): section is string => section !== null)
   const header = [
     '# 论文全文（阅读证据）',
     '',

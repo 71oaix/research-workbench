@@ -52,6 +52,10 @@ function filterBrokenPapers(papers: SearchPaper[]): { papers: SearchPaper[]; ski
   for (const paper of papers) {
     const broken =
       paper.title.trim().length === 0 ||
+      (paper.year === null &&
+        !paper.abstract &&
+        !paper.doi &&
+        !paper.arxivId) ||
       (paper.year === null && !paper.doi && !paper.arxivId && paper.authors.length === 0) ||
       paper.authors.some((author) => author.length > 40)
     if (broken) {

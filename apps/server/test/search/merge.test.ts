@@ -64,11 +64,13 @@ describe('mergeAndRank', () => {
       title: 'Attention Is All You Need!',
       source: 'semantic-scholar',
       authors: ['Alice'],
+      abstract: 'abstract a',
     })
     const b = paper({
       title: 'attention is all you need',
       source: 'openalex',
       authors: ['Bob'],
+      abstract: 'abstract b',
     })
     const { papers } = mergeAndRank([a, b], 15)
     expect(papers).toHaveLength(1)
@@ -136,11 +138,13 @@ describe('mergeAndRank', () => {
       title: 'An updated guideline for reporting systematic reviews',
       authors: ['Matthew Page'],
       source: 'crossref',
+      abstract: 'guideline abstract',
     })
     const versionB = paper({
       title: 'Updated guideline for reporting systematic reviews',
       authors: ['M. Page'],
       source: 'openalex',
+      abstract: 'guideline abstract',
     })
     const { papers } = mergeAndRank([versionA, versionB], 15)
     expect(papers).toHaveLength(1)
@@ -163,6 +167,27 @@ describe('mergeAndRank', () => {
       year: 2024,
     })
     const { papers, stats } = mergeAndRank([broken, ok], 15)
+    expect(papers).toHaveLength(1)
+    expect(papers[0].title).toBe('Normal Paper')
+    expect(stats.skippedPapers).toBe(1)
+  })
+
+  it('filters papers without year, abstract and identifiers even with authors', () => {
+    const unverifiable = paper({
+      title: 'Multi-Agent Systems Meet LLM: Future Directions',
+      source: 'semantic-scholar',
+      authors: ['Qimeng Li'],
+      url: 'https://x',
+      citationCount: 3,
+    })
+    const ok = paper({
+      title: 'Normal Paper',
+      source: 'semantic-scholar',
+      authors: ['Alice'],
+      year: 2024,
+      abstract: 'abstract',
+    })
+    const { papers, stats } = mergeAndRank([unverifiable, ok], 15)
     expect(papers).toHaveLength(1)
     expect(papers[0].title).toBe('Normal Paper')
     expect(stats.skippedPapers).toBe(1)

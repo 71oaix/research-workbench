@@ -183,3 +183,11 @@ reject  → step rejected → workflow: cancelled（记录 decision）
 - 排序：`log2(1+引用数) + SEARCH_RELEVANCE_WEIGHT × 命中主题词数`（默认 2.0，可配 0 恢复纯引用）；
   过滤元数据损坏卡片（无年份 && 无 DOI && 无 arXiv && 无作者，或作者字段异常超长），计入 `skippedPapers`
 - 摘录一致性：摘录区声明“已读 N 篇，仅注入前 M 篇，其余仅可引摘要”；reviewer 材料注入前 3 篇全文摘录
+
+## 检索召回与编号修复（M2-14）
+
+- cs 域检索源扩为 arxiv + OpenAlex + Crossref + S2（多源兜底，单源失效不再召回归零）
+- 源级熔断：连续失败 ≥3 次停用该源剩余查询，失败源统计为源级一条（失败 N 个查询 + 熔断跳过 M 个）
+- arxiv 查询适配：纯中文跳过、>4 实词精简到前 3 实词、空结果二次放宽（前 2 词 → 首词）
+- 全文编号：`paper-fulltext.md` 段落编号 = 卡片编号（index+1），下载失败不占编号
+- 不可核验卡片：无年份 + 无摘要 + 无 DOI/arXiv 管道端过滤；有年份无摘要标注“摘要：缺失”

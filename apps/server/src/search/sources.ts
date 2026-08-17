@@ -21,7 +21,7 @@ export function buildSourceRegistry(config: SearchConfig): SourceSpec[] {
     {
       source: 'openalex',
       tier: 'T1',
-      domains: ['medical', 'cross-disciplinary', 'exhaustive'],
+      domains: ['medical', 'cs', 'cross-disciplinary', 'exhaustive'],
       create: (cfg) => new OpenAlexClient({ mailto: cfg.openAlexMailto, timeoutMs: cfg.timeoutMs }),
     },
     {
@@ -33,7 +33,7 @@ export function buildSourceRegistry(config: SearchConfig): SourceSpec[] {
     {
       source: 'crossref',
       tier: 'T1',
-      domains: ['medical', 'cross-disciplinary', 'exhaustive'],
+      domains: ['medical', 'cs', 'cross-disciplinary', 'exhaustive'],
       create: (cfg) => new CrossrefClient({ mailto: cfg.crossrefMailto, timeoutMs: cfg.timeoutMs }),
     },
     {

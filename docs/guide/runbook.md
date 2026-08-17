@@ -273,6 +273,22 @@ PI_THINKING_EVALUATOR=...       # 可选，evaluator 思考强度（默认 xhigh
 node scripts/verify-m2-13.mjs
 ```
 
+## M2-14 检索召回与编号修复说明
+
+- cs 域检索源：arxiv + OpenAlex + Crossref + Semantic Scholar（有 key 时 T1，无 key 时 T2）；
+- 源级熔断：某源连续失败 ≥3 次后停用该源剩余查询，失败源统计压缩为源级（如
+  “semantic-scholar(T2) 失败 14 个查询，熔断跳过 2 个查询”），不再逐查询刷屏；
+- arxiv 查询：纯中文查询跳过；>4 实词英文查询精简到前 3 实词；空结果依次放宽到前 2 词、首词；
+- 全文编号：`paper-fulltext.md` 段落编号严格等于卡片编号，中间下载失败不占编号；
+- 不可核验卡片：无年份 + 无摘要 + 无 DOI/arXiv 的卡片在管道端过滤（`skippedPapers` 可查）；
+  有年份但无摘要的卡片保留并标注“摘要：缺失”。
+
+真实流程验证：
+
+```bash
+node scripts/verify-m2-14.mjs
+```
+
 ## 常见问题
 
 - 端口被占用：设置环境变量 `PORT`（server）或修改

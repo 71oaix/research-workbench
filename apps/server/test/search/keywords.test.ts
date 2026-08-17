@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { SearchError } from '../../src/search/errors'
-import { expandKeywordQueries, extractKeywordGroups } from '../../src/search/keywords'
+import {
+  expandKeywordQueries,
+  extractKeywordGroups,
+  normalizeArxivQuery,
+} from '../../src/search/keywords'
 
 describe('extractKeywordGroups', () => {
   it('parses keyword groups from the plan, stripping markdown and numbering', () => {
@@ -58,5 +62,21 @@ describe('extractKeywordGroups', () => {
       { label: 'g1-2', query: 'multi-agent memory architecture' },
       { label: 'g2', query: 'RAG' },
     ])
+  })
+
+  it('normalizes long arxiv queries to at most 3 content words', () => {
+    expect(normalizeArxivQuery('episodic semantic memory LLM agent')).toBe(
+      'episodic semantic memory'
+    )
+    expect(normalizeArxivQuery('multi-agent memory architecture')).toBe(
+      'multi-agent memory architecture'
+    )
+  })
+
+  it('skips queries without english content for arxiv', () => {
+    expect(normalizeArxivQuery('多智能体 记忆架构')).toBeNull()
+    expect(normalizeArxivQuery('shared memory multi-agent')).toBe(
+      'shared memory multi-agent'
+    )
   })
 })

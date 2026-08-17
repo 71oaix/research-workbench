@@ -2,7 +2,7 @@ import type { SearchStats } from '@research-workbench/shared'
 import { extractThemeTokens } from '../evidence/evaluation'
 import type { SearchConfig } from './config'
 import { SearchError } from './errors'
-import { expandKeywordQueries, extractKeywordGroups } from './keywords'
+import { expandKeywordQueries, extractKeywordGroups, normalizeArxivQuery } from './keywords'
 import { mergeAndRank } from './merge'
 import { detectDomain, selectForDomain } from './sources'
 import type { SourceSpec } from './sources'
@@ -38,20 +38,45 @@ export class AcademicSearchService {
       clients.map((client) => ({ query, client, tier: specTier(selected, client.source) }))
     )
 
-    const settled = await runPerSourceConcurrent(tasks, this.config.sourceConcurrency, (task) =>
-      this.searchOne(task.client, task.query, limit)
+    const { results, circuits } = await runPerSourceConcurrent(
+      tasks,
+      this.config.sourceConcurrency,
+      (task) => this.searchOne(task.client, task.query, limit),
+      3
     )
 
-    settled.forEach((result, index) => {
-      if (result.status === 'fulfilled') {
+    results.forEach((result) => {
+      if (result.status === 'fulfilled' && Array.isArray(result.value)) {
         rawPapers.push(...result.value)
-      } else {
-        const { query, client, tier } = tasks[index]
-        failed.push(`${client.source}(${tier}) ${query.query.slice(0, 24)}`)
       }
     })
 
-    if (rawPapers.length === 0 && failed.length === tasks.length) {
+    // 源级失败统计：同一源合并为一条，熔断源记录跳过查询数
+    const failureBySource = new Map<string, { tier: string; failed: number; skipped: number }>()
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        const { client, tier } = tasks[index]
+        const entry = failureBySource.get(client.source) ?? { tier, failed: 0, skipped: 0 }
+        entry.failed++
+        failureBySource.set(client.source, entry)
+      }
+    })
+    for (const [source, circuit] of circuits) {
+      if (circuit.tripped && circuit.skipped > 0) {
+        const tier = specTier(selected, source)
+        const entry = failureBySource.get(source) ?? { tier, failed: 0, skipped: 0 }
+        entry.skipped = circuit.skipped
+        failureBySource.set(source, entry)
+      }
+    }
+    for (const [source, entry] of failureBySource) {
+      const parts: string[] = []
+      if (entry.failed > 0) parts.push(`失败 ${entry.failed} 个查询`)
+      if (entry.skipped > 0) parts.push(`熔断跳过 ${entry.skipped} 个查询`)
+      failed.push(`${source}(${entry.tier}) ${parts.join('，')}`)
+    }
+
+    if (rawPapers.length === 0 && failureBySource.size === clients.length) {
       throw new SearchError(`所有检索源失败：${failed.join('、')}`)
     }
 
@@ -91,11 +116,24 @@ export class AcademicSearchService {
     query: KeywordGroup,
     limit: number
   ): Promise<SearchPaper[]> {
-    let papers = await client.search(query.query, limit)
+    let q = query.query
+    if (client.source === 'arxiv') {
+      const normalized = normalizeArxivQuery(query.query)
+      if (!normalized) return []
+      q = normalized
+    }
+    let papers = await client.search(q, limit)
     if (papers.length === 0) {
-      const broadened = broadenQuery(query.query)
-      if (broadened !== query.query) {
+      const broadened = broadenQuery(q)
+      if (broadened !== q) {
         papers = await client.search(broadened, limit)
+      }
+    }
+    if (papers.length === 0) {
+      const first = firstToken(q)
+      const broadened = broadenQuery(q)
+      if (first && first !== q && first !== broadened) {
+        papers = await client.search(first, limit)
       }
     }
     return papers
@@ -109,8 +147,12 @@ export class AcademicSearchService {
 async function runPerSourceConcurrent<T, R>(
   tasks: T[],
   concurrency: number,
-  fn: (task: T) => Promise<R>
-): Promise<PromiseSettledResult<R>[]> {
+  fn: (task: T) => Promise<R>,
+  maxFailures: number
+): Promise<{
+  results: PromiseSettledResult<R>[]
+  circuits: Map<string, { failures: number; tripped: boolean; skipped: number }>
+}> {
   const bySource = new Map<string, { task: T; index: number }[]>()
   tasks.forEach((task, index) => {
     const source = (task as { client: { source: string } }).client.source
@@ -119,32 +161,37 @@ async function runPerSourceConcurrent<T, R>(
     bySource.set(source, bucket)
   })
   const results: PromiseSettledResult<R>[] = new Array(tasks.length)
+  const circuits = new Map<string, { failures: number; tripped: boolean; skipped: number }>()
   await Promise.all(
-    [...bySource.values()].map(async (bucket) => {
-      await runWithLimit(bucket, concurrency, fn, results)
+    [...bySource.entries()].map(async ([source, bucket]) => {
+      const circuit = { failures: 0, tripped: false, skipped: 0 }
+      circuits.set(source, circuit)
+      let cursor = 0
+      const workers = Array.from(
+        { length: Math.min(concurrency, bucket.length) },
+        async () => {
+          while (cursor < bucket.length) {
+            const entry = bucket[cursor++]
+            if (circuit.tripped) {
+              circuit.skipped++
+              results[entry.index] = { status: 'fulfilled', value: undefined as R }
+              continue
+            }
+            try {
+              results[entry.index] = { status: 'fulfilled', value: await fn(entry.task) }
+              circuit.failures = 0
+            } catch (reason) {
+              circuit.failures++
+              if (circuit.failures >= maxFailures) circuit.tripped = true
+              results[entry.index] = { status: 'rejected', reason }
+            }
+          }
+        }
+      )
+      await Promise.all(workers)
     })
   )
-  return results
-}
-
-async function runWithLimit<T, R>(
-  items: { task: T; index: number }[],
-  limit: number,
-  fn: (task: T) => Promise<R>,
-  results: PromiseSettledResult<R>[]
-): Promise<void> {
-  let cursor = 0
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (cursor < items.length) {
-      const entry = items[cursor++]
-      try {
-        results[entry.index] = { status: 'fulfilled', value: await fn(entry.task) }
-      } catch (reason) {
-        results[entry.index] = { status: 'rejected', reason }
-      }
-    }
-  })
-  await Promise.all(workers)
+  return { results, circuits }
 }
 
 function specTier(specs: SourceSpec[], source: string): string {
@@ -154,4 +201,9 @@ function specTier(specs: SourceSpec[], source: string): string {
 function broadenQuery(query: string): string {
   const tokens = query.split(/\s+/).filter((token) => token.length > 0)
   return tokens.length > 2 ? tokens.slice(0, 2).join(' ') : query
+}
+
+function firstToken(query: string): string {
+  const tokens = query.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
+  return tokens[0] ?? ''
 }

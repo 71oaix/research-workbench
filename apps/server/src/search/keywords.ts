@@ -44,6 +44,41 @@ export function expandKeywordQueries(groups: KeywordGroup[]): KeywordGroup[] {
   return expanded
 }
 
+/**
+ * arxiv 查询适配：无英文内容的查询跳过；>4 实词查询精简到前 3 个实词，
+ * 缓解 arxiv all: 长短语 AND 召回过低的问题。
+ */
+export function normalizeArxivQuery(query: string): string | null {
+  const trimmed = query.trim()
+  if (!/[a-zA-Z0-9]/.test(trimmed)) return null
+  const tokens = trimmed
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token && !ARXIV_STOPWORDS.has(token))
+  if (tokens.length <= 4) return trimmed
+  return tokens.slice(0, 3).join(' ')
+}
+
+const ARXIV_STOPWORDS = new Set([
+  'a',
+  'an',
+  'the',
+  'in',
+  'of',
+  'for',
+  'on',
+  'to',
+  'and',
+  'with',
+  'by',
+  'et',
+  'al',
+  'from',
+  'via',
+  'over',
+  'into',
+])
+
 function splitSections(md: string): PlanSection[] {
   const sections: PlanSection[] = []
   let current: PlanSection | null = null

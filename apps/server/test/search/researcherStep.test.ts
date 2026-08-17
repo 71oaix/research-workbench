@@ -310,4 +310,71 @@ describe('ResearcherStepServiceImpl', () => {
 
     expect(acquireFullTextMock).toHaveBeenCalledTimes(5)
   })
+
+  it('numbers full-text sections by card index, skipping failed downloads', async () => {
+    const db = createDb()
+    const repos = createRepositories(db)
+    const workflow = repos.workflows.create('调研')
+    const step = repos.steps.create({
+      workflowId: workflow.id,
+      label: '检索文献',
+      role: 'researcher',
+      position: 1,
+      requiresApproval: false,
+    })
+    const papers = ['Paper 0', 'Paper 1', 'Paper 2'].map((title, index) => ({
+      source: 'semantic-scholar',
+      externalId: `s2-${index}`,
+      title,
+      abstract: null,
+      authors: ['A'],
+      year: 2024,
+      doi: null,
+      arxivId: `2401.0000${index}`,
+      url: null,
+      citationCount: 10,
+      raw: null,
+      sources: ['semantic-scholar'],
+    }))
+    const output: SearchOutput = {
+      rawPapers: papers,
+      papers,
+      stats: {
+        queryGroups: 1,
+        sources: ['semantic-scholar'],
+        keywordsUsed: 1,
+        queries: 1,
+        minCitations: 0,
+        totalHits: 3,
+        uniquePapers: 3,
+        failedSources: [],
+        topN: 15,
+      },
+      groups: [],
+    }
+    acquireFullTextMock.mockReset()
+    acquireFullTextMock.mockImplementation(async (paper: { title: string }) => {
+      if (paper.title === 'Paper 1') return { result: null, reason: 'failed' }
+      return {
+        result: { text: 'full text content '.repeat(100), url: 'https://x', source: 'oa' },
+        reason: 'ok',
+      }
+    })
+    const search = { search: vi.fn().mockResolvedValue(output) } as unknown as AcademicSearchService
+    const service = new ResearcherStepServiceImpl(search, repos, createEventBus(), loadSearchConfig({}))
+
+    const result = await service.prepare({
+      workflowId: workflow.id,
+      stepId: step.id,
+      planContent: '## 检索关键词\n- paper',
+    })
+
+    const fullText = repos.artifacts
+      .listByWorkflow(workflow.id)
+      .find((artifact) => artifact.name === 'paper-fulltext.md')
+    expect(fullText?.content).toContain('## [1] Paper 0')
+    expect(fullText?.content).toContain('## [3] Paper 2')
+    expect(fullText?.content).not.toContain('## [2]')
+    expect(result.cardsMd).toContain('摘要：缺失')
+  })
 })

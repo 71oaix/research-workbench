@@ -60,6 +60,8 @@ export function buildResearchCards(
     )
     if (paper.abstract) {
       lines.push(`- 摘要：${truncate(paper.abstract, 300)}`)
+    } else {
+      lines.push('- 摘要：缺失（该卡片无摘要，仅可引用标题层面信息）')
     }
     lines.push('')
   })
