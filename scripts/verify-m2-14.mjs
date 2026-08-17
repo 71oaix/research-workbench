@@ -29,24 +29,31 @@ async function getDetail(id) {
 
 async function approveUntilDone(id, detail) {
   let current = detail
-  while (current.workflow.status === 'paused') {
-    const awaiting = current.steps.find((step) => step.status === 'awaiting_approval')
-    if (!awaiting) break
-    try {
-      current = await jsonFetch(
-        `${base}/workflows/${id}/steps/${awaiting.id}/decision`,
-        {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ type: 'approve' }),
-        }
-      )
-    } catch (error) {
-      // 长请求可能被网络层掐断，但服务端会继续执行；重新拉取状态恢复
-      const label = awaiting.label
-      console.error(`[断线恢复] 审批 ${label} 的连接中断，重新同步状态（${error.message}）`)
+  while (true) {
+    if (current.workflow.status === 'paused') {
+      const awaiting = current.steps.find((step) => step.status === 'awaiting_approval')
+      if (!awaiting) break
+      try {
+        current = await jsonFetch(
+          `${base}/workflows/${id}/steps/${awaiting.id}/decision`,
+          {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ type: 'approve' }),
+          }
+        )
+      } catch (error) {
+        // 长请求可能被网络层掐断，但服务端会继续执行；重新拉取状态恢复
+        console.error(`[断线恢复] 审批 ${awaiting.label} 的连接中断（${error.message}）`)
+        await new Promise((resolve) => setTimeout(resolve, 30000))
+        current = await getDetail(id)
+      }
+    } else if (current.workflow.status === 'executing') {
+      // 某步骤仍在运行（如 reviewer 长任务），轮询等待下一审批点
       await new Promise((resolve) => setTimeout(resolve, 30000))
       current = await getDetail(id)
+    } else {
+      break
     }
   }
   return current
