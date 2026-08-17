@@ -46,7 +46,8 @@ export class ArxivClient implements AcademicSearchClient {
           signal: AbortSignal.timeout(this.options.timeoutMs ?? 30_000),
         })
         if (!response.ok && attempt < (this.options.maxRetries ?? 2)) {
-          await sleep(1000 * 2 ** attempt)
+          // 429 用更长的退避，尊重 arXiv 限流
+          await sleep((response.status === 429 ? 6000 : 1000) * 2 ** attempt)
           continue
         }
         if (!response.ok) {

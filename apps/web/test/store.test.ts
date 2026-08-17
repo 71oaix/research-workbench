@@ -97,4 +97,49 @@ describe('workflow store', () => {
       note: '补充上下文工程方向',
     })
   })
+
+  it('refreshes the workflow list after a websocket reconnect', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => [workflow] })
+    vi.stubGlobal('fetch', fetchMock)
+
+    type FakeSocket = {
+      onopen: (() => void) | null
+      onclose: (() => void) | null
+      onmessage: ((event: { data: string }) => void) | null
+      onerror: (() => void) | null
+      close: () => void
+    }
+    const sockets: FakeSocket[] = []
+    class FakeWebSocket {
+      onopen: (() => void) | null = null
+      onclose: (() => void) | null = null
+      onmessage: ((event: { data: string }) => void) | null = null
+      onerror: (() => void) | null = null
+      constructor(_url: string) {
+        sockets.push(this)
+      }
+      close() {
+        this.onclose?.()
+      }
+    }
+    vi.stubGlobal('WebSocket', FakeWebSocket)
+    vi.useFakeTimers()
+    try {
+      const unsubscribe = useWorkflowStore.getState().connectWs()
+
+      sockets[0].onopen?.()
+      expect(fetchMock).not.toHaveBeenCalled()
+
+      sockets[0].onclose?.()
+      await vi.advanceTimersByTimeAsync(3000)
+      expect(sockets).toHaveLength(2)
+
+      sockets[1].onopen?.()
+      expect(fetchMock).toHaveBeenCalled()
+      unsubscribe()
+    } finally {
+      vi.useRealTimers()
+      vi.unstubAllGlobals()
+    }
+  })
 })

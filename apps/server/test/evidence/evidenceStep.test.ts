@@ -154,6 +154,41 @@ describe('EvidenceStepServiceImpl', () => {
     expect(result.promptExtra).toContain('未发现 [编号] 引用')
   })
 
+  it('injects only top-3 full-text excerpts and truncates long sections', async () => {
+    const repos = createRepositories(createDb())
+    const service = new EvidenceStepServiceImpl(repos, createEventBus())
+    const longBody = 'lorem ipsum '.repeat(2000)
+    const fullText = makeArtifact(
+      'paper-fulltext.md',
+      [
+        '# 论文全文（阅读证据）',
+        '- 下载：成功 5 篇',
+        '',
+        `## [1] Paper One\n\n${longBody}`,
+        `## [2] Paper Two\n\n${longBody}`,
+        `## [3] Paper Three\n\n${longBody}`,
+        `## [4] Paper Four\n\n${longBody}`,
+        `## [5] Paper Five\n\n${longBody}`,
+      ].join('\n\n')
+    )
+    const cards = makeArtifact(
+      'research-cards.md',
+      ['# cards', '', '### [1] Paper One', '### [5] Paper Five'].join('\n')
+    )
+
+    const result = await service.prepareWriter({
+      workflowId: 'wf-1',
+      stepId: 'step-1',
+      inputArtifacts: [cards, fullText],
+    })
+
+    expect(result.promptExtra).toContain('### [1] Paper One')
+    expect(result.promptExtra).toContain('### [3] Paper Three')
+    expect(result.promptExtra).not.toContain('### [4] Paper Four')
+    expect(result.promptExtra).toContain('中间部分省略')
+    expect(result.promptExtra).toContain('其余论文只用摘要')
+  })
+
   it('generates citation-verification.md and injects it when verifier deps are provided', async () => {
     const db = createDb()
     const repos = createRepositories(db)

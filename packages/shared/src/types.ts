@@ -73,6 +73,8 @@ export interface Paper {
   url: string | null
   citationCount: number | null
   fullText?: string | null
+  downloadStatus?: 'ok' | 'no_oa' | 'failed' | null
+  downloadError?: string | null
   raw: string | null
   createdAt: string
 }

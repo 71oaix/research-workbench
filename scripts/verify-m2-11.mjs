@@ -7,7 +7,7 @@
 const base = process.env.API_BASE ?? 'http://localhost:3000'
 
 const workflow = {
-  goal: '调研大语言模型多智能体系统的记忆架构',
+  goal: '研究下多智能体的记忆架构',
   steps: [
     { label: '生成检索计划', role: 'planner', requiresApproval: true },
     { label: '检索文献', role: 'researcher', requiresApproval: true },

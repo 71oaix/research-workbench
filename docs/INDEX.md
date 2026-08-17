@@ -2,7 +2,7 @@
 title: 文档索引
 status: active
 created: 2026-08-05
-updated: 2026-08-16
+updated: 2026-08-17
 ---
 
 # 文档索引
@@ -48,5 +48,5 @@ updated: 2026-08-16
 | Issue: M2-11 真实案例复盘修复 | active | issues/open/2026-08-16-m2-11-runtime-review-fixes.md | 全文提取 / 流程恢复 / 核验误报 / 评估指标 / 产物呈现 |
 | Plan: M2-11 真实案例复盘修复 | active | plans/open/2026-08-16-m2-11-runtime-review-fixes.md | 已实现，待合并 |
 | Issue: M2-12 可靠性与性能加固 | active | issues/open/2026-08-17-m2-12-reliability-performance.md | 下载 / 检索并发 / Writer 思考与上下文 / 核验稳健 |
-| Plan: M2-12 可靠性与性能加固 | active | plans/open/2026-08-17-m2-12-reliability-performance.md | 待用户确认后实现 |
+| Plan: M2-12 可靠性与性能加固 | active | plans/open/2026-08-17-m2-12-reliability-performance.md | 已实现，待合并 |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |

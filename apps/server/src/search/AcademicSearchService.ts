@@ -37,8 +37,8 @@ export class AcademicSearchService {
       clients.map((client) => ({ query, client, tier: specTier(selected, client.source) }))
     )
 
-    const settled = await Promise.allSettled(
-      tasks.map(({ query, client }) => this.searchOne(client, query, limit))
+    const settled = await runPerSourceConcurrent(tasks, this.config.sourceConcurrency, (task) =>
+      this.searchOne(task.client, task.query, limit)
     )
 
     settled.forEach((result, index) => {
@@ -94,6 +94,51 @@ export class AcademicSearchService {
     }
     return papers
   }
+}
+
+/**
+ * 按数据源分组并发执行：同一源的请求并发不超过 concurrency，
+ * 不同源之间完全并行，避免打爆单一 API 的同时整体提速。
+ */
+async function runPerSourceConcurrent<T, R>(
+  tasks: T[],
+  concurrency: number,
+  fn: (task: T) => Promise<R>
+): Promise<PromiseSettledResult<R>[]> {
+  const bySource = new Map<string, { task: T; index: number }[]>()
+  tasks.forEach((task, index) => {
+    const source = (task as { client: { source: string } }).client.source
+    const bucket = bySource.get(source) ?? []
+    bucket.push({ task, index })
+    bySource.set(source, bucket)
+  })
+  const results: PromiseSettledResult<R>[] = new Array(tasks.length)
+  await Promise.all(
+    [...bySource.values()].map(async (bucket) => {
+      await runWithLimit(bucket, concurrency, fn, results)
+    })
+  )
+  return results
+}
+
+async function runWithLimit<T, R>(
+  items: { task: T; index: number }[],
+  limit: number,
+  fn: (task: T) => Promise<R>,
+  results: PromiseSettledResult<R>[]
+): Promise<void> {
+  let cursor = 0
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (cursor < items.length) {
+      const entry = items[cursor++]
+      try {
+        results[entry.index] = { status: 'fulfilled', value: await fn(entry.task) }
+      } catch (reason) {
+        results[entry.index] = { status: 'rejected', reason }
+      }
+    }
+  })
+  await Promise.all(workers)
 }
 
 function specTier(specs: SourceSpec[], source: string): string {

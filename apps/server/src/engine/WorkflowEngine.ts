@@ -88,9 +88,11 @@ export class WorkflowEngine {
     note: string | null = null
   ): Promise<Workflow> {
     this.requireWorkflow(workflowId)
-    const step = this.requireStep(workflowId, stepId)
-    if (step.status !== 'awaiting_approval') {
-      throw new EngineError('step_not_awaiting_approval', 400)
+    this.requireStep(workflowId, stepId)
+    // 原子抢占：只有处于 awaiting_approval 的步骤能通过，双击/并发第二次必然 409
+    const step = this.repos.steps.updateStatusWhere(stepId, 'awaiting_approval', 'approved')
+    if (!step) {
+      throw new EngineError('step_not_awaiting_approval', 409)
     }
 
     const decision = this.repos.decisions.create({
@@ -121,7 +123,6 @@ export class WorkflowEngine {
       return this.requireWorkflow(workflowId)
     }
 
-    this.setStepStatus(stepId, 'approved')
     this.setWorkflowStatus(workflowId, 'executing')
     await this.runPendingSteps(workflowId)
     return this.requireWorkflow(workflowId)

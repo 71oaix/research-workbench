@@ -6,25 +6,37 @@ import type { MergedPaper } from '../search/types'
 export interface FullTextResult {
   text: string
   url: string
+  source: string
 }
 
-export function resolvePdfUrl(paper: MergedPaper): string | null {
-  if (paper.arxivId) {
-    return `https://arxiv.org/pdf/${paper.arxivId}`
+export type DownloadReason = 'ok' | 'no_oa' | 'failed'
+
+export interface AcquireResult {
+  result: FullTextResult | null
+  reason: DownloadReason
+}
+
+export interface AcquireOptions {
+  dir: string
+  maxChars: number
+  extractText?: (buffer: Buffer) => Promise<string>
+}
+
+const MIN_TEXT_CHARS = 500
+
+export function resolvePdfUrls(paper: MergedPaper): string[] {
+  const urls: string[] = []
+  const push = (url: string | null | undefined) => {
+    if (url && !urls.includes(url)) urls.push(url)
   }
-  if (paper.url && /\.pdf(\?|$)/i.test(paper.url)) {
-    return paper.url
-  }
+  if (paper.arxivId) push(`https://arxiv.org/pdf/${paper.arxivId}`)
+  if (paper.url && /\.pdf(\?|$)/i.test(paper.url)) push(paper.url)
   const raw = safeJson(paper.raw)
-  const openAccessPdf = raw?.openAccessPdf as { url?: unknown } | undefined
-  if (typeof openAccessPdf?.url === 'string' && openAccessPdf.url) {
-    return openAccessPdf.url
-  }
-  const bestOaLocation = raw?.best_oa_location as { pdf_url?: unknown } | undefined
-  if (typeof bestOaLocation?.pdf_url === 'string' && bestOaLocation.pdf_url) {
-    return bestOaLocation.pdf_url
-  }
-  return null
+  const s2Pdf = (raw?.openAccessPdf as { url?: unknown } | undefined)?.url
+  if (typeof s2Pdf === 'string') push(s2Pdf)
+  const oaPdf = (raw?.best_oa_location as { pdf_url?: unknown } | undefined)?.pdf_url
+  if (typeof oaPdf === 'string') push(oaPdf)
+  return urls
 }
 
 export function fullTextKey(paper: {
@@ -41,10 +53,24 @@ export function fullTextKey(paper: {
 
 export async function acquireFullText(
   paper: MergedPaper,
-  options: { dir: string; maxChars: number }
+  options: AcquireOptions
+): Promise<AcquireResult> {
+  const urls = resolvePdfUrls(paper)
+  if (urls.length === 0) return { result: null, reason: 'no_oa' }
+  const extract = options.extractText ?? extractPdfText
+  for (const url of urls) {
+    const result = await tryDownload(paper, url, options, extract)
+    if (result) return { result, reason: 'ok' }
+  }
+  return { result: null, reason: 'failed' }
+}
+
+async function tryDownload(
+  paper: MergedPaper,
+  url: string,
+  options: AcquireOptions,
+  extractText: (buffer: Buffer) => Promise<string>
 ): Promise<FullTextResult | null> {
-  const url = resolvePdfUrl(paper)
-  if (!url) return null
   let buffer: Buffer
   try {
     const response = await fetch(url, { signal: AbortSignal.timeout(60_000) })
@@ -56,12 +82,16 @@ export async function acquireFullText(
   if (buffer.length === 0 || !buffer.subarray(0, 5).toString('ascii').startsWith('%PDF')) {
     return null
   }
+  const text = await extractText(buffer)
+  if (!text || text.length < MIN_TEXT_CHARS) return null
   mkdirSync(options.dir, { recursive: true })
   const safeName = `${paper.source}-${paper.externalId}`.replace(/[^\w.-]+/g, '_')
   writeFileSync(path.join(options.dir, `${safeName}.pdf`), buffer)
-  const text = await extractPdfText(buffer)
-  if (!text) return null
-  return { text: text.slice(0, options.maxChars), url }
+  return {
+    text: text.slice(0, options.maxChars),
+    url,
+    source: url.includes('arxiv.org') ? 'arxiv' : 'oa',
+  }
 }
 
 async function extractPdfText(buffer: Buffer): Promise<string> {

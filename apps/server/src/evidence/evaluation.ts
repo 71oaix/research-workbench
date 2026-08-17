@@ -12,6 +12,7 @@ export interface EvaluationSummary {
   topicHitRate: number
   topicGatePassed: boolean | null
   relevanceAvg: number
+  relevanceMedian: number
   outlineCoverage: OutlineCoverage
   failedSources: string[]
 }
@@ -30,9 +31,9 @@ export function buildEvaluationReport(input: {
 }): EvaluationReport {
   const theme = extractThemeTokens(input.planMd)
   const assessable = theme.size > 0 && input.cards.length > 0
-  const { hitRate, relevanceAvg } = assessable
+  const { hitRate, relevanceAvg, relevanceMedian } = assessable
     ? topicStats(theme, input.cards)
-    : { hitRate: 0, relevanceAvg: 0 }
+    : { hitRate: 0, relevanceAvg: 0, relevanceMedian: 0 }
   const gatePassed = !assessable ? null : hitRate >= TOPIC_GATE_THRESHOLD
   const outline = outlineCoverage(input.planMd, input.draftMd)
   const sources = failedSources(input.rawCardsMd)
@@ -42,6 +43,7 @@ export function buildEvaluationReport(input: {
     topicHitRate: round2(hitRate),
     topicGatePassed: gatePassed,
     relevanceAvg: round2(relevanceAvg),
+    relevanceMedian: round2(relevanceMedian),
     outlineCoverage: outline,
     failedSources: sources,
   }
@@ -61,6 +63,7 @@ export function buildEvaluationReport(input: {
     '## 汇总',
     `- 主题匹配：${gateText}`,
     `- 平均相关度：${round2(relevanceAvg).toFixed(2)}`,
+    `- 相关度中位数：${round2(relevanceMedian).toFixed(2)}`,
     `- 大纲覆盖：${outlineText}`,
     `- 来源失败：${sourceText}`,
     '',
@@ -83,15 +86,22 @@ export function extractThemeTokens(planMd: string): Set<string> {
 function topicStats(
   theme: Set<string>,
   cards: EvidencePoolCard[]
-): { hitRate: number; relevanceAvg: number } {
+): { hitRate: number; relevanceAvg: number; relevanceMedian: number } {
   let hits = 0
   let coverageSum = 0
+  const coverage: number[] = []
   for (const card of cards) {
     const cardTokens = tokenize(`${card.title} ${card.abstract ?? ''}`.slice(0, 400))
     if (hasIntersection(cardTokens, theme)) hits++
-    coverageSum += intersectionSize(cardTokens, theme) / theme.size
+    const value = intersectionSize(cardTokens, theme) / theme.size
+    coverageSum += value
+    coverage.push(value)
   }
-  return { hitRate: hits / cards.length, relevanceAvg: coverageSum / cards.length }
+  return {
+    hitRate: hits / cards.length,
+    relevanceAvg: coverageSum / cards.length,
+    relevanceMedian: median(coverage),
+  }
 }
 
 function outlineCoverage(planMd: string, draftMd: string): OutlineCoverage {
@@ -109,9 +119,18 @@ function outlineCoverage(planMd: string, draftMd: string): OutlineCoverage {
     text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '')
   let covered = 0
   for (const item of planned) {
-    const key = norm(item)
-    if (!key) continue
-    if (draftHeadings.some((heading) => norm(heading).includes(key) || key.includes(norm(heading)))) {
+    if (!item) continue
+    if (
+      draftHeadings.some((heading) => {
+        const a = tokenize(item)
+        const b = tokenize(heading)
+        if (a.size === 0 || b.size === 0) {
+          const key = norm(item)
+          return key.length > 0 && (norm(heading).includes(key) || key.includes(norm(heading)))
+        }
+        return jaccard(a, b) >= 0.5 || hasIntersection(a, b)
+      })
+    ) {
       covered++
     }
   }
@@ -186,6 +205,15 @@ function intersectionSize(a: Set<string>, b: Set<string>): number {
 
 function round2(value: number): number {
   return Math.round(value * 100) / 100
+}
+
+function median(values: number[]): number {
+  if (values.length === 0) return 0
+  const sorted = [...values].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 === 1
+    ? sorted[mid]
+    : (sorted[mid - 1] + sorted[mid]) / 2
 }
 
 function loadTopicGate(): number {

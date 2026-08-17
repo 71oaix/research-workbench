@@ -99,4 +99,32 @@ describe('buildEvaluationReport', () => {
     expect(report.summary.failedSources).toEqual(['Semantic Scholar', 'OpenAlex'])
     expect(report.md).toContain('Semantic Scholar、OpenAlex')
   })
+
+  it('covers rewritten draft headings via token Jaccard overlap', () => {
+    const report = buildEvaluationReport({
+      planMd,
+      draftMd: '# 综述\n## 引言与背景\n## 大语言模型驱动的智能体综述\n## 结论',
+      cardsMd: '# cards\n- 失败源：无',
+      rawCardsMd: '- 失败源：无',
+      cards: [card('大语言模型多智能体记忆架构研究', 'multi-agent memory architecture')],
+    })
+    // 规划大纲：引言 / 大语言模型智能体 / 记忆架构方法 / 总结
+    expect(report.summary.outlineCoverage.covered).toBeGreaterThanOrEqual(2)
+  })
+
+  it('reports relevance median alongside the average', () => {
+    const report = buildEvaluationReport({
+      planMd,
+      draftMd: '',
+      cardsMd: '',
+      rawCardsMd: '',
+      cards: [
+        card('大语言模型多智能体记忆架构研究', 'memory architecture'),
+        card('完全无关主题', 'nothing in common'),
+      ],
+    })
+    expect(report.summary.relevanceMedian).toBeGreaterThanOrEqual(0)
+    expect(report.summary.relevanceMedian).toBeLessThanOrEqual(1)
+    expect(report.md).toContain('相关度中位数')
+  })
 })

@@ -121,4 +121,46 @@ describe('repositories', () => {
       repos.papers.findByExternalId('arxiv', '1706.03762')?.fullText
     ).toBe('We propose a new architecture.')
   })
+
+  it('persists download status and error', () => {
+    const db = createDb()
+    const repos = createRepositories(db)
+    const paper = repos.papers.upsert({
+      source: 'arxiv',
+      externalId: '1706.03762',
+      title: 'Attention Is All You Need',
+      abstract: null,
+      authors: ['Ashish Vaswani'],
+      year: 2017,
+      doi: null,
+      arxivId: '1706.03762',
+      url: 'https://arxiv.org/abs/1706.03762',
+      citationCount: 100000,
+      downloadStatus: 'failed',
+      downloadError: '全部候选下载失败（候选 2 个）',
+      raw: null,
+    })
+    expect(paper.downloadStatus).toBe('failed')
+    expect(paper.downloadError).toContain('候选 2 个')
+    expect(repos.papers.findByExternalId('arxiv', '1706.03762')?.downloadStatus).toBe('failed')
+  })
+
+  it('updates step status atomically only when the expected status matches', () => {
+    const db = createDb()
+    const repos = createRepositories(db)
+    const workflow = repos.workflows.create('调研')
+    const step = repos.steps.create({
+      workflowId: workflow.id,
+      label: '规划',
+      role: 'planner',
+      position: 0,
+      requiresApproval: true,
+    })
+    expect(repos.steps.updateStatusWhere(step.id, 'awaiting_approval', 'approved')).toBeNull()
+    repos.steps.updateStatus(step.id, 'awaiting_approval')
+    expect(
+      repos.steps.updateStatusWhere(step.id, 'awaiting_approval', 'approved')?.status
+    ).toBe('approved')
+    expect(repos.steps.updateStatusWhere(step.id, 'awaiting_approval', 'rejected')).toBeNull()
+  })
 })

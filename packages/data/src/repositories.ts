@@ -32,6 +32,7 @@ export interface StepRepository {
   }): Step
   listByWorkflow(workflowId: string): Step[]
   updateStatus(id: string, status: StepStatus): Step | null
+  updateStatusWhere(id: string, fromStatus: StepStatus, toStatus: StepStatus): Step | null
   setPendingFeedback(id: string, feedback: string | null): Step | null
 }
 
@@ -134,6 +135,10 @@ function mapPaper(row: Record<string, unknown>): Paper {
         ? null
         : Number(row.citation_count),
     fullText: row.full_text ? String(row.full_text) : null,
+    downloadStatus: row.download_status
+      ? (String(row.download_status) as Paper['downloadStatus'])
+      : null,
+    downloadError: row.download_error ? String(row.download_error) : null,
     raw: row.raw ? String(row.raw) : null,
     createdAt: String(row.created_at),
   }
@@ -244,6 +249,16 @@ export function createRepositories(db: Db): Repositories {
           .get(id) as Record<string, unknown> | undefined
         return row ? mapStep(row) : null
       },
+      updateStatusWhere(id: string, fromStatus: StepStatus, toStatus: StepStatus): Step | null {
+        const result = db
+          .prepare('UPDATE steps SET status = ?, updated_at = ? WHERE id = ? AND status = ?')
+          .run(toStatus, now(), id, fromStatus)
+        if (result.changes === 0) return null
+        const row = db
+          .prepare('SELECT * FROM steps WHERE id = ?')
+          .get(id) as Record<string, unknown> | undefined
+        return row ? mapStep(row) : null
+      },
       setPendingFeedback(id: string, feedback: string | null): Step | null {
         db.prepare('UPDATE steps SET pending_feedback = ?, updated_at = ? WHERE id = ?').run(
           feedback,
@@ -298,8 +313,9 @@ export function createRepositories(db: Db): Repositories {
         db.prepare(
           `INSERT INTO papers
            (id, source, external_id, title, abstract, authors, year, doi, url,
-            arxiv_id, citation_count, full_text, raw, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            arxiv_id, citation_count, full_text, download_status, download_error,
+            raw, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(source, external_id) DO UPDATE SET
              title = excluded.title,
              abstract = excluded.abstract,
@@ -310,6 +326,8 @@ export function createRepositories(db: Db): Repositories {
              url = excluded.url,
              citation_count = excluded.citation_count,
              full_text = excluded.full_text,
+             download_status = excluded.download_status,
+             download_error = excluded.download_error,
              raw = excluded.raw`
         ).run(
           id,
@@ -324,6 +342,8 @@ export function createRepositories(db: Db): Repositories {
           input.arxivId,
           input.citationCount,
           input.fullText ?? null,
+          input.downloadStatus ?? null,
+          input.downloadError ?? null,
           input.raw,
           ts
         )

@@ -7,8 +7,24 @@ describe('loadPiConfig', () => {
     const config = loadPiConfig({})
     expect(config.provider).toBe('opencode-go')
     expect(config.defaultModel).toBe('deepseek-v4-flash')
+    expect(config.thinkingLevel).toBe('xhigh')
     expect(config.apiKey).toBeUndefined()
     expect(config.agentDir).toBe(path.resolve(process.cwd(), '.pi', 'agent'))
+  })
+
+  it('reads thinking level defaults and role overrides', () => {
+    const config = loadPiConfig({
+      PI_THINKING_LEVEL: 'high',
+      PI_THINKING_WRITER: 'xhigh',
+    })
+    expect(config.thinkingLevel).toBe('high')
+    expect(config.roleThinkingLevel.writer).toBe('xhigh')
+    expect(config.roleThinkingLevel.planner).toBeUndefined()
+  })
+
+  it('rejects unknown thinking levels', () => {
+    expect(() => loadPiConfig({ PI_THINKING_LEVEL: 'max' })).toThrow(PiConfigError)
+    expect(() => loadPiConfig({ PI_THINKING_PLANNER: 'ultra' })).toThrow(PiConfigError)
   })
 
   it('isolates pi sessions in a dedicated agent dir with override support', () => {

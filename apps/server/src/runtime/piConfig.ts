@@ -3,11 +3,24 @@ import type { Role } from '@research-workbench/shared'
 
 export class PiConfigError extends Error {}
 
+export type ThinkingLevel = 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
+
+const THINKING_LEVELS: readonly ThinkingLevel[] = [
+  'off',
+  'minimal',
+  'low',
+  'medium',
+  'high',
+  'xhigh',
+]
+
 export interface PiConfig {
   apiKey: string | undefined
   provider: string
   defaultModel: string
   roleModel: Partial<Record<Role, string>>
+  thinkingLevel: ThinkingLevel
+  roleThinkingLevel: Partial<Record<Role, ThinkingLevel>>
   agentDir: string
 }
 
@@ -23,6 +36,7 @@ export function loadPiConfig(env: NodeJS.ProcessEnv = process.env): PiConfig {
   const provider = env.PI_PROVIDER ?? 'opencode-go'
   const defaultModel = env.PI_DEFAULT_MODEL ?? 'deepseek-v4-flash'
   const roleModel: Partial<Record<Role, string>> = {}
+  const roleThinkingLevel: Partial<Record<Role, ThinkingLevel>> = {}
   for (const role of ['planner', 'researcher', 'writer', 'reviewer'] as const) {
     const value = env[`PI_MODEL_${role.toUpperCase()}`]
     if (value) {
@@ -33,12 +47,32 @@ export function loadPiConfig(env: NodeJS.ProcessEnv = process.env): PiConfig {
       }
       roleModel[role] = value
     }
+    const thinking = env[`PI_THINKING_${role.toUpperCase()}`]
+    if (thinking) {
+      roleThinkingLevel[role] = parseThinkingLevel(
+        thinking,
+        `PI_THINKING_${role.toUpperCase()}`
+      )
+    }
   }
   return {
     apiKey: env.OPENCODE_GO_API_KEY,
     provider,
     defaultModel,
     roleModel,
+    thinkingLevel: parseThinkingLevel(env.PI_THINKING_LEVEL, 'PI_THINKING_LEVEL'),
+    roleThinkingLevel,
     agentDir: resolvePiAgentDir(env),
   }
+}
+
+function parseThinkingLevel(value: string | undefined, name: string): ThinkingLevel {
+  if (value === undefined) return 'xhigh'
+  const normalized = value.trim().toLowerCase() as ThinkingLevel
+  if (!THINKING_LEVELS.includes(normalized)) {
+    throw new PiConfigError(
+      `${name} 只接受 ${THINKING_LEVELS.join(' / ')}（DeepSeek 最高档为 xhigh → max）`
+    )
+  }
+  return normalized
 }

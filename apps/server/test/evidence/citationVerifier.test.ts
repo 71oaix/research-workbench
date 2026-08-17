@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { verifyCitations } from '../../src/evidence/citationVerifier'
+import { createVerifierDeps, verifyCitations } from '../../src/evidence/citationVerifier'
 import type { CitationVerifierDeps } from '../../src/evidence/citationVerifier'
 import type { EvidencePoolCard } from '../../src/evidence/evidencePool'
+import type { CrossrefClient } from '../../src/search/crossref'
+import type { SemanticScholarClient } from '../../src/search/semanticScholar'
 import type { SearchPaper } from '../../src/search/types'
 
 function card(overrides: Partial<EvidencePoolCard> = {}): EvidencePoolCard {
@@ -21,7 +23,7 @@ function card(overrides: Partial<EvidencePoolCard> = {}): EvidencePoolCard {
 
 function paper(overrides: Partial<SearchPaper> = {}): SearchPaper {
   return {
-    source: 'crossref',
+    source: overrides.source ?? 'crossref',
     externalId: overrides.doi ?? 'x',
     title: overrides.title ?? 'Attention Is All You Need',
     abstract: overrides.abstract ?? null,
@@ -154,5 +156,43 @@ describe('verifyCitations', () => {
 
     expect(report.items[0].status).toBe('verified')
     expect(report.items[0].resolvedVia).toBe('arxiv')
+  })
+
+  it('falls back to Semantic Scholar when Crossref search finds nothing', async () => {
+    const crossref = {
+      search: async () => [],
+      lookup: async () => null,
+    }
+    const semanticScholar = {
+      search: async () => [paper({ source: 'semantic-scholar', doi: '10.1000/s2', title: 'S2 Result' })],
+    }
+    const deps = createVerifierDeps({
+      crossref: crossref as unknown as CrossrefClient,
+      semanticScholar: semanticScholar as unknown as SemanticScholarClient,
+    })
+
+    const resolved = await deps.searchByTitleAuthor('S2 Result', 'Author')
+    expect(resolved?.source).toBe('semantic-scholar')
+  })
+
+  it('caches DOI lookups across calls', async () => {
+    let lookupCalls = 0
+    const crossref = {
+      search: async () => [],
+      lookup: async () => {
+        lookupCalls++
+        return paper()
+      },
+    }
+    const deps = createVerifierDeps({
+      crossref: crossref as unknown as CrossrefClient,
+    })
+
+    const first = await deps.lookupDoi('10.1000/a')
+    const second = await deps.lookupDoi('https://doi.org/10.1000/A')
+
+    expect(first?.doi).toBe('10.1000/a')
+    expect(second?.doi).toBe('10.1000/a')
+    expect(lookupCalls).toBe(1)
   })
 })

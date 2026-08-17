@@ -2,6 +2,7 @@ export interface SearchConfig {
   topN: number
   perQuery: number
   maxGroups: number
+  sourceConcurrency: number
   compensatePerQuery: number
   minCitations: number
   readTop: number
@@ -16,7 +17,8 @@ export function loadSearchConfig(env: NodeJS.ProcessEnv = process.env): SearchCo
   return {
     topN: positiveInt(env.SEARCH_TOP_N, 15),
     perQuery: positiveInt(env.SEARCH_PER_QUERY, 25),
-    maxGroups: positiveInt(env.SEARCH_MAX_GROUPS, 10),
+    maxGroups: positiveInt(env.SEARCH_MAX_GROUPS, 8),
+    sourceConcurrency: positiveInt(env.SEARCH_SOURCE_CONCURRENCY, 3),
     compensatePerQuery: positiveInt(env.SEARCH_COMPENSATE_PER_QUERY, 50),
     minCitations: nonNegativeInt(env.SEARCH_MIN_CITATIONS, 0),
     readTop: positiveInt(env.SEARCH_READ_TOP, 8),
