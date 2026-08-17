@@ -194,17 +194,48 @@ function clusterNearDuplicates(list: MergedPaper[]): MergedPaper[] {
       if (removed.has(j)) continue
       const b = list[j]
       if (b.doi || b.arxivId) continue
-      if (
-        firstAuthorSurname(a.authors) !== '' &&
-        firstAuthorSurname(a.authors) === firstAuthorSurname(b.authors) &&
-        jaccard(a.title, b.title) >= 0.9
-      ) {
+      if (nearDuplicate(a, b)) {
         list[i] = mergePair(a, b)
         removed.add(j)
       }
     }
   }
   return list.filter((_, index) => !removed.has(index))
+}
+
+/**
+ * 近重复判定：标题词元 Jaccard ≥0.75 且（首作者或年份一致）；
+ * 或中文标题 bigram Jaccard ≥0.7 且（首作者或年份一致）——覆盖“同一论文中英文双标题/格式漂移”
+ * 这类真实案例（如 M2-14 中 [6]/[7] 的太极统一场论论文未合并）。
+ */
+function nearDuplicate(a: MergedPaper, b: MergedPaper): boolean {
+  const authorMatch =
+    firstAuthorSurname(a.authors) !== '' &&
+    firstAuthorSurname(a.authors) === firstAuthorSurname(b.authors)
+  const yearMatch = a.year !== null && a.year === b.year
+  if (!authorMatch && !yearMatch) return false
+  if (jaccard(a.title, b.title) >= 0.75) return true
+  if (chineseJaccard(a.title, b.title) >= 0.7) return true
+  return false
+}
+
+function chineseJaccard(titleA: string, titleB: string): number {
+  const bigrams = (title: string): Set<string> => {
+    const chinese = (title.match(/[\u4e00-\u9fff]+/g) ?? []).join('')
+    const set = new Set<string>()
+    for (let i = 0; i < chinese.length - 1; i++) {
+      set.add(chinese.slice(i, i + 2))
+    }
+    return set
+  }
+  const a = bigrams(titleA)
+  const b = bigrams(titleB)
+  if (a.size === 0 || b.size === 0) return 0
+  let intersection = 0
+  for (const token of a) {
+    if (b.has(token)) intersection++
+  }
+  return intersection / (a.size + b.size - intersection)
 }
 
 function firstAuthorSurname(authors: string[]): string {

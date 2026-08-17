@@ -56,6 +56,38 @@ describe('EvidenceStepServiceImpl', () => {
     expect(repos.artifacts.listByWorkflow('wf-1')).toHaveLength(0)
   })
 
+  it('injects a machine-generated evidence status list into the writer prompt', async () => {
+    const repos = createRepositories(createDb())
+    const service = new EvidenceStepServiceImpl(repos, createEventBus())
+    const cards = makeArtifact(
+      'research-cards.md',
+      [
+        '# cards',
+        '',
+        '### [1] Paper A',
+        '- 年份：2025 | 引用数：10 | 来源：arxiv | 全文：已读',
+        '',
+        '### [2] Paper B',
+        '- 年份：2025 | 引用数：5 | 来源：crossref | 全文：下载失败（全部候选下载失败或提取文本不足（候选 1 个））',
+        '',
+        '### [3] Paper C',
+        '- 年份：2024 | 引用数：3 | 来源：openalex | 全文：仅摘要',
+      ].join('\n')
+    )
+
+    const result = await service.prepareWriter({
+      workflowId: 'wf-1',
+      stepId: 'step-1',
+      inputArtifacts: [cards],
+    })
+
+    expect(result.promptExtra).toContain('证据状态（机器生成，必须照抄）')
+    expect(result.promptExtra).toContain('全文已读：[1]')
+    expect(result.promptExtra).toContain('下载失败：[2]（全部候选下载失败')
+    expect(result.promptExtra).toContain('仅摘要：[3]')
+    expect(result.promptExtra).toContain('必须与“证据状态”清单一致')
+  })
+
   it('prepareReviewer creates citation-lint.md and includes the model evaluation report', async () => {
     const db = createDb()
     const repos = createRepositories(db)

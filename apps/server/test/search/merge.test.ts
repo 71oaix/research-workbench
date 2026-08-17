@@ -192,4 +192,26 @@ describe('mergeAndRank', () => {
     expect(papers[0].title).toBe('Normal Paper')
     expect(stats.skippedPapers).toBe(1)
   })
+
+  it('merges the same paper with bilingual title formatting variants', () => {
+    const zhEnA = paper({
+      title:
+        '基于太极统一场论的仿人脑通用人工智能理论与工程实现研究 (完善版)Taiji Unified Field Theory Based Humanoid General Artificial Intelligence: Theoretical Framework and Engineering Implementation',
+      source: 'openalex',
+      authors: ['Zhang San'],
+      year: 2025,
+      abstract: 'abstract a',
+    })
+    const zhEnB = paper({
+      title:
+        '中文标题: 基于太极统一场论的仿人脑通用人工智能理论与工程实现研究 英文标题: Research on the Theory and Engineering Implementation of Humanoid General Artificial Intelligence Based on Taiji Unified Field Theory',
+      source: 'semantic-scholar',
+      authors: ['Zhang San'],
+      year: 2025,
+      abstract: 'abstract b',
+    })
+    const { papers } = mergeAndRank([zhEnA, zhEnB], 15)
+    expect(papers).toHaveLength(1)
+    expect(papers[0].sources).toEqual(['openalex', 'semantic-scholar'])
+  })
 })

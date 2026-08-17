@@ -153,6 +153,7 @@ function buildEvaluatorSection(cardsMd: string, draftMd: string, referencesMd: s
 
 function buildWriterSection(cardsMd: string, fullTextExcerpts: string | null): string {
   const sections = ['## 证据池（仅以此为事实来源）', cardsMd]
+  sections.push(buildEvidenceStatus(cardsMd))
   if (fullTextExcerpts) {
     sections.push('## 论文全文摘录（仅前 3 篇，其余论文只用摘要）', fullTextExcerpts)
   }
@@ -164,9 +165,50 @@ function buildWriterSection(cardsMd: string, fullTextExcerpts: string | null): s
     '3. 动词与证据强度匹配：只写“报告/表明/与…一致”，不要写成“证明/首次/前所未有”；',
     '4. 只有摘录区内提供全文摘录的论文可引用其细节；未提供摘录的论文只能引其摘要可支撑的结论；',
     '5. 文末附“参考文献”与“claim-evidence map”，每条格式为 Claim | Evidence | Status；',
-    '6. 只使用证据池中的论文，不得编造引用。'
+    '6. 只使用证据池中的论文，不得编造引用；',
+    '7. 引言/小结中关于“哪些论文读了全文、哪些仅用摘要/下载失败”的声明必须与“证据状态”清单一致（照抄编号），不得自行改写。'
   )
   return sections.join('\n\n')
+}
+
+/**
+ * 从证据卡片生成机器可核对的“证据状态”清单，强制 writer 的全文/摘要声明与上游一致，
+ * 消除“卡片标全文已读、草稿却写仅摘要”之类的一致性矛盾。
+ */
+export function buildEvidenceStatus(cardsMd: string): string {
+  const blocks = cardsMd.split(/^###\s*\[(\d+)\]\s+/gm)
+  const groups: Record<string, string[]> = {
+    '全文已读': [],
+    '下载失败': [],
+    '无开放获取': [],
+    '仅摘要': [],
+  }
+  for (let i = 1; i < blocks.length; i += 2) {
+    const id = blocks[i]
+    const body = blocks[i + 1] ?? ''
+    const meta = body.split('\n').find((line) => line.includes('全文：'))
+    if (!meta) continue
+    if (meta.includes('全文：已读')) {
+      groups['全文已读'].push(`[${id}]`)
+    } else if (meta.includes('全文：下载失败')) {
+      const reason = meta.match(/下载失败（([^）]*)）/)?.[1]
+      groups['下载失败'].push(reason ? `[${id}]（${reason}）` : `[${id}]`)
+    } else if (meta.includes('全文：无开放获取')) {
+      groups['无开放获取'].push(`[${id}]`)
+    } else {
+      groups['仅摘要'].push(`[${id}]`)
+    }
+  }
+  const lines = ['## 证据状态（机器生成，必须照抄）', '']
+  let any = false
+  for (const [label, ids] of Object.entries(groups)) {
+    if (ids.length > 0) {
+      lines.push(`- ${label}：${ids.join('、')}`)
+      any = true
+    }
+  }
+  if (!any) lines.push('- （卡片未标注下载状态）')
+  return lines.join('\n')
 }
 
 /**
