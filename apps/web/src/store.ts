@@ -13,7 +13,7 @@ interface WorkflowState {
   wsStatus: WsStatus
   error: string | null
   refreshList: () => Promise<void>
-  createWorkflow: (goal: string) => Promise<void>
+  createWorkflow: (goal: string, includeWriter?: boolean) => Promise<void>
   selectWorkflow: (id: string) => Promise<void>
   startWorkflow: () => Promise<void>
   decide: (
@@ -47,11 +47,11 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     }
   },
 
-  async createWorkflow(goal) {
+  async createWorkflow(goal, includeWriter = true) {
     const trimmed = goal.trim()
     if (!trimmed) return
     try {
-      const detail = await api.createWorkflow(trimmed)
+      const detail = await api.createWorkflow(trimmed, includeWriter)
       const workflows = await api.listWorkflows()
       set({ workflows, selectedId: detail.workflow.id, detail, error: null })
     } catch (e) {

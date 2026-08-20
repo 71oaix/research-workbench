@@ -37,7 +37,7 @@ function makePlanArtifact(version: number, content: string): Artifact {
 }
 
 describe('PiStepRunner researcher branch', () => {
-  it('runs the researcher step service and feeds cards into the model prompt', async () => {
+  it('runs the researcher step service and feeds candidates into the model prompt', async () => {
     const handle = {
       id: 'h1',
       send: vi.fn().mockResolvedValue('# 检索结果'),
@@ -48,7 +48,7 @@ describe('PiStepRunner researcher branch', () => {
       takeUsage: vi.fn().mockReturnValue(null),
     } as unknown as PiRuntimeProvider
     const researcher = {
-      prepare: vi.fn().mockResolvedValue({ cardsMd: '# 检索证据卡片\n### [1] Paper' }),
+      prepare: vi.fn().mockResolvedValue({ candidatesMd: '# 检索候选池\n### [1] Paper' }),
     } as unknown as ResearcherStepService
 
     const runner = new PiStepRunner(provider, undefined, researcher)
@@ -69,7 +69,7 @@ describe('PiStepRunner researcher branch', () => {
       compensate: false,
     })
     expect(handle.send).toHaveBeenCalledWith(
-      expect.stringContaining('检索证据卡片（仅以此为事实来源）')
+      expect.stringContaining('检索候选池（仅以此为事实来源，未筛选）')
     )
     expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('### [1] Paper'))
     expect(result.artifactName).toBe('02-research.md')
@@ -105,7 +105,7 @@ describe('PiStepRunner researcher branch', () => {
       takeUsage: vi.fn().mockReturnValue(null),
     } as unknown as PiRuntimeProvider
     const researcher = {
-      prepare: vi.fn().mockResolvedValue({ cardsMd: '# cards' }),
+      prepare: vi.fn().mockResolvedValue({ candidatesMd: '# candidates' }),
     } as unknown as ResearcherStepService
     const runner = new PiStepRunner(provider, undefined, researcher)
 

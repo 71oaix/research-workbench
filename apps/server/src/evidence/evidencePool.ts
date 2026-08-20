@@ -12,6 +12,8 @@ export interface EvidencePoolCard {
   year: number | null
   abstract: string
   versions: number[]
+  downloadStatus?: 'ok' | 'no_oa' | 'failed' | null
+  downloadError?: string | null
 }
 
 export function buildEvidencePool(artifacts: Artifact[]): {
@@ -37,6 +39,10 @@ export function buildEvidencePool(artifacts: Artifact[]): {
         if (!existing.doi && block.doi) existing.doi = block.doi
         if (!existing.arxivId && block.arxivId) existing.arxivId = block.arxivId
         if (!existing.url && block.url) existing.url = block.url
+        if (!existing.downloadStatus && block.downloadStatus) {
+          existing.downloadStatus = block.downloadStatus
+          existing.downloadError = block.downloadError ?? null
+        }
       }
     }
   }
@@ -55,6 +61,14 @@ export function buildEvidencePool(artifacts: Artifact[]): {
     if (card.doi) meta.push(`DOI：${card.doi}`)
     if (card.arxivId) meta.push(`arXiv：${card.arxivId}`)
     if (card.url) meta.push(`链接：${card.url}`)
+    if (card.downloadStatus === 'ok') meta.push('全文：已读')
+    else if (card.downloadStatus === 'failed') {
+      meta.push(`全文：下载失败（${card.downloadError ?? '未知原因'}）`)
+    } else if (card.downloadStatus === 'no_oa') {
+      meta.push('全文：无开放获取')
+    } else {
+      meta.push('全文：仅摘要')
+    }
     lines.push(`### [${index + 1}] ${card.title}`, `- ${meta.join(' | ')}`, `- 作者：${card.authors || '未知'}`)
     if (card.abstract) lines.push(`- 摘要：${card.abstract.slice(0, 300)}`)
     lines.push('')
@@ -83,6 +97,17 @@ function splitCards(content: string): EvidencePoolCard[] {
     const authors = match(body, /作者[：:]\s*(.+)/) ?? ''
     const yearMatch = match(body, /年份[：:]\s*(\d{4})/)
     const abstract = match(body, /摘要[：:]\s*(.+)/) ?? ''
+    const statusLine = body.split('\n').find((line) => line.includes('全文：'))
+    let downloadStatus: EvidencePoolCard['downloadStatus'] = null
+    let downloadError: string | null = null
+    if (statusLine?.includes('全文：已读')) {
+      downloadStatus = 'ok'
+    } else if (statusLine?.includes('全文：下载失败')) {
+      downloadStatus = 'failed'
+      downloadError = statusLine.match(/下载失败（([^）]*)）/)?.[1] ?? null
+    } else if (statusLine?.includes('全文：无开放获取')) {
+      downloadStatus = 'no_oa'
+    }
     cards.push({
       key: dedupKey({ doi: doi ?? null, arxiv: arxiv ?? null, title }),
       title,
@@ -94,6 +119,8 @@ function splitCards(content: string): EvidencePoolCard[] {
       year: yearMatch !== null ? Number(yearMatch) : null,
       abstract,
       versions: [],
+      downloadStatus,
+      downloadError,
     })
   }
   return cards

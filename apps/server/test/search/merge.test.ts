@@ -42,7 +42,7 @@ describe('mergeAndRank', () => {
 
     const { papers, stats } = mergeAndRank([fromS2, fromOpenAlex], 15)
     expect(papers).toHaveLength(1)
-    expect(stats).toEqual({ totalHits: 2, uniquePapers: 1 })
+    expect(stats).toEqual({ totalHits: 2, uniquePapers: 1, skippedPapers: 0 })
     expect(papers[0].citationCount).toBe(100)
     expect(papers[0].abstract).toBe('this is a much longer abstract')
     expect(papers[0].authors).toEqual(['Alice', 'Bob'])
@@ -60,8 +60,18 @@ describe('mergeAndRank', () => {
   })
 
   it('merges by normalized title when no identifiers exist', () => {
-    const a = paper({ title: 'Attention Is All You Need!', source: 'semantic-scholar' })
-    const b = paper({ title: 'attention is all you need', source: 'openalex' })
+    const a = paper({
+      title: 'Attention Is All You Need!',
+      source: 'semantic-scholar',
+      authors: ['Alice'],
+      abstract: 'abstract a',
+    })
+    const b = paper({
+      title: 'attention is all you need',
+      source: 'openalex',
+      authors: ['Bob'],
+      abstract: 'abstract b',
+    })
     const { papers } = mergeAndRank([a, b], 15)
     expect(papers).toHaveLength(1)
   })
@@ -128,14 +138,109 @@ describe('mergeAndRank', () => {
       title: 'An updated guideline for reporting systematic reviews',
       authors: ['Matthew Page'],
       source: 'crossref',
+      abstract: 'guideline abstract',
     })
     const versionB = paper({
       title: 'Updated guideline for reporting systematic reviews',
       authors: ['M. Page'],
       source: 'openalex',
+      abstract: 'guideline abstract',
     })
     const { papers } = mergeAndRank([versionA, versionB], 15)
     expect(papers).toHaveLength(1)
     expect(papers[0].authors).toEqual(['Matthew Page', 'M. Page'])
+  })
+
+  it('filters broken metadata papers and reports skipped count', () => {
+    const broken = paper({
+      title: 'Multi-agent UAV anti-jamming',
+      source: 'semantic-scholar',
+      authors: [
+        '吴志娟',
+        '未知的动态环境和日趋复杂的作战任务需求促使无人机系统向着集群化自主化和智能化方向发展的一个非常长的异常作者字段内容用于触发元数据过滤',
+      ],
+    })
+    const ok = paper({
+      title: 'Normal Paper',
+      source: 'semantic-scholar',
+      authors: ['Alice'],
+      year: 2024,
+    })
+    const { papers, stats } = mergeAndRank([broken, ok], 15)
+    expect(papers).toHaveLength(1)
+    expect(papers[0].title).toBe('Normal Paper')
+    expect(stats.skippedPapers).toBe(1)
+  })
+
+  it('filters papers without year, abstract and identifiers even with authors', () => {
+    const unverifiable = paper({
+      title: 'Multi-Agent Systems Meet LLM: Future Directions',
+      source: 'semantic-scholar',
+      authors: ['Qimeng Li'],
+      url: 'https://x',
+      citationCount: 3,
+    })
+    const ok = paper({
+      title: 'Normal Paper',
+      source: 'semantic-scholar',
+      authors: ['Alice'],
+      year: 2024,
+      abstract: 'abstract',
+    })
+    const { papers, stats } = mergeAndRank([unverifiable, ok], 15)
+    expect(papers).toHaveLength(1)
+    expect(papers[0].title).toBe('Normal Paper')
+    expect(stats.skippedPapers).toBe(1)
+  })
+
+  it('merges the same paper with bilingual title formatting variants', () => {
+    const zhEnA = paper({
+      title:
+        '基于太极统一场论的仿人脑通用人工智能理论与工程实现研究 (完善版)Taiji Unified Field Theory Based Humanoid General Artificial Intelligence: Theoretical Framework and Engineering Implementation',
+      source: 'openalex',
+      authors: ['Zhang San'],
+      year: 2025,
+      abstract: 'abstract a',
+    })
+    const zhEnB = paper({
+      title:
+        '中文标题: 基于太极统一场论的仿人脑通用人工智能理论与工程实现研究 英文标题: Research on the Theory and Engineering Implementation of Humanoid General Artificial Intelligence Based on Taiji Unified Field Theory',
+      source: 'semantic-scholar',
+      authors: ['Zhang San'],
+      year: 2025,
+      abstract: 'abstract b',
+    })
+    const { papers } = mergeAndRank([zhEnA, zhEnB], 15)
+    expect(papers).toHaveLength(1)
+    expect(papers[0].sources).toEqual(['openalex', 'semantic-scholar'])
+  })
+
+  it('ranks relevanceLevel before citations (selector 分级优先)', () => {
+    const partialHighCitation = paper({
+      title: 'Partial but cited 1000x',
+      citationCount: 1000,
+      year: 2024,
+      relevanceLevel: 'partial',
+      source: 'openalex',
+    })
+    const highLowCitation = paper({
+      title: 'High relevance low citation',
+      citationCount: 3,
+      year: 2025,
+      relevanceLevel: 'high',
+      source: 'openalex',
+    })
+    const noLevel = paper({
+      title: 'No level',
+      citationCount: 500,
+      year: 2023,
+      source: 'openalex',
+    })
+    const { papers } = mergeAndRank([partialHighCitation, noLevel, highLowCitation], 10)
+    expect(papers.map((p) => p.title)).toEqual([
+      'High relevance low citation',
+      'Partial but cited 1000x',
+      'No level',
+    ])
   })
 })

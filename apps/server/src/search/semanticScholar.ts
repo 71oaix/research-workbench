@@ -1,7 +1,7 @@
 import { fetchJson } from './http'
 import { normalizeArxiv, normalizeDoi } from './merge'
 import { RateLimiter } from './rateLimiter'
-import type { AcademicSearchClient, SearchPaper } from './types'
+import type { AcademicSearchClient, SearchFilters, SearchPaper } from './types'
 
 const S2_FIELDS =
   'title,abstract,year,authors,venue,externalIds,citationCount,openAccessPdf,url'
@@ -23,12 +23,14 @@ export class SemanticScholarClient implements AcademicSearchClient {
     this.rateLimiter = options.rateLimiter ?? new RateLimiter(1000)
   }
 
-  async search(query: string, limit: number): Promise<SearchPaper[]> {
+  async search(query: string, limit: number, filters?: SearchFilters): Promise<SearchPaper[]> {
     const base = this.options.baseUrl ?? 'https://api.semanticscholar.org/graph/v1'
     const url = new URL(`${base}/paper/search`)
     url.searchParams.set('query', query)
     url.searchParams.set('limit', String(Math.min(Math.max(1, Math.floor(limit)), 100)))
     url.searchParams.set('fields', S2_FIELDS)
+    const s2Year = buildS2YearFilter(filters)
+    if (s2Year) url.searchParams.set('year', s2Year)
 
     const headers: Record<string, string> = {}
     if (this.options.apiKey) {
@@ -53,6 +55,13 @@ export class SemanticScholarClient implements AcademicSearchClient {
       .map((raw, index) => normalizeS2Paper(raw, index))
       .filter((paper) => paper.title.length > 0)
   }
+}
+
+function buildS2YearFilter(filters?: SearchFilters): string | null {
+  if (!filters?.yearFrom && !filters?.yearTo) return null
+  if (filters.yearFrom && filters.yearTo) return `${filters.yearFrom}-${filters.yearTo}`
+  if (filters.yearFrom) return `${filters.yearFrom}:`
+  return `:${filters.yearTo}`
 }
 
 function normalizeS2Paper(raw: unknown, index: number): SearchPaper {

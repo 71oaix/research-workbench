@@ -16,7 +16,8 @@ describe('source registry', () => {
     const specs = buildSourceRegistry(loadSearchConfig({}))
     expect(detectDomain('研究 LLM agent 的记忆机制')).toBe('cs')
     const csSources = selectForDomain(specs, 'cs').map((spec) => spec.source)
-    expect(csSources).toContain('arxiv')
-    expect(csSources).toContain('semantic-scholar')
+    expect(csSources).toEqual(
+      expect.arrayContaining(['arxiv', 'openalex', 'crossref', 'semantic-scholar'])
+    )
   })
 })

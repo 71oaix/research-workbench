@@ -18,10 +18,19 @@ import { ArxivClient } from './search/arxiv'
 import { loadSearchConfig } from './search/config'
 import { CrossrefClient } from './search/crossref'
 import { ResearcherStepServiceImpl } from './search/researcherStep'
+import { SelectorStepServiceImpl } from './search/SelectorStepService'
 import { buildSourceRegistry } from './search/sources'
 import { attachWebSocket } from './ws'
 
-const ROLES: Role[] = ['planner', 'researcher', 'writer', 'reviewer']
+const ROLES: Role[] = [
+  'planner',
+  'researcher',
+  'selector',
+  'writer',
+  'evaluator',
+  'reviewer',
+  'summarizer',
+]
 
 export interface AppBundle {
   app: Hono
@@ -136,6 +145,7 @@ function createDefaultStepRunner(
   const searchConfig = loadSearchConfig()
   const searchService = new AcademicSearchService(buildSourceRegistry(searchConfig), searchConfig)
   const researcher = new ResearcherStepServiceImpl(searchService, repos, bus, searchConfig)
+  const selector = new SelectorStepServiceImpl(searchService, repos, bus, searchConfig)
   const crossref = new CrossrefClient({
     mailto: searchConfig.crossrefMailto,
     timeoutMs: searchConfig.timeoutMs,
@@ -153,7 +163,8 @@ function createDefaultStepRunner(
       bus.emit({ type: 'usage.recorded', usage: record })
     },
     researcher,
-    evidence
+    evidence,
+    selector
   )
 }
 

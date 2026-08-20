@@ -16,7 +16,22 @@ const ARTIFACT_META: Record<string, ArtifactMeta> = {
   'research-cards.md': {
     group: '检索证据',
     label: '证据卡片',
-    description: '确定性检索管道产物：论文卡片、检索概览与失败源。',
+    description: 'Selector 筛选后的论文卡片：相关度分级、筛选理由、检索概览与失败源。',
+  },
+  'research-candidates.md': {
+    group: '检索证据',
+    label: '候选池',
+    description: 'Researcher 产出的检索候选池（标题+摘要，未筛选，供 Selector 判定）。',
+  },
+  'research-candidates.json': {
+    group: '检索证据',
+    label: '候选数据',
+    description: '候选池结构化数据（内部交接用，保留 OA 信息供下载与引文雪球）。',
+  },
+  'selector-report.md': {
+    group: '检索证据',
+    label: '筛选报告',
+    description: 'Selector 判定记录：入选/剔除、相关度分级、理由、二次检索与引文雪球统计。',
   },
   '02-research.md': {
     group: '检索证据',
@@ -53,9 +68,19 @@ const ARTIFACT_META: Record<string, ArtifactMeta> = {
     label: '审查意见',
     description: 'Reviewer 的可信引用清单、存疑引用与 Concern Ledger。',
   },
+  '05-summary.md': {
+    group: '调研结果',
+    label: '调研摘要',
+    description: 'Summarizer 归纳：主题分组 + 相关度分级 + 引用清单（最终交付物）。',
+  },
+  'references.bib': {
+    group: '调研结果',
+    label: '引用清单',
+    description: 'BibTeX 引用清单（仅含必填字段，缺失字段不编造）。',
+  },
 }
 
-const GROUP_ORDER = ['规划', '检索证据', '全文', '引用核验', '评估', '草稿', '审查']
+const GROUP_ORDER = ['规划', '检索证据', '全文', '引用核验', '评估', '草稿', '审查', '调研结果']
 
 interface GroupedArtifact {
   name: string

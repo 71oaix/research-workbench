@@ -139,6 +139,29 @@ describe('OpenAlexClient', () => {
     await expect(client.search('query', 5)).resolves.toEqual([])
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
+
+  it('applies year range filters to the works search URL', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ results: [] }))
+    vi.stubGlobal('fetch', fetchMock)
+    const client = new OpenAlexClient({ retryDelayMs: () => 0 })
+    await client.search('memory agent', 10, { yearFrom: 2020, yearTo: 2025 })
+    const [url] = fetchMock.mock.calls[0] as [string]
+    expect(url).toContain('filter=from_publication_date%3A2020-01-01%2Cto_publication_date%3A2025-12-31')
+  })
+
+  it('citedBy uses filter=cites:W{id} and worksByIds uses openalex filter', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ results: [] }))
+    vi.stubGlobal('fetch', fetchMock)
+    const client = new OpenAlexClient({ retryDelayMs: () => 0 })
+    await client.citedBy('W123', 10)
+    expect(decodeURIComponent(String(fetchMock.mock.calls[0][0]))).toContain(
+      'filter=cites:W123'
+    )
+    await client.worksByIds(['W123', 'W456'])
+    expect(decodeURIComponent(String(fetchMock.mock.calls[1][0]))).toContain(
+      'filter=openalex:W123|W456'
+    )
+  })
 })
 
 describe('ArxivClient', () => {
@@ -170,6 +193,48 @@ describe('ArxivClient', () => {
       year: 2017,
       authors: ['Ashish Vaswani'],
       doi: '10.48550/arxiv.1706.03762',
+    })
+  })
+
+  it('lookupMany batches ids via id_list and returns a map', async () => {
+    const fetchMock = vi.fn().mockImplementation(async (url: string) => {
+      const ids = new URL(url).searchParams.get('id_list')?.split(',') ?? []
+      const entries = ids
+        .map(
+          (id) =>
+            [
+              '<entry>',
+              `<id>http://arxiv.org/abs/${id}</id>`,
+              `<title>Paper ${id}</title>`,
+              `<summary>summary ${id}</summary>`,
+              '<published>2024-01-01T00:00:00Z</published>',
+              '<author><name>Alice</name></author>',
+              '</entry>',
+            ].join('')
+        )
+        .join('')
+      return {
+        ok: true,
+        text: async () => `<feed>${entries}</feed>`,
+      } as unknown as Response
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const client = new ArxivClient({ rateLimiter: new RateLimiter(0) })
+
+    const ids = Array.from({ length: 11 }, (_, index) => `2401.0000${index}`)
+    const map = await client.lookupMany(ids)
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    const [firstUrl] = fetchMock.mock.calls[0] as [string]
+    expect(decodeURIComponent(firstUrl)).toContain('id_list=')
+    expect(decodeURIComponent(firstUrl)).toContain('2401.00000,2401.00001')
+    expect(map.get('2401.00000')).toMatchObject({
+      arxivId: '2401.00000',
+      title: 'Paper 2401.00000',
+    })
+    expect(map.get('2401.000010')).toMatchObject({
+      arxivId: '2401.000010',
+      title: 'Paper 2401.000010',
     })
   })
 })

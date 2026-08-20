@@ -66,6 +66,19 @@ export interface DecisionRepository {
 export interface UsageRepository {
   record(input: Omit<UsageRecord, 'id' | 'createdAt'>): UsageRecord
   listByWorkflow(workflowId: string): UsageRecord[]
+  summaryByWorkflow(workflowId: string): UsageSummary[]
+}
+
+export interface UsageSummary {
+  workflowId: string
+  stepId: string | null
+  role: Role | null
+  calls: number
+  inputTokens: number
+  outputTokens: number
+  cacheReadTokens: number
+  cacheWriteTokens: number
+  costCny: number
 }
 
 export interface Repositories {
@@ -422,6 +435,34 @@ export function createRepositories(db: Db): Repositories {
           .prepare('SELECT * FROM usage_records WHERE workflow_id = ? ORDER BY created_at')
           .all(workflowId) as Record<string, unknown>[]
         return rows.map(mapUsage)
+      },
+      summaryByWorkflow(workflowId: string): UsageSummary[] {
+        const rows = db
+          .prepare(
+            `SELECT workflow_id, step_id, role,
+              COUNT(*) AS calls,
+              SUM(input_tokens) AS input_tokens,
+              SUM(output_tokens) AS output_tokens,
+              SUM(cache_read_tokens) AS cache_read_tokens,
+              SUM(cache_write_tokens) AS cache_write_tokens,
+              SUM(cost_cny) AS cost_cny
+             FROM usage_records
+             WHERE workflow_id = ?
+             GROUP BY workflow_id, step_id, role
+             ORDER BY MIN(created_at)`
+          )
+          .all(workflowId) as Record<string, unknown>[]
+        return rows.map((row) => ({
+          workflowId: String(row.workflow_id),
+          stepId: row.step_id ? String(row.step_id) : null,
+          role: row.role ? (row.role as Role) : null,
+          calls: Number(row.calls ?? 0),
+          inputTokens: Number(row.input_tokens ?? 0),
+          outputTokens: Number(row.output_tokens ?? 0),
+          cacheReadTokens: Number(row.cache_read_tokens ?? 0),
+          cacheWriteTokens: Number(row.cache_write_tokens ?? 0),
+          costCny: Number(row.cost_cny ?? 0),
+        }))
       },
     },
   }

@@ -24,6 +24,10 @@ export default function App() {
     detail?.steps.find((step) => step.status === 'awaiting_approval') ?? null
   const reviewArtifact =
     detail?.artifacts.find((artifact) => artifact.name === '04-review.md') ?? null
+  const planArtifact =
+    detail?.artifacts
+      .filter((artifact) => artifact.name === '01-plan.md')
+      .sort((a, b) => b.version - a.version)[0] ?? null
   const canStart = detail !== null && detail.workflow.status === 'planning'
 
   return (
@@ -52,6 +56,7 @@ export default function App() {
                   step={awaitingStep}
                   decisions={detail.decisions}
                   reviewContent={reviewArtifact?.content ?? null}
+                  planContent={planArtifact?.content ?? null}
                   onDecide={(type, note) =>
                     void decide(awaitingStep.workflowId, awaitingStep.id, type, note)
                   }

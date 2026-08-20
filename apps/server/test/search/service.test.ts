@@ -149,4 +149,65 @@ describe('AcademicSearchService', () => {
     expect(maxActive).toBeGreaterThan(1)
     expect(maxActive).toBeLessThanOrEqual(2)
   })
+
+  it('trips the circuit after repeated source failures and reports source-level stats', async () => {
+    let searchCalls = 0
+    const client: AcademicSearchClient = {
+      source: 'mock',
+      async search() {
+        searchCalls++
+        throw new Error('http 429')
+      },
+    }
+    const spec: SourceSpec = {
+      source: 'mock',
+      tier: 'T2',
+      domains: ['cs', 'cross-disciplinary', 'exhaustive', 'medical'] as Domain[],
+      create: () => client,
+    }
+    const config = loadSearchConfig({ SEARCH_SOURCE_CONCURRENCY: '1' })
+    const service = new AcademicSearchService([spec], config)
+    const plan = [
+      '## 检索关键词',
+      '- g1',
+      '- g2',
+      '- g3',
+      '- g4',
+      '- g5',
+      '- g6',
+      '- g7',
+      '- g8',
+    ].join('\n')
+
+    await expect(service.search(plan)).rejects.toThrow(/熔断/)
+    expect(searchCalls).toBe(3)
+  })
+
+  it('trims long arxiv queries and skips pure-chinese queries', async () => {
+    const record = { queries: [] as string[] }
+    const client: AcademicSearchClient = {
+      source: 'arxiv',
+      async search(query) {
+        record.queries.push(query)
+        return [makePaper('arxiv', `Found ${query}`, 1)]
+      },
+    }
+    const spec: SourceSpec = {
+      source: 'arxiv',
+      tier: 'T1',
+      domains: ['cs', 'cross-disciplinary', 'exhaustive', 'medical'] as Domain[],
+      create: () => client,
+    }
+    const service = new AcademicSearchService([spec], loadSearchConfig({}))
+    const plan = [
+      '## 检索关键词',
+      '- episodic semantic memory LLM agent',
+      '- 多智能体 记忆架构',
+    ].join('\n')
+
+    await service.search(plan)
+
+    expect(record.queries).toContain('episodic semantic memory')
+    expect(record.queries.some((query) => /[\u4e00-\u9fff]/.test(query))).toBe(false)
+  })
 })

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  buildEvaluationReport,
+  buildEvaluationInputs,
   extractThemeTokens,
 } from '../../src/evidence/evaluation'
 import type { EvidencePoolCard } from '../../src/evidence/evidencePool'
@@ -22,7 +22,9 @@ function card(title: string, abstract = ''): EvidencePoolCard {
 
 const planMd = [
   '## 锚定点',
-  '大语言模型 / 多智能体 / 记忆架构',
+  '### 核心概念',
+  '- 多智能体记忆架构',
+  '- 记忆检索与遗忘机制',
   '## 检索关键词',
   'large language model / 大语言模型',
   'multi-agent / 多智能体',
@@ -44,87 +46,35 @@ describe('extractThemeTokens', () => {
   })
 })
 
-describe('buildEvaluationReport', () => {
-  it('passes the topic gate and reports outline coverage', () => {
-    const report = buildEvaluationReport({
+describe('buildEvaluationInputs', () => {
+  it('builds reference data without emitting verdicts', () => {
+    const ref = buildEvaluationInputs({
       planMd,
-      draftMd: '# 综述\n## 引言\n## 大语言模型智能体\n内容 [1]',
-      cardsMd: '# cards\n- 失败源：无\n### [1] A',
-      rawCardsMd: '- 失败源：无',
-      cards: [
-        card('大语言模型多智能体记忆架构研究', 'multi-agent memory architecture'),
-        card('另一篇无关论文', 'unrelated topic'),
-      ],
+      draftMd: 'draft with [1] and [2] and [1]',
+      cardsMd: '# 证据池\n### [1] A',
+      rawCardsMd: '- 失败源：Semantic Scholar、OpenAlex',
+      cards: [card('A')],
     })
-    expect(report.summary.assessable).toBe(true)
-    expect(report.summary.topicGatePassed).toBe(true)
-    expect(report.summary.outlineCoverage).toEqual({ covered: 2, total: 4 })
-    expect(report.summary.failedSources).toEqual([])
-    expect(report.md).toContain('主题匹配：通过')
+    expect(ref.coreConcepts).toContain('多智能体记忆架构')
+    expect(ref.planOutline).toHaveLength(4)
+    expect(ref.draftCitationCount).toBe(3)
+    expect(ref.draftUniqueRefs).toBe(2)
+    expect(ref.failedSourceCount).toBe(2)
+    expect(ref.failedSourceSample.length).toBeLessThanOrEqual(5)
+    expect(ref.md).toContain('规则统计参考')
+    expect(ref.md).not.toContain('通过（')
   })
 
-  it('fails the topic gate when no card hits the theme', () => {
-    const report = buildEvaluationReport({
-      planMd,
-      draftMd: '',
-      cardsMd: '',
-      rawCardsMd: '',
-      cards: [card('completely unrelated paper', 'nothing in common')],
-    })
-    expect(report.summary.topicGatePassed).toBe(false)
-    expect(report.md).toContain('未通过')
-  })
-
-  it('reports unassessable when the plan has no theme', () => {
-    const report = buildEvaluationReport({
+  it('handles plans without outline or concepts gracefully', () => {
+    const ref = buildEvaluationInputs({
       planMd: '# 计划\n没有关键词小节',
       draftMd: '',
       cardsMd: '',
       rawCardsMd: '',
       cards: [card('x')],
     })
-    expect(report.summary.assessable).toBe(false)
-    expect(report.summary.topicGatePassed).toBe(null)
-    expect(report.md).toContain('无法评估')
-  })
-
-  it('parses failed sources from raw research cards', () => {
-    const report = buildEvaluationReport({
-      planMd,
-      draftMd: '',
-      cardsMd: '# 证据池（合并去重）',
-      rawCardsMd: '- 失败源：Semantic Scholar、OpenAlex',
-      cards: [card('大语言模型')],
-    })
-    expect(report.summary.failedSources).toEqual(['Semantic Scholar', 'OpenAlex'])
-    expect(report.md).toContain('Semantic Scholar、OpenAlex')
-  })
-
-  it('covers rewritten draft headings via token Jaccard overlap', () => {
-    const report = buildEvaluationReport({
-      planMd,
-      draftMd: '# 综述\n## 引言与背景\n## 大语言模型驱动的智能体综述\n## 结论',
-      cardsMd: '# cards\n- 失败源：无',
-      rawCardsMd: '- 失败源：无',
-      cards: [card('大语言模型多智能体记忆架构研究', 'multi-agent memory architecture')],
-    })
-    // 规划大纲：引言 / 大语言模型智能体 / 记忆架构方法 / 总结
-    expect(report.summary.outlineCoverage.covered).toBeGreaterThanOrEqual(2)
-  })
-
-  it('reports relevance median alongside the average', () => {
-    const report = buildEvaluationReport({
-      planMd,
-      draftMd: '',
-      cardsMd: '',
-      rawCardsMd: '',
-      cards: [
-        card('大语言模型多智能体记忆架构研究', 'memory architecture'),
-        card('完全无关主题', 'nothing in common'),
-      ],
-    })
-    expect(report.summary.relevanceMedian).toBeGreaterThanOrEqual(0)
-    expect(report.summary.relevanceMedian).toBeLessThanOrEqual(1)
-    expect(report.md).toContain('相关度中位数')
+    expect(ref.coreConcepts).toEqual([])
+    expect(ref.planOutline).toEqual([])
+    expect(ref.failedSourceCount).toBe(0)
   })
 })

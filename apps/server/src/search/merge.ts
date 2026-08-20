@@ -3,15 +3,18 @@ import type { MergedPaper, SearchPaper } from './types'
 export interface MergeStats {
   totalHits: number
   uniquePapers: number
+  skippedPapers: number
 }
 
 export function mergeAndRank(
   papers: SearchPaper[],
-  topN: number
+  topN: number,
+  options: { themeTokens?: Set<string>; relevanceWeight?: number } = {}
 ): { papers: MergedPaper[]; stats: MergeStats } {
+  const filtered = filterBrokenPapers(papers)
   const merged: MergedPaper[] = []
   const index = new Map<string, MergedPaper>()
-  for (const paper of papers) {
+  for (const paper of filtered.papers) {
     const keys = dedupKeys(paper)
     const existing = keys.map((key) => index.get(key)).find(Boolean)
     if (!existing) {
@@ -26,11 +29,69 @@ export function mergeAndRank(
   }
 
   const clustered = clusterNearDuplicates(merged)
-  const ranked = [...clustered].sort(compare).slice(0, topN)
+  const ranked = [...clustered]
+    .sort((a, b) => compareWithRelevance(a, b, options))
+    .slice(0, topN)
   return {
     papers: ranked,
-    stats: { totalHits: papers.length, uniquePapers: clustered.length },
+    stats: {
+      totalHits: papers.length,
+      uniquePapers: clustered.length,
+      skippedPapers: filtered.skipped,
+    },
   }
+}
+
+/**
+ * 剔除元数据损坏且无法定位权威记录的论文（无年份 && 无 DOI && 无 arXiv），
+ * 避免其稀释相关度并误导 writer。
+ */
+function filterBrokenPapers(papers: SearchPaper[]): { papers: SearchPaper[]; skipped: number } {
+  const kept: SearchPaper[] = []
+  let skipped = 0
+  for (const paper of papers) {
+    const broken =
+      paper.title.trim().length === 0 ||
+      (paper.year === null &&
+        !paper.abstract &&
+        !paper.doi &&
+        !paper.arxivId) ||
+      (paper.year === null && !paper.doi && !paper.arxivId && paper.authors.length === 0) ||
+      paper.authors.some((author) => author.length > 40)
+    if (broken) {
+      skipped++
+      continue
+    }
+    kept.push(paper)
+  }
+  return { papers: kept, skipped }
+}
+
+function compareWithRelevance(
+  a: MergedPaper,
+  b: MergedPaper,
+  options: { themeTokens?: Set<string>; relevanceWeight?: number }
+): number {
+  const weight = options.relevanceWeight ?? 0
+  if (weight > 0 && options.themeTokens && options.themeTokens.size > 0) {
+    const scoreA = relevanceScore(a, options.themeTokens, weight)
+    const scoreB = relevanceScore(b, options.themeTokens, weight)
+    if (scoreA !== scoreB) return scoreB - scoreA
+  }
+  return compare(a, b)
+}
+
+function relevanceScore(
+  paper: MergedPaper,
+  theme: Set<string>,
+  weight: number
+): number {
+  const text = `${paper.title} ${paper.abstract ?? ''}`.slice(0, 400).toLowerCase()
+  let hits = 0
+  for (const token of theme) {
+    if (text.includes(token)) hits++
+  }
+  return Math.log2(1 + (paper.citationCount ?? 0)) + weight * hits
 }
 
 export function normalizeDoi(doi: string | null): string | null {
@@ -68,6 +129,7 @@ function mergePair(a: MergedPaper, b: SearchPaper): MergedPaper {
   return {
     ...a,
     sources: [...new Set([...a.sources, b.source])],
+    relevanceLevel: a.relevanceLevel ?? b.relevanceLevel ?? null,
     title: longer(a.title, b.title),
     abstract: longerOrNull(a.abstract, b.abstract),
     authors: union(a.authors, b.authors),
@@ -81,11 +143,20 @@ function mergePair(a: MergedPaper, b: SearchPaper): MergedPaper {
 }
 
 function compare(a: MergedPaper, b: MergedPaper): number {
+  // 相关度分级优先（selector 输出），引用数退为 tie-breaker
+  const levelDiff = levelRank(b.relevanceLevel) - levelRank(a.relevanceLevel)
+  if (levelDiff !== 0) return levelDiff
   const citations = (b.citationCount ?? -1) - (a.citationCount ?? -1)
   if (citations !== 0) return citations
   const sources = b.sources.length - a.sources.length
   if (sources !== 0) return sources
   return (b.year ?? -1) - (a.year ?? -1)
+}
+
+function levelRank(level: 'high' | 'partial' | null | undefined): number {
+  if (level === 'high') return 2
+  if (level === 'partial') return 1
+  return 0
 }
 
 function longer(a: string, b: string): string {
@@ -133,17 +204,48 @@ function clusterNearDuplicates(list: MergedPaper[]): MergedPaper[] {
       if (removed.has(j)) continue
       const b = list[j]
       if (b.doi || b.arxivId) continue
-      if (
-        firstAuthorSurname(a.authors) !== '' &&
-        firstAuthorSurname(a.authors) === firstAuthorSurname(b.authors) &&
-        jaccard(a.title, b.title) >= 0.9
-      ) {
+      if (nearDuplicate(a, b)) {
         list[i] = mergePair(a, b)
         removed.add(j)
       }
     }
   }
   return list.filter((_, index) => !removed.has(index))
+}
+
+/**
+ * 近重复判定：标题词元 Jaccard ≥0.75 且（首作者或年份一致）；
+ * 或中文标题 bigram Jaccard ≥0.7 且（首作者或年份一致）——覆盖“同一论文中英文双标题/格式漂移”
+ * 这类真实案例（如 M2-14 中 [6]/[7] 的太极统一场论论文未合并）。
+ */
+function nearDuplicate(a: MergedPaper, b: MergedPaper): boolean {
+  const authorMatch =
+    firstAuthorSurname(a.authors) !== '' &&
+    firstAuthorSurname(a.authors) === firstAuthorSurname(b.authors)
+  const yearMatch = a.year !== null && a.year === b.year
+  if (!authorMatch && !yearMatch) return false
+  if (jaccard(a.title, b.title) >= 0.75) return true
+  if (chineseJaccard(a.title, b.title) >= 0.7) return true
+  return false
+}
+
+function chineseJaccard(titleA: string, titleB: string): number {
+  const bigrams = (title: string): Set<string> => {
+    const chinese = (title.match(/[\u4e00-\u9fff]+/g) ?? []).join('')
+    const set = new Set<string>()
+    for (let i = 0; i < chinese.length - 1; i++) {
+      set.add(chinese.slice(i, i + 2))
+    }
+    return set
+  }
+  const a = bigrams(titleA)
+  const b = bigrams(titleB)
+  if (a.size === 0 || b.size === 0) return 0
+  let intersection = 0
+  for (const token of a) {
+    if (b.has(token)) intersection++
+  }
+  return intersection / (a.size + b.size - intersection)
 }
 
 function firstAuthorSurname(authors: string[]): string {

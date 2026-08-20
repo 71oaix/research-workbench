@@ -26,18 +26,25 @@ describe('MockStepRunner', () => {
       position: 1,
       requiresApproval: false,
     })
+    const selectorStep = repos.steps.create({
+      workflowId: workflow.id,
+      label: '筛选',
+      role: 'selector',
+      position: 2,
+      requiresApproval: false,
+    })
     const writerStep = repos.steps.create({
       workflowId: workflow.id,
       label: '写作',
       role: 'writer',
-      position: 2,
+      position: 3,
       requiresApproval: false,
     })
     const reviewerStep = repos.steps.create({
       workflowId: workflow.id,
       label: '审查',
       role: 'reviewer',
-      position: 3,
+      position: 4,
       requiresApproval: true,
     })
 
@@ -57,7 +64,16 @@ describe('MockStepRunner', () => {
       inputArtifacts: [toArtifact(planner)],
     })
     expect(researcher.artifactName).toBe('02-research.md')
+    expect(artifactNames()).toContain('research-candidates.md')
+
+    const selector = await runner.run({
+      step: selectorStep,
+      goal: '演示调研',
+      inputArtifacts: [],
+    })
+    expect(selector.artifactName).toBe('research-cards.md')
     expect(artifactNames()).toContain('research-cards.md')
+    expect(artifactNames()).toContain('selector-report.md')
 
     const writer = await runner.run({
       step: writerStep,

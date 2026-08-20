@@ -7,8 +7,48 @@ import { loadSearchConfig } from '../../src/search/config'
 import { ResearcherStepServiceImpl } from '../../src/search/researcherStep'
 import type { SearchOutput } from '../../src/search/types'
 
-describe('ResearcherStepServiceImpl', () => {
-  it('persists raw papers, creates research-cards.md and emits search events', async () => {
+function makePaper(title: string, index: number, overrides: Record<string, unknown> = {}) {
+  return {
+    source: 'semantic-scholar',
+    externalId: `s2-${index}`,
+    title,
+    abstract: null,
+    authors: ['A'],
+    year: 2024,
+    doi: null,
+    arxivId: null,
+    url: null,
+    citationCount: 10,
+    raw: null,
+    ...overrides,
+  }
+}
+
+function makeOutput(papers: ReturnType<typeof makePaper>[]): SearchOutput {
+  return {
+    rawPapers: papers,
+    papers: papers.map((paper, index) => ({
+      ...paper,
+      sources: ['semantic-scholar'],
+      externalId: paper.externalId ?? `s2-${index}`,
+    })),
+    stats: {
+      queryGroups: 1,
+      sources: ['semantic-scholar'],
+      keywordsUsed: 1,
+      queries: 1,
+      minCitations: 0,
+      totalHits: papers.length,
+      uniquePapers: papers.length,
+      failedSources: [],
+      topN: 15,
+    },
+    groups: [{ label: 'g1', query: 'paper' }],
+  }
+}
+
+describe('ResearcherStepServiceImpl（候选池阶段）', () => {
+  it('persists candidate artifacts (md + json) and emits search events, without downloading', async () => {
     const db = createDb()
     const repos = createRepositories(db)
     const bus = createEventBus()
@@ -24,64 +64,10 @@ describe('ResearcherStepServiceImpl', () => {
       requiresApproval: false,
     })
 
-    const output: SearchOutput = {
-      rawPapers: [
-        {
-          source: 'semantic-scholar',
-          externalId: 's2-1',
-          title: 'Paper One',
-          abstract: null,
-          authors: ['A'],
-          year: 2024,
-          doi: '10.1/one',
-          arxivId: null,
-          url: 'https://example.com/one',
-          citationCount: 10,
-          raw: null,
-        },
-        {
-          source: 'openalex',
-          externalId: 'W1',
-          title: 'Paper One',
-          abstract: null,
-          authors: ['A', 'B'],
-          year: 2024,
-          doi: '10.1/one',
-          arxivId: null,
-          url: null,
-          citationCount: 12,
-          raw: null,
-        },
-      ],
-      papers: [
-        {
-          source: 'semantic-scholar',
-          externalId: 's2-1',
-          title: 'Paper One',
-          abstract: null,
-          authors: ['A', 'B'],
-          year: 2024,
-          doi: '10.1/one',
-          arxivId: null,
-          url: 'https://example.com/one',
-          citationCount: 12,
-          raw: null,
-          sources: ['semantic-scholar', 'openalex'],
-        },
-      ],
-      stats: {
-        queryGroups: 1,
-        sources: ['semantic-scholar', 'openalex'],
-        keywordsUsed: 1,
-        queries: 2,
-        minCitations: 0,
-        totalHits: 2,
-        uniquePapers: 1,
-        failedSources: [],
-        topN: 15,
-      },
-      groups: [{ label: 'g1', query: 'paper' }],
-    }
+    const output = makeOutput([
+      makePaper('Paper One', 1, { doi: '10.1/one' }),
+      makePaper('Paper Two', 2),
+    ])
     const search = { search: vi.fn().mockResolvedValue(output) } as unknown as AcademicSearchService
     const service = new ResearcherStepServiceImpl(search, repos, bus, loadSearchConfig({}))
 
@@ -91,25 +77,25 @@ describe('ResearcherStepServiceImpl', () => {
       planContent: '## 检索关键词\n- paper',
     })
 
-    expect(result.cardsMd).toContain('# 检索证据卡片')
-    expect(result.cardsMd).toContain('### [1] Paper One')
-    expect(repos.papers.list()).toHaveLength(2)
-    expect(repos.artifacts.listByWorkflow(workflow.id).map((a) => a.name)).toContain(
-      'research-cards.md'
-    )
+    expect(result.candidatesMd).toContain('# 检索候选池')
+    expect(result.candidatesMd).toContain('### [1] Paper One')
+    const names = repos.artifacts.listByWorkflow(workflow.id).map((artifact) => artifact.name)
+    expect(names).toContain('research-candidates.md')
+    expect(names).toContain('research-candidates.json')
+    expect(names).not.toContain('research-cards.md')
+    const jsonArtifact = repos.artifacts
+      .listByWorkflow(workflow.id)
+      .find((artifact) => artifact.name === 'research-candidates.json')
+    const bundle = JSON.parse(jsonArtifact?.content ?? '{}')
+    expect(bundle.papers).toHaveLength(2)
+    expect(bundle.papers[0].doi).toBe('10.1/one')
+
     const types = new Set(events.map((event) => event.type))
     expect(types.has('artifact.updated')).toBe(true)
     expect(types.has('search.completed')).toBe(true)
-    const searchEvent = events.find((event) => event.type === 'search.completed')
-    expect(searchEvent).toMatchObject({
-      type: 'search.completed',
-      workflowId: workflow.id,
-      stepId: step.id,
-      stats: output.stats,
-    })
   })
 
-  it('filters out papers with zero theme overlap before building cards', async () => {
+  it('filters out papers with zero theme overlap before building candidates', async () => {
     const db = createDb()
     const repos = createRepositories(db)
     const workflow = repos.workflows.create('调研主题')
@@ -120,53 +106,17 @@ describe('ResearcherStepServiceImpl', () => {
       position: 1,
       requiresApproval: false,
     })
-    const output: SearchOutput = {
-      rawPapers: [],
-      papers: [
-        {
-          source: 'semantic-scholar',
-          externalId: 'a',
-          title: 'Multi-Agent Memory Architecture Research',
-          abstract: null,
-          authors: [],
-          year: 2024,
-          doi: null,
-          arxivId: null,
-          url: null,
-          citationCount: 10,
-          raw: null,
-          sources: ['semantic-scholar'],
-        },
-        {
-          source: 'semantic-scholar',
-          externalId: 'b',
-          title: 'Completely Unrelated GUI Testing',
-          abstract: null,
-          authors: [],
-          year: 2024,
-          doi: null,
-          arxivId: null,
-          url: null,
-          citationCount: 100,
-          raw: null,
-          sources: ['semantic-scholar'],
-        },
-      ],
-      stats: {
-        queryGroups: 1,
-        sources: ['semantic-scholar'],
-        keywordsUsed: 1,
-        queries: 1,
-        minCitations: 0,
-        totalHits: 2,
-        uniquePapers: 2,
-        failedSources: [],
-        topN: 15,
-      },
-      groups: [],
-    }
+    const output = makeOutput([
+      makePaper('Multi-Agent Memory Architecture Research', 1),
+      makePaper('Completely Unrelated GUI Testing', 2),
+    ])
     const search = { search: vi.fn().mockResolvedValue(output) } as unknown as AcademicSearchService
-    const service = new ResearcherStepServiceImpl(search, repos, createEventBus(), loadSearchConfig({}))
+    const service = new ResearcherStepServiceImpl(
+      search,
+      repos,
+      createEventBus(),
+      loadSearchConfig({})
+    )
 
     const result = await service.prepare({
       workflowId: workflow.id,
@@ -174,7 +124,42 @@ describe('ResearcherStepServiceImpl', () => {
       planContent: '## 检索关键词\nmulti-agent memory architecture',
     })
 
-    expect(result.cardsMd).toContain('Multi-Agent Memory Architecture Research')
-    expect(result.cardsMd).not.toContain('Completely Unrelated GUI Testing')
+    expect(result.candidatesMd).toContain('Multi-Agent Memory Architecture Research')
+    expect(result.candidatesMd).not.toContain('Completely Unrelated GUI Testing')
+  })
+
+  it('caps candidates at SEARCH_CANDIDATE_TOP', async () => {
+    const db = createDb()
+    const repos = createRepositories(db)
+    const workflow = repos.workflows.create('调研')
+    const step = repos.steps.create({
+      workflowId: workflow.id,
+      label: '检索文献',
+      role: 'researcher',
+      position: 1,
+      requiresApproval: false,
+    })
+    const papers = Array.from({ length: 10 }, (_, index) => makePaper(`Paper ${index}`, index))
+    const search = {
+      search: vi.fn().mockResolvedValue(makeOutput(papers)),
+    } as unknown as AcademicSearchService
+    const service = new ResearcherStepServiceImpl(
+      search,
+      repos,
+      createEventBus(),
+      loadSearchConfig({ SEARCH_CANDIDATE_TOP: '5' })
+    )
+
+    await service.prepare({
+      workflowId: workflow.id,
+      stepId: step.id,
+      planContent: '## 检索关键词\n- paper',
+    })
+
+    const jsonArtifact = repos.artifacts
+      .listByWorkflow(workflow.id)
+      .find((artifact) => artifact.name === 'research-candidates.json')
+    const bundle = JSON.parse(jsonArtifact?.content ?? '{}')
+    expect(bundle.papers).toHaveLength(5)
   })
 })

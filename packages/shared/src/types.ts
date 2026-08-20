@@ -1,4 +1,11 @@
-export type Role = 'planner' | 'researcher' | 'writer' | 'reviewer'
+export type Role =
+  | 'planner'
+  | 'researcher'
+  | 'selector'
+  | 'writer'
+  | 'evaluator'
+  | 'reviewer'
+  | 'summarizer'
 
 export type WorkflowStatus =
   | 'planning'
@@ -88,7 +95,9 @@ export interface SearchStats {
   totalHits: number
   uniquePapers: number
   failedSources: string[]
+  skippedPapers?: number
   topN: number
+  gapQueries?: number
 }
 
 export interface Decision {

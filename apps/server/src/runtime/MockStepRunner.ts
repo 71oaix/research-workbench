@@ -16,14 +16,33 @@ export class MockStepRunner implements StepRunner {
       case 'planner':
         return { artifactName, content: mockPlan(goal, feedback ?? null) }
       case 'researcher': {
-        this.persist(step.workflowId, step.id, 'research-cards.md', mockCards())
+        this.persist(step.workflowId, step.id, 'research-candidates.md', mockCandidates())
         return { artifactName, content: mockResearch() }
+      }
+      case 'selector': {
+        this.persist(step.workflowId, step.id, 'research-cards.md', mockCards())
+        this.persist(step.workflowId, step.id, 'selector-report.md', mockSelectorReport())
+        return { artifactName, content: mockCards() }
       }
       case 'writer':
         return { artifactName, content: mockDraft(feedback ?? null) }
+      case 'evaluator': {
+        this.persist(step.workflowId, step.id, 'evaluation-report.md', mockEvaluation())
+        return { artifactName, content: mockEvaluation() }
+      }
       case 'reviewer': {
         this.persist(step.workflowId, step.id, 'citation-lint.md', mockLint())
         return { artifactName, content: mockReview() }
+      }
+      case 'summarizer': {
+        this.persist(step.workflowId, step.id, '05-summary.md', mockSummary())
+        this.persist(
+          step.workflowId,
+          step.id,
+          'references.bib',
+          '@article{research1,\n  title = {演示论文 1},\n  author = {作者 A},\n  year = {2024},\n}\n'
+        )
+        return { artifactName, content: mockSummary() }
       }
     }
   }
@@ -62,15 +81,15 @@ function mockPlan(goal: string, feedback: string | null): string {
   return lines.join('\n')
 }
 
-function mockCards(): string {
+function mockCandidates(): string {
   const lines = [
-    '# 检索证据卡片（确定性管道）',
+    '# 检索候选池（演示）',
     '',
     '## 检索概览',
     '- 命中 / 去重：20 / 10（演示）',
     '- 失败源：无',
     '',
-    '## 论文卡片',
+    '## 候选论文',
     '',
   ]
   for (let index = 1; index <= 10; index++) {
@@ -84,6 +103,47 @@ function mockCards(): string {
     )
   }
   return lines.join('\n')
+}
+
+function mockCards(): string {
+  const lines = [
+    '# 检索证据卡片（确定性管道）',
+    '',
+    '## 检索概览',
+    '- 命中 / 去重：20 / 10（演示）',
+    '- 筛选：候选 10 篇 → 入选 5 篇（高相关 3 / 部分相关 2）',
+    '- 失败源：无',
+    '',
+    '## 论文卡片',
+    '',
+  ]
+  for (let index = 1; index <= 5; index++) {
+    lines.push(
+      `### [${index}] 演示论文 ${index}`,
+      `- 年份：2024 | 引用数：${1000 - index * 10} | 来源：mock | 相关度：${
+        index <= 3 ? '高' : '部分'
+      }`,
+      `- DOI：10.1000/demo.${index}`,
+      '- 作者：作者 A、作者 B',
+      `- 摘要：这是第 ${index} 篇演示论文的摘要，用于演示证据卡片结构。`,
+      `- 筛选理由：与主题相关（演示）`,
+      ''
+    )
+  }
+  return lines.join('\n')
+}
+
+function mockSelectorReport(): string {
+  return [
+    '# 筛选报告（演示）',
+    '',
+    '- 候选池：10 篇',
+    '- 入选：5 篇（高相关 3 / 部分相关 2）',
+    '- 剔除：5 篇',
+    '',
+    '## 入选清单',
+    '- [1] 演示论文 1（高）：与主题高度相关（演示）',
+  ].join('\n')
 }
 
 function mockResearch(): string {
@@ -155,6 +215,33 @@ function mockLint(): string {
   ].join('\n')
 }
 
+function mockEvaluation(): string {
+  return [
+    '# 评估报告（演示）',
+    '',
+    '## 逐核心概念命中判定',
+    '| 概念 | 判定 | 依据卡片 | 理由 |',
+    '|------|------|----------|------|',
+    '| 智能体记忆分类 | 命中 | [1][2] | 摘要直接覆盖短期/长期记忆分类 |',
+    '',
+    '## 逐卡相关度评分',
+    '| 编号 | 标题 | 评分 | 依据 |',
+    '|------|------|------|------|',
+    '| [1] | 演示论文 1 | 5 | 与主题高度相关 |',
+    '',
+    '## 大纲覆盖',
+    '| 计划章节 | 判定 | 内容锚点 | 理由 |',
+    '|----------|------|----------|------|',
+    '| 引言 | 覆盖 | [1] | 章节引用了卡片 |',
+    '',
+    '## 覆盖不足方向与 gap 建议',
+    '- 建议补充近两年文献。',
+    '',
+    '## 总体结论',
+    '- 通过：证据与草稿一致。',
+  ].join('\n')
+}
+
 function mockReview(): string {
   return [
     '# 审查意见（演示）',
@@ -170,6 +257,25 @@ function mockReview(): string {
     '',
     '## 总体结论',
     '- 建议通过。',
+  ].join('\n')
+}
+
+function mockSummary(): string {
+  return [
+    '# 调研结果摘要（演示）',
+    '',
+    '- 证据卡片：5 篇（高相关 3 / 部分相关 2）',
+    '',
+    '## 主题分组',
+    '### 智能体记忆',
+    '- 主组：[1][2]（相关：[3]）',
+    '',
+    '## 相关度分级',
+    '- 高相关（3）：[1][2][3]',
+    '- 部分相关（2）：[4][5]',
+    '',
+    '## 引用清单',
+    '- [1] 演示论文 1（2024）｜作者 A｜10.1000/demo.1',
   ].join('\n')
 }
 

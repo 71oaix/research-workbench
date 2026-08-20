@@ -8,10 +8,11 @@ export function WorkflowList() {
   const selectWorkflow = useWorkflowStore((state) => state.selectWorkflow)
   const [goal, setGoal] = useState('')
   const [creating, setCreating] = useState(false)
+  const [includeWriter, setIncludeWriter] = useState(true)
 
   async function handleCreate() {
     setCreating(true)
-    await createWorkflow(goal)
+    await createWorkflow(goal, includeWriter)
     setGoal('')
     setCreating(false)
   }
@@ -31,6 +32,14 @@ export function WorkflowList() {
         >
           新建
         </button>
+        <label className="template-option">
+          <input
+            type="checkbox"
+            checked={includeWriter}
+            onChange={(event) => setIncludeWriter(event.target.checked)}
+          />
+          包含综述写作（Writer）
+        </label>
       </div>
       <ul className="workflow-list">
         {workflows.map((workflow) => (

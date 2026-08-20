@@ -249,6 +249,109 @@ node scripts/verify-m2-12.mjs
 node scripts/verify-m2-12.mjs --live
 ```
 
+## M2-13 效果修复配置与验证
+
+```bash
+SEARCH_DOWNLOAD_MAX=25          # 可选，单次全量下载篇数上限，默认 25
+SEARCH_DOWNLOAD_TIMEOUT_MS=240000  # 可选，下载阶段整体时间预算（毫秒），默认 240000
+SEARCH_RELEVANCE_WEIGHT=2.0     # 可选，排序相关度权重，默认 2.0；设 0 恢复纯引用数排序
+PI_MODEL_EVALUATOR=...          # 可选，evaluator 模型（默认 flash）
+PI_THINKING_EVALUATOR=...       # 可选，evaluator 思考强度（默认 xhigh）
+```
+
+说明：
+
+- 全文下载不再受 top-8 限制：有 OA 候选的卡片全部尝试（并发 3），时间预算内未完成标 timeout；
+- 引用核验改用 arXiv `id_list` 批量（≤10/请求），失败回退 DOI / 标题搜索，Unverifiable 占比应显著下降；
+- 评估由模型生成：新增 `evaluator` 角色（writer 后、reviewer 前，自动执行），
+  规则统计只作参考输入，输出逐概念命中 / 逐卡相关度 / 大纲覆盖 / gap 建议；
+- 检索排序加相关度加权，并过滤元数据损坏卡片（无年份 + 无 DOI/arXiv + 无作者，或作者字段异常超长）。
+
+真实流程验证：
+
+```bash
+node scripts/verify-m2-13.mjs
+```
+
+## M2-14 检索召回与编号修复说明
+
+- cs 域检索源：arxiv + OpenAlex + Crossref + Semantic Scholar（有 key 时 T1，无 key 时 T2）；
+- 源级熔断：某源连续失败 ≥3 次后停用该源剩余查询，失败源统计压缩为源级（如
+  “semantic-scholar(T2) 失败 14 个查询，熔断跳过 2 个查询”），不再逐查询刷屏；
+- arxiv 查询：纯中文查询跳过；>4 实词英文查询精简到前 3 实词；空结果依次放宽到前 2 词、首词；
+- 全文编号：`paper-fulltext.md` 段落编号严格等于卡片编号，中间下载失败不占编号；
+- 不可核验卡片：无年份 + 无摘要 + 无 DOI/arXiv 的卡片在管道端过滤（`skippedPapers` 可查）；
+  有年份但无摘要的卡片保留并标注“摘要：缺失”。
+
+真实流程验证：
+
+```bash
+node scripts/verify-m2-14.mjs
+```
+
+## M2-15 澄清、筛选与华为赛题性能吸收说明
+
+```bash
+SEARCH_CANDIDATE_TOP=40          # 可选，候选池规模，默认 40
+SEARCH_MAX_GROUPS=10             # 可选，查询组上限（关键词 ∪ 子问题），默认 10（M2-15 起）
+SEARCH_UNPAYWALL_EMAIL=you@example.com  # 可选，Unpaywall 兜底查询邮箱
+PI_MODEL_SELECTOR=...            # 可选，selector 模型（默认 flash）
+PI_THINKING_SELECTOR=xhigh       # 可选，selector 思考强度（默认 xhigh）
+```
+
+说明：
+
+- 默认模板变六步：规划 → 检索 → 筛选 → 写作 → 评估 → 审查；筛选自动执行（无需审批）；
+- 宽泛问题（如“研究下什么是 agent”）规划阶段会输出“## 澄清请求”，在审批意见中回答问题即可，
+  下一轮计划会收敛锚点；
+- 检索只产候选池（`research-candidates.md` / `.json`），由 selector 批量筛选后才下载全文，
+  卡片带相关度分级与筛选理由，`selector-report.md` 可回溯剔除与二次检索；
+- 引文雪球（OpenAlex cites / referenced_works）与 gap 二次检索会自动补充并重筛新候选；
+- plan 含时间范围时 OpenAlex / S2 检索自动按年份过滤。
+
+效果评测与成本报告（本地离线检索，无需模型 key）：
+
+```bash
+npx tsx scripts/eval-m2-15.mjs --limit 5
+npx tsx scripts/eval-m2-15.mjs --out data/eval/report.md
+npx tsx scripts/cost-report.mjs
+```
+
+真实六步流程验证（服务已启动且进程带 OPENCODE_GO_API_KEY）：
+
+```bash
+node scripts/verify-m2-15.mjs
+```
+
+脚本会检查：宽泛问题第一轮 plan 含“澄清请求”、六步完成、top-15 无明显无关论文、
+卡片带相关度分级与筛选理由、全文编号与卡片一致。
+
+## M2-16 归纳整理、writer 可选项与评测闭环说明
+
+```bash
+# 七步完整模板（含 writer）
+node scripts/verify-m2-15.mjs
+
+# 六步调研模板（无 writer，reviewer 输出证据调研审查）
+node scripts/verify-m2-15.mjs --research
+```
+
+评测与成本（离线检索无需模型 key；LitSearch 拉取需要网络，失败可离线放置文件）：
+
+```bash
+npx tsx scripts/eval-m2-15.mjs --limit 5
+npx tsx scripts/eval-m2-15.mjs --baseline --limit 5       # 全量版 vs 无迭代基线
+npx tsx scripts/eval-m2-15.mjs --litsearch data/eval/litsearch-queries.jsonl
+npx tsx scripts/fetch-litsearch.mjs --rows 30
+npx tsx scripts/cost-report.mjs
+```
+
+说明：
+
+- 最终交付物：`05-summary.md`（主题分组 + 相关度分级 + 引用清单）与 `references.bib`；
+- 新建工作流时勾选“包含综述写作（Writer）”，不勾选即调研模板；
+- 无 writer 时 evaluator/reviewer 自动降级（证据池覆盖 / 证据调研审查），不会因缺草稿报错。
+
 ## 常见问题
 
 - 端口被占用：设置环境变量 `PORT`（server）或修改

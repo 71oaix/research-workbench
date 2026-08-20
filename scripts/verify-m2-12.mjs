@@ -68,7 +68,7 @@ async function liveChecks() {
     ],
   }
   const jsonFetch = async (url, options) => {
-    const res = await fetch(url, { ...options, signal: AbortSignal.timeout(300000) })
+    const res = await fetch(url, { ...options, signal: AbortSignal.timeout(600000) })
     if (!res.ok) throw new Error(`${res.status} ${await res.text()}`)
     return res.json()
   }
