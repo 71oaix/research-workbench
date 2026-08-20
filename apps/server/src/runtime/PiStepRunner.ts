@@ -17,6 +17,15 @@ export class PiStepRunner implements StepRunner {
   ) {}
 
   async run({ step, goal, inputArtifacts, feedback }: StepRunInput): Promise<StepRunResult> {
+    // summarizer 为确定性归纳整理，不调用模型
+    if (step.role === 'summarizer' && this.evidence) {
+      const { summaryMd } = await this.evidence.prepareSummarizer({
+        workflowId: step.workflowId,
+        stepId: step.id,
+        inputArtifacts,
+      })
+      return { artifactName: '05-summary.md', content: summaryMd }
+    }
     const systemPrompt =
       ROLE_SYSTEM_PROMPTS[step.role] +
       (step.role === 'researcher'

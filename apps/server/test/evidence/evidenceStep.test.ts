@@ -166,7 +166,97 @@ describe('EvidenceStepServiceImpl', () => {
     ).rejects.toThrow('research-cards.md')
     await expect(
       service.prepareReviewer({ workflowId: 'wf-1', stepId: 's', inputArtifacts: [] })
-    ).rejects.toThrow('03-draft.md')
+    ).rejects.toThrow('research-cards.md')
+  })
+
+  it('prepareReviewer supports the no-draft research template (证据调研审查)', async () => {
+    const db = createDb()
+    const repos = createRepositories(db)
+    const service = new EvidenceStepServiceImpl(repos, createEventBus())
+    const workflow = repos.workflows.create('调研')
+    const step = repos.steps.create({
+      workflowId: workflow.id,
+      label: '审查证据',
+      role: 'reviewer',
+      position: 0,
+      requiresApproval: true,
+    })
+    const cards = makeArtifact(
+      'research-cards.md',
+      ['# cards', '', '### [1] Paper A', '- 相关度：高'].join('\n')
+    )
+    const evaluation = makeArtifact('evaluation-report.md', '# 评估报告')
+
+    const result = await service.prepareReviewer({
+      workflowId: workflow.id,
+      stepId: step.id,
+      inputArtifacts: [cards, evaluation],
+    })
+
+    expect(result.promptExtra).toContain('无草稿')
+    expect(result.promptExtra).toContain('证据调研审查')
+    const names = repos.artifacts.listByWorkflow(workflow.id).map((artifact) => artifact.name)
+    expect(names).not.toContain('citation-lint.md')
+    expect(names).not.toContain('citation-verification.md')
+  })
+
+  it('prepareSummarizer builds 05-summary.md and references.bib from cards', async () => {
+    const db = createDb()
+    const repos = createRepositories(db)
+    const bus = createEventBus()
+    const events: ServerEvent[] = []
+    bus.on((event) => events.push(event))
+    const workflow = repos.workflows.create('调研')
+    const step = repos.steps.create({
+      workflowId: workflow.id,
+      label: '归纳整理',
+      role: 'summarizer',
+      position: 0,
+      requiresApproval: false,
+    })
+    const service = new EvidenceStepServiceImpl(repos, bus)
+    const plan = makeArtifact(
+      '01-plan.md',
+      ['## 锚定点', '- 多智能体共享记忆', '## 子问题', '- 记忆如何组织'].join('\n')
+    )
+    const cards = makeArtifact(
+      'research-cards.md',
+      [
+        '# cards',
+        '',
+        '### [1] Paper A',
+        '- 年份：2024 | 引用数：10 | 来源：openalex | 相关度：高',
+        '- 作者：Alice',
+        '- DOI：10.1/a',
+        '- 摘要：multi-agent shared memory',
+        '',
+        '### [2] Paper B',
+        '- 年份：2023 | 引用数：5 | 来源：crossref',
+        '- 作者：Bob',
+        '- DOI：10.1/b',
+        '- 摘要：unrelated survey',
+      ].join('\n')
+    )
+
+    const result = await service.prepareSummarizer({
+      workflowId: workflow.id,
+      stepId: step.id,
+      inputArtifacts: [plan, cards],
+    })
+
+    expect(result.summaryMd).toContain('# 调研结果摘要')
+    expect(result.summaryMd).toContain('## 主题分组')
+    expect(result.summaryMd).toContain('## 引用清单')
+    expect(result.summaryMd).toContain('高相关（1）')
+    const names = repos.artifacts.listByWorkflow(workflow.id).map((artifact) => artifact.name)
+    expect(names).toContain('05-summary.md')
+    expect(names).toContain('references.bib')
+    const bib = repos.artifacts
+      .listByWorkflow(workflow.id)
+      .find((artifact) => artifact.name === 'references.bib')
+    expect(bib?.content).toContain('@article{research1')
+    expect(bib?.content).toContain('doi = {10.1/a}')
+    expect(events.some((event) => event.type === 'artifact.updated')).toBe(true)
   })
 
   it('prepareWriter merges multiple research-cards versions into one pool', async () => {

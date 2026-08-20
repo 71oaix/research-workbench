@@ -34,6 +34,16 @@ export class MockStepRunner implements StepRunner {
         this.persist(step.workflowId, step.id, 'citation-lint.md', mockLint())
         return { artifactName, content: mockReview() }
       }
+      case 'summarizer': {
+        this.persist(step.workflowId, step.id, '05-summary.md', mockSummary())
+        this.persist(
+          step.workflowId,
+          step.id,
+          'references.bib',
+          '@article{research1,\n  title = {演示论文 1},\n  author = {作者 A},\n  year = {2024},\n}\n'
+        )
+        return { artifactName, content: mockSummary() }
+      }
     }
   }
 
@@ -247,6 +257,25 @@ function mockReview(): string {
     '',
     '## 总体结论',
     '- 建议通过。',
+  ].join('\n')
+}
+
+function mockSummary(): string {
+  return [
+    '# 调研结果摘要（演示）',
+    '',
+    '- 证据卡片：5 篇（高相关 3 / 部分相关 2）',
+    '',
+    '## 主题分组',
+    '### 智能体记忆',
+    '- 主组：[1][2]（相关：[3]）',
+    '',
+    '## 相关度分级',
+    '- 高相关（3）：[1][2][3]',
+    '- 部分相关（2）：[4][5]',
+    '',
+    '## 引用清单',
+    '- [1] 演示论文 1（2024）｜作者 A｜10.1000/demo.1',
   ].join('\n')
 }
 

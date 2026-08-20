@@ -1,7 +1,8 @@
 /**
  * M2-15 手动验证脚本：宽泛问题澄清 + 六步流程（selector 筛选）+ 相关度分级 + 编号一致。
  * 前置：本地服务已启动，且进程带有 OPENCODE_GO_API_KEY。
- * 用法：node scripts/verify-m2-15.mjs
+ * 用法：node scripts/verify-m2-15.mjs            # 七步完整模板（含 writer）
+ *       node scripts/verify-m2-15.mjs --research # 六步调研模板（无 writer）
  */
 
 const base = process.env.API_BASE ?? 'http://localhost:3000'
@@ -12,9 +13,18 @@ const workflow = {
     { label: '生成检索计划', role: 'planner', requiresApproval: true },
     { label: '检索文献', role: 'researcher', requiresApproval: true },
     { label: '筛选证据', role: 'selector', requiresApproval: false },
-    { label: '撰写综述', role: 'writer', requiresApproval: true },
     { label: '评估证据', role: 'evaluator', requiresApproval: false },
     { label: '审查引用', role: 'reviewer', requiresApproval: true },
+    { label: '归纳整理', role: 'summarizer', requiresApproval: false },
+  ],
+}
+
+const FULL_WORKFLOW = {
+  ...workflow,
+  steps: [
+    ...workflow.steps.slice(0, 3),
+    { label: '撰写综述', role: 'writer', requiresApproval: true },
+    ...workflow.steps.slice(3),
   ],
 }
 
@@ -86,13 +96,14 @@ function check(name, ok, extra = '') {
 const log = (...args) => console.error(`[${new Date().toISOString().slice(11, 19)}]`, ...args)
 
 async function main() {
-  log('创建六步工作流（含 selector 筛选）')
+  const researchMode = process.argv.includes('--research')
+  log(`创建${researchMode ? '六步调研' : '七步完整'}工作流（含 selector 与 summarizer）`)
   const created = await jsonFetch(
     `${base}/workflows`,
     {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(workflow),
+      body: JSON.stringify(researchMode ? workflow : FULL_WORKFLOW),
     },
     30000
   )
@@ -106,8 +117,11 @@ async function main() {
   const cards = done.artifacts.find((artifact) => artifact.name === 'research-cards.md')
   const fullText = done.artifacts.find((artifact) => artifact.name === 'paper-fulltext.md')
   const selectorReport = done.artifacts.find((artifact) => artifact.name === 'selector-report.md')
+  const summary = done.artifacts.find((artifact) => artifact.name === '05-summary.md')
+  const references = done.artifacts.find((artifact) => artifact.name === 'references.bib')
   const cardsMd = cards?.content ?? ''
   const fullTextMd = fullText?.content ?? ''
+  const summaryMd = summary?.content ?? ''
 
   const hits = Number((cardsMd.match(/命中 \/ 去重：(\d+) \/ (\d+)/) ?? [])[1] ?? 0)
   const selectionLine = cardsMd.split('\n').find((line) => line.startsWith('- 筛选：'))
@@ -125,12 +139,20 @@ async function main() {
   console.log(`命中/去重=${hits}｜筛选=${selectionLine ?? '（无）'}｜全文段落=${fullTextIds.join(',')}｜理由=${reasons}`)
 
   check('工作流 completed', done.workflow.status === 'completed', done.workflow.status)
-  check('六步模板含 selector', done.steps.some((step) => step.role === 'selector'))
+  check('模板含 selector 与 summarizer', done.steps.some((step) => step.role === 'selector') && done.steps.some((step) => step.role === 'summarizer'))
+  check(
+    researchMode ? '调研模板不含 writer' : '完整模板含 writer',
+    researchMode
+      ? !done.steps.some((step) => step.role === 'writer')
+      : done.steps.some((step) => step.role === 'writer')
+  )
   check('宽泛问题触发澄清请求', clarified, clarified ? '已回答并收敛' : '未触发')
   check('命中 ≥ 40（cs 域多源 + RefChain 查询组）', hits >= 40, `${hits}`)
   check('卡片带相关度分级（高+部分 ≥ 3）', leveled >= 3, `高${high}/部分${partial}`)
   check('每张入选卡片带筛选理由', reasons >= 1, `${reasons} 条`)
   check('selector-report.md 已生成', Boolean(selectorReport))
+  check('05-summary.md 已生成（主题分组 + 分级 + 引用清单）', summaryMd.includes('## 主题分组') && summaryMd.includes('## 引用清单'))
+  check('references.bib 已生成', Boolean(references?.content.includes('@article')))
   check('全文编号与卡片编号一致', numberingOk, fullTextIds.join(',') || '无全文')
   check('top-15 无明显无关论文（太极/谣言/英语教学）', !/太极统一场论|谣言传播|大学英语教学/.test(cardsMd))
 }

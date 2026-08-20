@@ -7,6 +7,7 @@ const ROLE_LABELS: Record<Step['role'], string> = {
   writer: '写作',
   evaluator: '评估',
   reviewer: '审查',
+  summarizer: '归纳',
 }
 
 export function StepTimeline({ steps }: { steps: Step[] }) {

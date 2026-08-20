@@ -1,4 +1,11 @@
-export type Role = 'planner' | 'researcher' | 'selector' | 'writer' | 'evaluator' | 'reviewer'
+export type Role =
+  | 'planner'
+  | 'researcher'
+  | 'selector'
+  | 'writer'
+  | 'evaluator'
+  | 'reviewer'
+  | 'summarizer'
 
 export type WorkflowStatus =
   | 'planning'

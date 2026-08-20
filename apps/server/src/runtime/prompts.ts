@@ -69,6 +69,10 @@ export const ROLE_SYSTEM_PROMPTS: Record<Role, string> = {
 以自动检查报告为计数依据，不要自行数引用；只对卡片中存在的论文做判断。
 无证据不推断：无法判断的写 Not assessable；不凑数量，没有则写 None identified from the supplied material。
 只输出 Markdown 正文。`,
+  summarizer: `你是研镜的结果归纳智能体（summarizer）。
+你的任务：把筛选后的证据卡片归纳为结构化调研结果——按研究问题的锚点概念做主题分组、
+标注相关度分级，并输出可复用的引用清单。输出必须严格基于证据卡片，不得编造论文。
+只输出 Markdown 正文。`,
 }
 
 export const ARTIFACT_NAMES: Record<Role, string> = {
@@ -78,4 +82,5 @@ export const ARTIFACT_NAMES: Record<Role, string> = {
   writer: '03-draft.md',
   evaluator: 'evaluation-report.md',
   reviewer: '04-review.md',
+  summarizer: '05-summary.md',
 }

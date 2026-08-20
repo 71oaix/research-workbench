@@ -215,3 +215,18 @@ reject  → step rejected → workflow: cancelled（记录 decision）
 - 下载兜底：`SEARCH_UNPAYWALL_EMAIL` 配置后，无候选或候选全失败时查询 Unpaywall 补 PDF 候选
 - 评测与成本：`scripts/eval-m2-15.mjs`（离线 recall@20 / precision + 可选完整工作流核验率）、
   `scripts/cost-report.mjs`（usage_records 聚合：调用次数 / token / ¥ / 耗时）；评测数据在 `data/eval/`
+
+## 全量吸收与归纳整理（M2-16）
+
+- summarizer 角色：reviewer 之后的收尾步骤（`requiresApproval=false`，确定性实现、不调用模型），
+  产出 `05-summary.md`（主题分组 + 相关度分级 + 引用清单）与 `references.bib`
+- 主题分组：概念优先取 plan“检索关键词”（双语），其次锚定点 / 子问题；卡片按标题 + 摘要词元交叠分组，
+  主组 + 相关组，未命中进“其他”
+- BibTeX：只输出必填字段（title/author/year/doi/arxiv/url），缺失不编造
+- writer 可选项：新建工作流勾选“包含综述写作”；不勾选时流程为
+  规划 → 检索 → 筛选 → 评估 → 审查 → 归纳（六步调研模板）
+- 无 writer 降级：evaluator“大纲覆盖”改为“证据池覆盖”；reviewer 无草稿时跳过
+  lint/引用核验，输出“证据调研审查”（覆盖度 + 分级合理性 + 缺口）
+- 评测闭环：`eval-m2-15.mjs` 支持 `--baseline`（无迭代基线：仅关键词组）与
+  `--litsearch`（HF 数据集子集）；`fetch-litsearch.mjs` 拉取 LitSearch 查询
+- 成本落地：`cost-report.mjs` 聚合 usage_records 写入 `docs/research/` 指标表

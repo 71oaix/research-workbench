@@ -326,6 +326,32 @@ node scripts/verify-m2-15.mjs
 脚本会检查：宽泛问题第一轮 plan 含“澄清请求”、六步完成、top-15 无明显无关论文、
 卡片带相关度分级与筛选理由、全文编号与卡片一致。
 
+## M2-16 归纳整理、writer 可选项与评测闭环说明
+
+```bash
+# 七步完整模板（含 writer）
+node scripts/verify-m2-15.mjs
+
+# 六步调研模板（无 writer，reviewer 输出证据调研审查）
+node scripts/verify-m2-15.mjs --research
+```
+
+评测与成本（离线检索无需模型 key；LitSearch 拉取需要网络，失败可离线放置文件）：
+
+```bash
+npx tsx scripts/eval-m2-15.mjs --limit 5
+npx tsx scripts/eval-m2-15.mjs --baseline --limit 5       # 全量版 vs 无迭代基线
+npx tsx scripts/eval-m2-15.mjs --litsearch data/eval/litsearch-queries.jsonl
+npx tsx scripts/fetch-litsearch.mjs --rows 30
+npx tsx scripts/cost-report.mjs
+```
+
+说明：
+
+- 最终交付物：`05-summary.md`（主题分组 + 相关度分级 + 引用清单）与 `references.bib`；
+- 新建工作流时勾选“包含综述写作（Writer）”，不勾选即调研模板；
+- 无 writer 时 evaluator/reviewer 自动降级（证据池覆盖 / 证据调研审查），不会因缺草稿报错。
+
 ## 常见问题
 
 - 端口被占用：设置环境变量 `PORT`（server）或修改

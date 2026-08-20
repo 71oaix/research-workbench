@@ -7,6 +7,7 @@ import { verifyCitations } from './citationVerifier'
 import type { CitationVerifierDeps } from './citationVerifier'
 import { buildEvaluationInputs } from './evaluation'
 import { buildEvidencePool } from './evidencePool'
+import { buildBibtex, buildSummary, parseSummaryCards } from './summarizer'
 
 export interface EvidenceStepService {
   prepareEvaluator(input: {
@@ -24,6 +25,11 @@ export interface EvidenceStepService {
     stepId: string
     inputArtifacts: Artifact[]
   }): Promise<{ promptExtra: string }>
+  prepareSummarizer(input: {
+    workflowId: string
+    stepId: string
+    inputArtifacts: Artifact[]
+  }): Promise<{ summaryMd: string }>
 }
 
 export class EvidenceStepServiceImpl implements EvidenceStepService {
@@ -73,7 +79,7 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
     return {
       promptExtra: buildEvaluatorSection(
         pool.cardsMd,
-        draft?.content ?? '（缺少草稿）',
+        draft?.content ?? null,
         references.md
       ),
     }
@@ -88,20 +94,23 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
     const plan = findLatestArtifact(input.inputArtifacts, '01-plan.md')
     const rawCards = findLatestArtifact(input.inputArtifacts, 'research-cards.md')
     const pool = buildEvidencePool(input.inputArtifacts)
-    if (!draft || pool.cardIds.length === 0) {
-      throw new Error('缺少 03-draft.md 或 research-cards.md，无法审查引用')
+    if (pool.cardIds.length === 0) {
+      throw new Error('缺少 research-cards.md，无法审查证据')
     }
-    const lintMd = buildCitationLint(draft.content, pool.cardIds)
-    const lintArtifact = this.repos.artifacts.create({
-      workflowId: input.workflowId,
-      stepId: input.stepId,
-      name: 'citation-lint.md',
-      content: lintMd,
-    })
-    this.bus.emit({ type: 'artifact.updated', artifact: lintArtifact })
+    let lintMd = '（无草稿：跳过引用格式检查）'
+    if (draft) {
+      lintMd = buildCitationLint(draft.content, pool.cardIds)
+      const lintArtifact = this.repos.artifacts.create({
+        workflowId: input.workflowId,
+        stepId: input.stepId,
+        name: 'citation-lint.md',
+        content: lintMd,
+      })
+      this.bus.emit({ type: 'artifact.updated', artifact: lintArtifact })
+    }
 
     let verificationMd: string | null = null
-    if (this.verifierDeps) {
+    if (draft && this.verifierDeps) {
       const report = await verifyCitations({
         draft: draft.content,
         cards: pool.cards,
@@ -132,9 +141,45 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
       }),
     }
   }
+
+  async prepareSummarizer(input: {
+    workflowId: string
+    stepId: string
+    inputArtifacts: Artifact[]
+  }): Promise<{ summaryMd: string }> {
+    const cards = findLatestArtifact(input.inputArtifacts, 'research-cards.md')
+    const plan = findLatestArtifact(input.inputArtifacts, '01-plan.md')
+    if (!cards) {
+      throw new Error('缺少 research-cards.md，无法归纳整理')
+    }
+    const summaryMd = buildSummary(cards.content, plan?.content ?? '')
+    const bib = buildBibtex(parseSummaryCards(cards.content))
+    this.createArtifact(input, '05-summary.md', summaryMd)
+    this.createArtifact(input, 'references.bib', bib || '（无卡片可导出）')
+    return { summaryMd }
+  }
+
+  private createArtifact(
+    input: { workflowId: string; stepId: string },
+    name: string,
+    content: string
+  ): void {
+    const artifact = this.repos.artifacts.create({
+      workflowId: input.workflowId,
+      stepId: input.stepId,
+      name,
+      content,
+    })
+    this.bus.emit({ type: 'artifact.updated', artifact })
+  }
 }
 
-function buildEvaluatorSection(cardsMd: string, draftMd: string, referencesMd: string): string {
+function buildEvaluatorSection(
+  cardsMd: string,
+  draftMd: string | null,
+  referencesMd: string
+): string {
+  const hasDraft = Boolean(draftMd)
   return [
     '## 评估材料',
     '',
@@ -142,12 +187,15 @@ function buildEvaluatorSection(cardsMd: string, draftMd: string, referencesMd: s
     cardsMd,
     '',
     '### 综述草稿（评估对象）',
-    draftMd,
+    draftMd ?? '（缺少草稿：按“证据池覆盖”口径评估——判断证据池分组/分级是否覆盖计划章节）',
     '',
     referencesMd,
     '',
     '评估要求：按系统提示词输出结构化评估报告；每项判定必须给理由；',
     '至少列出 2 条覆盖不足方向；不要顺着草稿说好话。',
+    hasDraft
+      ? ''
+      : '无草稿时：“大纲覆盖”改为“证据池覆盖”（计划章节 vs 卡片主题分组/分级），其余口径不变。',
   ].join('\n\n')
 }
 
@@ -267,7 +315,7 @@ function excerptBody(body: string, max: number): string {
 }
 
 function buildReviewerSection(input: {
-  draft: Artifact
+  draft: Artifact | null
   cardsMd: string
   lintMd: string
   verificationMd: string | null
@@ -276,7 +324,7 @@ function buildReviewerSection(input: {
 }): string {
   const sections = [
     '## 待审查草稿',
-    input.draft.content,
+    input.draft?.content ?? '（无草稿：请基于证据池与评估报告输出“证据调研审查”——覆盖度 + 分级合理性 + 缺口）',
     '',
     '## 证据池',
     input.cardsMd,
@@ -297,6 +345,7 @@ function buildReviewerSection(input: {
     '1. 输出“可信引用清单 / 存疑引用与原因 / 覆盖不足的方向 / 总体结论”；',
     '2. 以自动检查报告为计数依据，不要自行数引用；',
     '3. 只对证据池中存在的论文做判断，证据不足时写 Not assessable。',
+    input.draft ? '' : '4. 无草稿模式下输出“证据调研审查”：证据池覆盖度、相关度分级合理性、覆盖不足方向与缺口建议。',
   )
   return sections.join('\n')
 }

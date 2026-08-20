@@ -59,5 +59,5 @@ updated: 2026-08-17
 | Issue: M2-15 模糊问题澄清 + 标题摘要筛选 | active | issues/open/2026-08-18-m2-15-clarify-and-select-papers.md | 澄清锚点 + selector 筛选 + Unpaywall 候选 |
 | Plan: M2-15 澄清 + 筛选 + 华为赛题吸收 | active | plans/open/2026-08-18-m2-15-clarify-and-select-papers.md | 已实现并真实运行验证（待合并） |
 | Issue: M2-16 全量吸收 | active | issues/open/2026-08-20-m2-16-full-absorption.md | 归纳整理 + 评测闭环 + 成本落地 + writer 可选项 |
-| Plan: M2-16 全量吸收 | active | plans/open/2026-08-20-m2-16-full-absorption.md | 待用户确认后实现 |
+| Plan: M2-16 全量吸收 | active | plans/open/2026-08-20-m2-16-full-absorption.md | 已实现并测试（待真实运行验证后合并） |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |

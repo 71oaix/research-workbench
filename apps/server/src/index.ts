@@ -22,7 +22,15 @@ import { SelectorStepServiceImpl } from './search/SelectorStepService'
 import { buildSourceRegistry } from './search/sources'
 import { attachWebSocket } from './ws'
 
-const ROLES: Role[] = ['planner', 'researcher', 'selector', 'writer', 'evaluator', 'reviewer']
+const ROLES: Role[] = [
+  'planner',
+  'researcher',
+  'selector',
+  'writer',
+  'evaluator',
+  'reviewer',
+  'summarizer',
+]
 
 export interface AppBundle {
   app: Hono

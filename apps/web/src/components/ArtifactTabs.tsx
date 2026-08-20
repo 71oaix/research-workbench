@@ -68,9 +68,19 @@ const ARTIFACT_META: Record<string, ArtifactMeta> = {
     label: '审查意见',
     description: 'Reviewer 的可信引用清单、存疑引用与 Concern Ledger。',
   },
+  '05-summary.md': {
+    group: '调研结果',
+    label: '调研摘要',
+    description: 'Summarizer 归纳：主题分组 + 相关度分级 + 引用清单（最终交付物）。',
+  },
+  'references.bib': {
+    group: '调研结果',
+    label: '引用清单',
+    description: 'BibTeX 引用清单（仅含必填字段，缺失字段不编造）。',
+  },
 }
 
-const GROUP_ORDER = ['规划', '检索证据', '全文', '引用核验', '评估', '草稿', '审查']
+const GROUP_ORDER = ['规划', '检索证据', '全文', '引用核验', '评估', '草稿', '审查', '调研结果']
 
 interface GroupedArtifact {
   name: string
