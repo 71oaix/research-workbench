@@ -72,7 +72,8 @@ function titleHit(title, gold) {
 }
 
 async function runOffline(queries, goldMap) {
-  const config = loadSearchConfig()
+  // recall@20 需要至少 20 篇候选：检索阶段放宽 topN
+  const config = { ...loadSearchConfig(), topN: 20 }
   const service = new AcademicSearchService(buildSourceRegistry(config), config)
   const rows = []
   for (const query of queries) {

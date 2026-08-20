@@ -4,6 +4,7 @@ import { extractThemeTokens, hasIntersection, tokenize } from '../evidence/evalu
 import type { AcademicSearchService } from './AcademicSearchService'
 import { buildResearchCandidates } from './cards'
 import type { SearchConfig } from './config'
+import { mergeAndRank } from './merge'
 import type { ResearcherStepService } from './types'
 
 export class ResearcherStepServiceImpl implements ResearcherStepService {
@@ -23,11 +24,19 @@ export class ResearcherStepServiceImpl implements ResearcherStepService {
     const output = await this.search.search(input.planContent, {
       compensate: input.compensate ?? false,
     })
-    const relevant = filterRelevantPapers(output.papers, input.planContent)
+    // 候选池取全量命中合并去重后的前 candidateTop 篇（不受 topN=15 截断）
+    const mergedAll = mergeAndRank(output.rawPapers, this.config.candidateTop)
+    const relevant = filterRelevantPapers(mergedAll.papers, input.planContent)
     const candidates = relevant.slice(0, this.config.candidateTop)
+    const candidateStats: typeof output.stats = {
+      ...output.stats,
+      totalHits: output.rawPapers.length,
+      uniquePapers: mergedAll.stats.uniquePapers,
+      topN: this.config.candidateTop,
+    }
 
     // 候选池双产物：md 给人/模型看，json 给 selector 代码用（保留结构化字段与 OA 原始信息）
-    const candidatesMd = buildResearchCandidates(candidates, output.stats, output.groups)
+    const candidatesMd = buildResearchCandidates(candidates, candidateStats, output.groups)
     const mdArtifact = this.repos.artifacts.create({
       workflowId: input.workflowId,
       stepId: input.stepId,
@@ -40,7 +49,7 @@ export class ResearcherStepServiceImpl implements ResearcherStepService {
       stepId: input.stepId,
       name: 'research-candidates.json',
       content: JSON.stringify({
-        stats: output.stats,
+        stats: candidateStats,
         groups: output.groups,
         papers: candidates,
       }),
