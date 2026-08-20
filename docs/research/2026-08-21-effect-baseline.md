@@ -73,7 +73,51 @@ npx tsx scripts/eval-m2-15.mjs --limit 2
 npx tsx scripts/eval-m2-15.mjs --baseline --out data/eval/report-baseline.md
 # LitSearch 子集（需网络；失败可离线放置 data/eval/litsearch-queries.jsonl）
 npx tsx scripts/fetch-litsearch.mjs --rows 30
-npx tsx scripts/eval-m2-15.mjs --litsearch data/eval/litsearch-queries.jsonl
+npx tsx scripts/eval-m2-15.mjs --litsearch data/eval/litsearch-queries-sample30.jsonl
 # 成本
 npx tsx scripts/cost-report.mjs
 ```
+
+## 五、LitSearch 基线对比（2026-08-20 实测）
+
+口径：从 LitSearch 全量 597 条查询按 query_set（inline_acl / inline_nonacl / manual_acl / manual_iclr）
+与 specificity（broad/specific ≈ 3:7，对齐原数据集 26:74）分层抽样 30 条；金标为对应 corpus 论文标题；
+用与自建评测相同的离线确定性检索段跑 recall@20（不改动任何生产代码）。
+
+实测结果：
+
+| 指标 | 数值 |
+|------|------|
+| 平均 recall@20（30 条） | **6.7%**（2/30 命中：lit-22、lit-25 为 100%） |
+| 命中分布 | 28 条 0%，2 条 100% |
+| 每查询耗时 | ≈19-100s（均值 ≈22s） |
+
+官方基线（LitSearch 论文 Table 3，recall@20；按样本 3:7 加权估算）：
+
+| 基线 | Broad R@20 | Specific R@20 | 样本加权 |
+|------|-----------|---------------|----------|
+| BM25 | 39.9 | 55.8-73.5（加权 ≈63） | ≈56% |
+| GritLM-7B | 70.8 | 77.9-89.1（加权 ≈82） | ≈79% |
+| GPT-4o rerank (w/ GritLM) | 75.3 | 79.9-92.4（加权 ≈85） | ≈82% |
+
+差距：现口径 **≈ -49pp（vs BM25）～ -75pp（vs GPT-4o+GritLM）**。
+
+### 重要局限（为什么 6.7% 是偏保守下限，不能直接当真实能力）
+
+1. **评测期间检索源半瘫**：OpenAlex 免费额度当日耗尽（计费接口返回
+   `Rate limit exceeded / Insufficient budget`），Semantic Scholar 无 key 全部 429 限流——
+   实际只有 Crossref + arXiv 两个源在贡献候选，直接拉低 recall（已用 curl 复现确认）。
+2. **离线口径不含生产全链路**：无澄清、无 RefChain 子问题分解（queryGroups=1）、无 selector 分级、无引文雪球。
+3. **Crossref 污染**：top-20 混入大量 "Table/Figure/Supplementary" 图表标题条目（如 lit-1 前 20 几乎全是），
+   属于可修复的精度问题，会同时挤占有效候选位置。
+4. 命中规律：能命中的两条（seq2seq 去噪预训练、教学文本澄清评测）均为"描述明确、可被关键词命中"的经典论文；
+   差距最大的是"宽泛研究问题 → 特定论文"类查询（如 lit-1 的硬负样本/去偏对比学习）。
+
+### 结论
+
+- 与比赛参考基准（LitSearch）相比，当前**真实差距很大**：即便把"源半瘫 + 无全链路"的折扣打满，
+  距 BM25 的召回水平也仍有量级差异；
+- 但 6.7% 是下限估计：修复 OpenAlex 计费 / S2 key、过滤图表标题污染、把 selector/雪球纳入离线评测后，
+  需重测才能得到可信差距（预计有显著回升，但仍低于 BM25，因为关键词 API 检索对"特定论文"类查询天然吃亏）；
+- 对竞赛定位的意义：单靠"多源关键词检索"打不过 BM25 基线，必须靠全链路（澄清拆解 + selector +
+  引文雪球 + LLM 排序）证明端到端价值，而不是离线 recall 单点数字。

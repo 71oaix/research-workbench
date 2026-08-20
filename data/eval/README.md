@@ -16,3 +16,14 @@ npx tsx scripts/eval-m2-15.mjs --queries-file data/eval/queries.jsonl
 LitSearch 子集：脚本支持 `--litsearch <jsonl>` 传入 LitSearch 查询子集
 （字段 `query`），其 recall 判定依赖对应的相关论文集合（`relevant`），
 未提供时只输出检索命中统计。
+
+## LitSearch 评测数据
+
+- `litsearch-queries.jsonl`：全量 597 条 LitSearch 查询（`query` + 金标论文标题 `relevant`），
+  由 HF 数据集 `princeton-nlp/LitSearch` 的 query parquet 转换而来；
+- `litsearch-queries-sample30.jsonl`：30 条分层抽样（query_set × specificity 对齐原分布），
+  用于基线对比跑批（结果见 `docs/research/2026-08-21-effect-baseline.md` 第五节）；
+- `litsearch-corpus-titles.json`：corpus_clean 64,183 篇论文的 corpusid → title 映射，
+  用于把金标 corpusid 转成标题（重跑全量或建本地索引时复用）。
+
+> 数据源 gitee 镜像：`https://gitee.com/hf-datasets/LitSearch`（huggingface.co 直连不可用时可用）。

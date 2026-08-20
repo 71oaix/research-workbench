@@ -1,5 +1,5 @@
 /**
- * 获取 LitSearch 查询子集（HF datasets-server），写入 data/eval/litsearch-queries.jsonl。
+ * 获取 LitSearch 查询子集（HF datasets-server，princeton-nlp/LitSearch），写入 data/eval/litsearch-queries.jsonl。
  * 用法：npx tsx scripts/fetch-litsearch.mjs [--rows 30]
  * 网络不可用时静默失败（可离线放置文件，README 已注明口径）。
  */
@@ -13,8 +13,8 @@ const ROWS = Number(process.argv.find((_, index, all) => all[index - 1] === '--r
 
 async function main() {
   const url =
-    `https://datasets-server.huggingface.co/rows?dataset=allenai%2FLitSearch` +
-    `&config=default&split=test&offset=0&length=${Math.min(ROWS, 100)}`
+    `https://datasets-server.huggingface.co/rows?dataset=princeton-nlp%2FLitSearch` +
+    `&config=query&split=full&offset=0&length=${Math.min(ROWS, 100)}`
   const response = await fetch(url, { signal: AbortSignal.timeout(30000) })
   if (!response.ok) {
     throw new Error(`LitSearch 拉取失败（HTTP ${response.status}）`)
