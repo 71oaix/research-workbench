@@ -57,5 +57,5 @@ updated: 2026-08-17
 | Issue: M2-14 检索召回与产物编号修复 | active | issues/open/2026-08-17-m2-14-search-recall-and-artifact-ids.md | 真实运行对比暴露：召回退化 + 编号错位 |
 | Plan: M2-14 检索召回与产物编号修复 | active | plans/open/2026-08-17-m2-14-search-recall-and-artifact-ids.md | 已实现，待真实运行验证后合并 |
 | Issue: M2-15 模糊问题澄清 + 标题摘要筛选 | active | issues/open/2026-08-18-m2-15-clarify-and-select-papers.md | 澄清锚点 + selector 筛选 + Unpaywall 候选 |
-| Plan: M2-15 模糊问题澄清 + 标题摘要筛选 | active | plans/open/2026-08-18-m2-15-clarify-and-select-papers.md | 待用户确认后实现 |
+| Plan: M2-15 澄清 + 筛选 + 华为赛题吸收 | active | plans/open/2026-08-18-m2-15-clarify-and-select-papers.md | 待用户确认后实现（RefChain/时间过滤/雪球/评测） |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |

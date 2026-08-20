@@ -48,3 +48,10 @@ resolution_plan: "docs/plans/close/2026-08-16-m2-9-citation-verification.md"
 
 - 依赖：M2-8
 - 后续：M2-10 审查与评估
+
+## M2-12 修订注记（2026-08-17）
+
+本 issue 的“多源交叉”口径在 M2-12 落地：DOI 走 Crossref lookup、arXiv 论文走 arXiv lookup、
+无 DOI/arXiv 时标题 + 第一作者检索（Crossref → Semantic Scholar 兜底），
+与本文档“Crossref → PubMed → Semantic Scholar → Web 兜底”的原始表述重新对齐
+（PubMed/Web 源留 M3，详见 `docs/plans/close/2026-08-16-m2-9-citation-verification.md` 的修订注记）。
