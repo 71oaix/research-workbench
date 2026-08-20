@@ -2,7 +2,12 @@ import type { SearchStats } from '@research-workbench/shared'
 import { extractThemeTokens } from '../evidence/evaluation'
 import type { SearchConfig } from './config'
 import { SearchError } from './errors'
-import { expandKeywordQueries, extractKeywordGroups, normalizeArxivQuery } from './keywords'
+import {
+  expandKeywordQueries,
+  extractKeywordGroups,
+  normalizeArxivQuery,
+  parseTimeRange,
+} from './keywords'
 import { mergeAndRank } from './merge'
 import { detectDomain, selectForDomain } from './sources'
 import type { SourceSpec } from './sources'
@@ -15,6 +20,8 @@ import type {
 
 export interface SearchOptions {
   compensate?: boolean
+  gapQueries?: string[]
+  onlyGapQueries?: boolean
 }
 
 export class AcademicSearchService {
@@ -24,13 +31,19 @@ export class AcademicSearchService {
   ) {}
 
   async search(planMd: string, options: SearchOptions = {}): Promise<SearchOutput> {
-    const groups = extractKeywordGroups(planMd, this.config.maxGroups)
+    const baseGroups = options.onlyGapQueries
+      ? []
+      : extractKeywordGroups(planMd, this.config.maxGroups)
+    const gapGroups =
+      options.gapQueries?.map((query, index) => ({ label: `gap-${index + 1}`, query })) ?? []
+    const groups = [...baseGroups, ...gapGroups].slice(0, this.config.maxGroups)
     const queries = expandKeywordQueries(groups)
     const domain = detectDomain(planMd)
     const selected = selectForDomain(this.specs, domain)
     const clients = selected.map((spec) => spec.create(this.config))
     const limit = options.compensate ? this.config.compensatePerQuery : this.config.perQuery
     const minCitations = options.compensate ? this.config.minCitations : 0
+    const timeRange = parseTimeRange(planMd)
 
     const failed: string[] = []
     const rawPapers: SearchPaper[] = []
@@ -41,7 +54,7 @@ export class AcademicSearchService {
     const { results, circuits } = await runPerSourceConcurrent(
       tasks,
       this.config.sourceConcurrency,
-      (task) => this.searchOne(task.client, task.query, limit),
+      (task) => this.searchOne(task.client, task.query, limit, timeRange ?? undefined),
       3
     )
 
@@ -100,6 +113,7 @@ export class AcademicSearchService {
       ),
       keywordsUsed: queries.length,
       queries: tasks.length,
+      gapQueries: options.gapQueries?.length ?? 0,
       minCitations,
       totalHits: merged.stats.totalHits,
       uniquePapers: merged.stats.uniquePapers,
@@ -114,7 +128,8 @@ export class AcademicSearchService {
   private async searchOne(
     client: AcademicSearchClient,
     query: KeywordGroup,
-    limit: number
+    limit: number,
+    filters?: { yearFrom?: number; yearTo?: number }
   ): Promise<SearchPaper[]> {
     let q = query.query
     if (client.source === 'arxiv') {
@@ -122,18 +137,18 @@ export class AcademicSearchService {
       if (!normalized) return []
       q = normalized
     }
-    let papers = await client.search(q, limit)
+    let papers = await client.search(q, limit, filters)
     if (papers.length === 0) {
       const broadened = broadenQuery(q)
       if (broadened !== q) {
-        papers = await client.search(broadened, limit)
+        papers = await client.search(broadened, limit, filters)
       }
     }
     if (papers.length === 0) {
       const first = firstToken(q)
       const broadened = broadenQuery(q)
       if (first && first !== q && first !== broadened) {
-        papers = await client.search(first, limit)
+        papers = await client.search(first, limit, filters)
       }
     }
     return papers

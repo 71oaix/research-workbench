@@ -139,6 +139,29 @@ describe('OpenAlexClient', () => {
     await expect(client.search('query', 5)).resolves.toEqual([])
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
+
+  it('applies year range filters to the works search URL', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ results: [] }))
+    vi.stubGlobal('fetch', fetchMock)
+    const client = new OpenAlexClient({ retryDelayMs: () => 0 })
+    await client.search('memory agent', 10, { yearFrom: 2020, yearTo: 2025 })
+    const [url] = fetchMock.mock.calls[0] as [string]
+    expect(url).toContain('filter=from_publication_date%3A2020-01-01%2Cto_publication_date%3A2025-12-31')
+  })
+
+  it('citedBy uses filter=cites:W{id} and worksByIds uses openalex filter', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ results: [] }))
+    vi.stubGlobal('fetch', fetchMock)
+    const client = new OpenAlexClient({ retryDelayMs: () => 0 })
+    await client.citedBy('W123', 10)
+    expect(decodeURIComponent(String(fetchMock.mock.calls[0][0]))).toContain(
+      'filter=cites:W123'
+    )
+    await client.worksByIds(['W123', 'W456'])
+    expect(decodeURIComponent(String(fetchMock.mock.calls[1][0]))).toContain(
+      'filter=openalex:W123|W456'
+    )
+  })
 })
 
 describe('ArxivClient', () => {

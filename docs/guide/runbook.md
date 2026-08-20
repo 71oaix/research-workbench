@@ -289,6 +289,43 @@ node scripts/verify-m2-13.mjs
 node scripts/verify-m2-14.mjs
 ```
 
+## M2-15 澄清、筛选与华为赛题性能吸收说明
+
+```bash
+SEARCH_CANDIDATE_TOP=40          # 可选，候选池规模，默认 40
+SEARCH_MAX_GROUPS=10             # 可选，查询组上限（关键词 ∪ 子问题），默认 10（M2-15 起）
+SEARCH_UNPAYWALL_EMAIL=you@example.com  # 可选，Unpaywall 兜底查询邮箱
+PI_MODEL_SELECTOR=...            # 可选，selector 模型（默认 flash）
+PI_THINKING_SELECTOR=xhigh       # 可选，selector 思考强度（默认 xhigh）
+```
+
+说明：
+
+- 默认模板变六步：规划 → 检索 → 筛选 → 写作 → 评估 → 审查；筛选自动执行（无需审批）；
+- 宽泛问题（如“研究下什么是 agent”）规划阶段会输出“## 澄清请求”，在审批意见中回答问题即可，
+  下一轮计划会收敛锚点；
+- 检索只产候选池（`research-candidates.md` / `.json`），由 selector 批量筛选后才下载全文，
+  卡片带相关度分级与筛选理由，`selector-report.md` 可回溯剔除与二次检索；
+- 引文雪球（OpenAlex cites / referenced_works）与 gap 二次检索会自动补充并重筛新候选；
+- plan 含时间范围时 OpenAlex / S2 检索自动按年份过滤。
+
+效果评测与成本报告（本地离线检索，无需模型 key）：
+
+```bash
+npx tsx scripts/eval-m2-15.mjs --limit 5
+npx tsx scripts/eval-m2-15.mjs --out data/eval/report.md
+npx tsx scripts/cost-report.mjs
+```
+
+真实六步流程验证（服务已启动且进程带 OPENCODE_GO_API_KEY）：
+
+```bash
+node scripts/verify-m2-15.mjs
+```
+
+脚本会检查：宽泛问题第一轮 plan 含“澄清请求”、六步完成、top-15 无明显无关论文、
+卡片带相关度分级与筛选理由、全文编号与卡片一致。
+
 ## 常见问题
 
 - 端口被占用：设置环境变量 `PORT`（server）或修改

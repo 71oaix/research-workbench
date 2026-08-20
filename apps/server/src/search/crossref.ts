@@ -1,7 +1,7 @@
 import { fetchJson, SearchHttpError } from './http'
 import { normalizeDoi } from './merge'
 import { RateLimiter } from './rateLimiter'
-import type { AcademicSearchClient, SearchPaper } from './types'
+import type { AcademicSearchClient, SearchFilters, SearchPaper } from './types'
 
 export interface CrossrefOptions {
   mailto?: string
@@ -19,7 +19,7 @@ export class CrossrefClient implements AcademicSearchClient {
     this.rateLimiter = options.rateLimiter ?? new RateLimiter(20)
   }
 
-  async search(query: string, limit: number): Promise<SearchPaper[]> {
+  async search(query: string, limit: number, _filters?: SearchFilters): Promise<SearchPaper[]> {
     const base = this.options.baseUrl ?? 'https://api.crossref.org'
     const url = new URL(`${base}/works`)
     url.searchParams.set('query', query)

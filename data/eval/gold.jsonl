@@ -1,0 +1,10 @@
+{"id":"q01","gold":["Intelligent Agents: Theory and Practice","Intelligent Agents","Agent Theories, Architectures, and Languages: A Survey"]}
+{"id":"q02","gold":["Generative Agents: Interactive Simulacra of Human Behavior","MemGPT: Towards LLMs as Operating Systems","Cognitive Architectures for Language Agents","A-Mem: Agent Memory"]}
+{"id":"q03","gold":["Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks","Retrieval-Augmented Generation for Large Language Models: A Survey","Dense Passage Retrieval for Open-Domain Question Answering"]}
+{"id":"q04","gold":["Survey of Hallucination in Natural Language Generation","A Survey on Hallucination in Large Language Models: Principles, Taxonomy, Challenges, and Open Questions","A Comprehensive Survey of Hallucination Mitigation Techniques in Large Language Models"]}
+{"id":"q05","gold":["Graph Neural Networks in Recommender Systems: A Survey","LightGCN: Simplifying and Powering Graph Convolution Network for Recommendation","Neural Graph Collaborative Filtering"]}
+{"id":"q06","gold":["CodeRL: Mastering Code Generation through Pretrained Models and Deep Reinforcement Learning","Execution-based Code Generation using Deep Reinforcement Learning","RL4Code: Ordering Reward Components in Code Generation"]}
+{"id":"q07","gold":["Neural-Symbolic Computing: An Effective Strategy for Integrating First-Order Logic with Deep Learning","The Third AI Summer: AAAI Robert S. Engelmore Memorial Lecture"]}
+{"id":"q08","gold":["Advances and Open Problems in Federated Learning","A Survey on Federated Learning","Federated Learning: Challenges, Methods, and Future Directions"]}
+{"id":"q09","gold":["Longformer: The Long-Document Transformer","Generating Long Sequences with Sparse Transformers","Ring Attention with Blockwise Transformers for Near-Infinity Context"]}
+{"id":"q10","gold":["LitSearch: A Retrieval Benchmark for Scientific Literature Search","AstaBench: Rigorous Benchmarking of AI Agents with a Scientific Research Suite","SPAR: Scholar Paper Retrieval with LLM-based Agents for Enhanced Academic Search","PaSa: An LLM Agent for Comprehensive Academic Paper Search"]}

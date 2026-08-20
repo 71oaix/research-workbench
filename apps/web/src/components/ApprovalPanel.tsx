@@ -7,14 +7,19 @@ export function ApprovalPanel({
   decisions,
   onDecide,
   reviewContent,
+  planContent,
 }: {
   step: Step
   decisions: Decision[]
   onDecide: (type: 'approve' | 'modify' | 'reject', note?: string) => void
   reviewContent?: string | null
+  planContent?: string | null
 }) {
   const [note, setNote] = useState('')
   const isReviewer = step.role === 'reviewer'
+  const clarification = planContent?.includes('## 澄清请求')
+    ? extractClarificationQuestions(planContent)
+    : []
   const blockingConcerns = reviewContent
     ? parseConcernLedger(reviewContent).filter((concern) => concern.blocking)
     : []
@@ -40,6 +45,16 @@ export function ApprovalPanel({
   return (
     <section className="approval-panel">
       <h3>审批：{step.label}</h3>
+      {clarification.length > 0 && (
+        <div className="clarification-hint">
+          <p>⚠ 该计划需要澄清，请在意见中回答以下问题：</p>
+          <ol>
+            {clarification.map((question, index) => (
+              <li key={index}>{question}</li>
+            ))}
+          </ol>
+        </div>
+      )}
       <textarea
         value={note}
         onChange={(event) => setNote(event.target.value)}
@@ -77,4 +92,18 @@ export function ApprovalPanel({
       )}
     </section>
   )
+}
+
+function extractClarificationQuestions(planContent: string): string[] {
+  const match = planContent.match(/##\s*澄清请求\s*([\s\S]*?)(?=\n##\s|\n#\s|$)/)
+  if (!match) return []
+  const questions: string[] = []
+  for (const line of match[1].split('\n')) {
+    const item = line
+      .replace(/^[-*]\s+/, '')
+      .replace(/^\d+[.)、]\s*/, '')
+      .trim()
+    if (item && !item.startsWith('#') && item.length >= 2) questions.push(item)
+  }
+  return questions.slice(0, 6)
 }

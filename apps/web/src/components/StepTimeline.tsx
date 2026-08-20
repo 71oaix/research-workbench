@@ -3,6 +3,7 @@ import type { Step } from '@research-workbench/shared'
 const ROLE_LABELS: Record<Step['role'], string> = {
   planner: '规划',
   researcher: '检索',
+  selector: '筛选',
   writer: '写作',
   evaluator: '评估',
   reviewer: '审查',

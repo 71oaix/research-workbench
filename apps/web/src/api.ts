@@ -9,13 +9,14 @@ export interface WorkflowDetail {
 
 interface StepSpecInput {
   label: string
-  role: 'planner' | 'researcher' | 'writer' | 'evaluator' | 'reviewer'
+  role: 'planner' | 'researcher' | 'selector' | 'writer' | 'evaluator' | 'reviewer'
   requiresApproval: boolean
 }
 
 const DEFAULT_STEPS: StepSpecInput[] = [
   { label: '生成检索计划', role: 'planner', requiresApproval: true },
   { label: '检索文献', role: 'researcher', requiresApproval: true },
+  { label: '筛选证据', role: 'selector', requiresApproval: false },
   { label: '撰写综述', role: 'writer', requiresApproval: true },
   { label: '评估证据', role: 'evaluator', requiresApproval: false },
   { label: '审查引用', role: 'reviewer', requiresApproval: true },

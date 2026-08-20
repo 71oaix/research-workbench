@@ -20,6 +20,7 @@ export interface AcquireOptions {
   dir: string
   maxChars: number
   extractText?: (buffer: Buffer) => Promise<string>
+  unpaywallEmail?: string
 }
 
 const MIN_TEXT_CHARS = 500
@@ -55,14 +56,46 @@ export async function acquireFullText(
   paper: MergedPaper,
   options: AcquireOptions
 ): Promise<AcquireResult> {
-  const urls = resolvePdfUrls(paper)
-  if (urls.length === 0) return { result: null, reason: 'no_oa' }
   const extract = options.extractText ?? extractPdfText
+  const unpaywallEnabled = Boolean(options.unpaywallEmail && paper.doi)
+  let urls = resolvePdfUrls(paper)
+  let consultedUnpaywall = false
+  if (urls.length === 0 && unpaywallEnabled) {
+    const pdf = await lookupUnpaywallPdf(paper.doi as string, options.unpaywallEmail as string)
+    consultedUnpaywall = true
+    if (pdf) urls.push(pdf)
+  }
+  if (urls.length === 0) return { result: null, reason: 'no_oa' }
   for (const url of urls) {
     const result = await tryDownload(paper, url, options, extract)
     if (result) return { result, reason: 'ok' }
   }
+  // 已有候选但全部失败时，Unpaywall 作为最后一层兜底
+  if (!consultedUnpaywall && unpaywallEnabled) {
+    const pdf = await lookupUnpaywallPdf(paper.doi as string, options.unpaywallEmail as string)
+    if (pdf) {
+      const result = await tryDownload(paper, pdf, options, extract)
+      if (result) return { result, reason: 'ok' }
+    }
+  }
   return { result: null, reason: 'failed' }
+}
+
+async function lookupUnpaywallPdf(doi: string, email: string): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://api.unpaywall.org/v2/${encodeURIComponent(doi)}?email=${encodeURIComponent(email)}`,
+      { signal: AbortSignal.timeout(15_000) }
+    )
+    if (!response.ok) return null
+    const data = (await response.json()) as {
+      best_oa_location?: { url_for_pdf?: unknown }
+    }
+    const pdf = data.best_oa_location?.url_for_pdf
+    return typeof pdf === 'string' && pdf ? pdf : null
+  } catch {
+    return null
+  }
 }
 
 async function tryDownload(

@@ -191,3 +191,27 @@ reject  → step rejected → workflow: cancelled（记录 decision）
 - arxiv 查询适配：纯中文跳过、>4 实词精简到前 3 实词、空结果二次放宽（前 2 词 → 首词）
 - 全文编号：`paper-fulltext.md` 段落编号 = 卡片编号（index+1），下载失败不占编号
 - 不可核验卡片：无年份 + 无摘要 + 无 DOI/arXiv 管道端过滤；有年份无摘要标注“摘要：缺失”
+
+## 澄清、筛选与华为赛题性能吸收（M2-15）
+
+- 流程六步：规划 → 检索（候选池）→ **筛选（selector，自动）** → 写作 → 评估 → 审查；
+  selector 位于 researcher 与 writer 之间，`requiresApproval=false`
+- 规划澄清：planner 检测到模糊问题（缺领域 / 对象类型 / 场景 / 时间范围）时输出“## 澄清请求”小节，
+  审批面板显示提示条，用户以审批意见回答，planner 重跑吸收后收敛锚点
+- 候选池拆分：researcher 只产出 `research-candidates.md`（人/模型可读）与
+  `research-candidates.json`（结构化，供 selector 代码解析），不再立即下载全文
+- selector 角色：逐篇分析标题 + 摘要（内容 / 场景 / 创新点），输出 入选/剔除 + 相关度分级
+  （高 / 部分）+ 理由（≤120 字）+ “二次检索建议”（2-4 条）；解析失败回退“全量入选”安全网
+- 引文雪球：对入选且来自 OpenAlex 的 top-3 论文，用 `filter=cites:W{id}`（被引方向）与
+  `select=referenced_works` → `filter=openalex:W1|W2`（参考文献方向）补充候选
+- gap 二次检索：按 selector 建议查询补检（`onlyGapQueries` 不复跑基础查询），
+  与雪球结果合并去重后，仅对新候选重筛 1 次
+- 时间过滤：plan 中的时间范围（年份区间 / 近 N 年）→ OpenAlex `from/to_publication_date`、
+  S2 `year`；解析失败不加过滤（安全网）
+- RefChain 检索：查询组 = 检索关键词 ∪ 子问题（去重，上限 `SEARCH_MAX_GROUPS` 默认 10）；
+  同义词扩展：LLM→large language model、RAG→retrieval augmented generation 等确定性映射，每组至多 +2
+- 相关度分级排序：`mergeAndRank` 中分级优先、引用数退为 tie-breaker；
+  卡片展示“相关度”与“筛选理由”，`selector-report.md` 记录入选 / 剔除 / gap / 雪球全量可回溯
+- 下载兜底：`SEARCH_UNPAYWALL_EMAIL` 配置后，无候选或候选全失败时查询 Unpaywall 补 PDF 候选
+- 评测与成本：`scripts/eval-m2-15.mjs`（离线 recall@20 / precision + 可选完整工作流核验率）、
+  `scripts/cost-report.mjs`（usage_records 聚合：调用次数 / token / ¥ / 耗时）；评测数据在 `data/eval/`

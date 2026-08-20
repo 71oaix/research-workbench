@@ -1,6 +1,6 @@
 import { normalizeArxiv } from './merge'
 import { RateLimiter } from './rateLimiter'
-import type { AcademicSearchClient, SearchPaper } from './types'
+import type { AcademicSearchClient, SearchFilters, SearchPaper } from './types'
 
 export interface ArxivOptions {
   baseUrl?: string
@@ -17,7 +17,7 @@ export class ArxivClient implements AcademicSearchClient {
     this.rateLimiter = options.rateLimiter ?? new RateLimiter(3000)
   }
 
-  async search(query: string, limit: number): Promise<SearchPaper[]> {
+  async search(query: string, limit: number, _filters?: SearchFilters): Promise<SearchPaper[]> {
     const base = this.options.baseUrl ?? 'https://export.arxiv.org/api/query'
     const url = new URL(base)
     url.searchParams.set('search_query', `all:${encodeURIComponent(query)}`)

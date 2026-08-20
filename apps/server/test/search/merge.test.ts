@@ -214,4 +214,33 @@ describe('mergeAndRank', () => {
     expect(papers).toHaveLength(1)
     expect(papers[0].sources).toEqual(['openalex', 'semantic-scholar'])
   })
+
+  it('ranks relevanceLevel before citations (selector 分级优先)', () => {
+    const partialHighCitation = paper({
+      title: 'Partial but cited 1000x',
+      citationCount: 1000,
+      year: 2024,
+      relevanceLevel: 'partial',
+      source: 'openalex',
+    })
+    const highLowCitation = paper({
+      title: 'High relevance low citation',
+      citationCount: 3,
+      year: 2025,
+      relevanceLevel: 'high',
+      source: 'openalex',
+    })
+    const noLevel = paper({
+      title: 'No level',
+      citationCount: 500,
+      year: 2023,
+      source: 'openalex',
+    })
+    const { papers } = mergeAndRank([partialHighCitation, noLevel, highLowCitation], 10)
+    expect(papers.map((p) => p.title)).toEqual([
+      'High relevance low citation',
+      'Partial but cited 1000x',
+      'No level',
+    ])
+  })
 })

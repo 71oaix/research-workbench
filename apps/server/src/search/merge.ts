@@ -129,6 +129,7 @@ function mergePair(a: MergedPaper, b: SearchPaper): MergedPaper {
   return {
     ...a,
     sources: [...new Set([...a.sources, b.source])],
+    relevanceLevel: a.relevanceLevel ?? b.relevanceLevel ?? null,
     title: longer(a.title, b.title),
     abstract: longerOrNull(a.abstract, b.abstract),
     authors: union(a.authors, b.authors),
@@ -142,11 +143,20 @@ function mergePair(a: MergedPaper, b: SearchPaper): MergedPaper {
 }
 
 function compare(a: MergedPaper, b: MergedPaper): number {
+  // 相关度分级优先（selector 输出），引用数退为 tie-breaker
+  const levelDiff = levelRank(b.relevanceLevel) - levelRank(a.relevanceLevel)
+  if (levelDiff !== 0) return levelDiff
   const citations = (b.citationCount ?? -1) - (a.citationCount ?? -1)
   if (citations !== 0) return citations
   const sources = b.sources.length - a.sources.length
   if (sources !== 0) return sources
   return (b.year ?? -1) - (a.year ?? -1)
+}
+
+function levelRank(level: 'high' | 'partial' | null | undefined): number {
+  if (level === 'high') return 2
+  if (level === 'partial') return 1
+  return 0
 }
 
 function longer(a: string, b: string): string {
