@@ -64,11 +64,27 @@ M2-14 真实运行：召回 1113/797（目标达成），但 top-15 混入“太
 
 - 对只有 1 个 PDF 候选的论文补 Unpaywall（`SEARCH_UNPAYWALL_EMAIL` 可配），降低 M2-14 的 3/9 失败率。
 
+### P0-3 华为赛题吸收（查询智能与召回增强，方案见 research/2026-08-20-huawei-topic-absorption.md）
+
+- 子问题并入检索查询组（SPAR RefChain 落地）＋同义词/缩写查询扩展；
+- plan 时间范围 → OpenAlex `from_publication_date` / S2 `year` 过滤；
+- selector 相关度分级（高度相关/部分相关）进入卡片与排序；
+- gap 驱动的二次检索（selector 输出缺失方向+建议查询 → 补检索 → 合并复审）；
+- 引文雪球：入选 top-3 论文经 OpenAlex `cited_by`/`referenced_works` 补充候选。
+
+### P1-2 评测与成本（华为赛题 20% 效率分 + “效果怎么证明”）
+
+- `scripts/eval-m2-15.mjs`：LitSearch 子集（20-30 条）+ 自建 10-20 条查询离线评测，
+  输出 recall@20 / precision / 核验率 / 每查询成本与延时（usage_records）；
+- 工作流成本报告（API 调用次数 / token / ¥ / 耗时）写入文档指标表。
+
 ## 范围（做）
 
 - P0-1 规划澄清（planner 澄清请求 + 审批面板提示 + 意见吸收）。
 - P0-2 selector 角色 + 候选池拆分 + 标题摘要批量筛选。
-- P1-1 Unpaywall 下载候选。
+- P0-3 华为赛题吸收：RefChain 子问题检索 + 查询扩展 + 时间过滤 + 相关度分级 +
+  gap 二次检索 + 引文雪球。
+- P1-1 Unpaywall 下载候选；P1-2 评测脚本 + 成本报告。
 
 ## 不做
 
@@ -79,5 +95,7 @@ M2-14 真实运行：召回 1113/797（目标达成），但 top-15 混入“太
 - [ ] 宽泛问题（如“研究下什么是 agent”）运行后 plan 含“澄清请求”，用户意见回答后第二轮锚点明显收敛
 - [ ] 真实运行候选池 30-50 篇，入选 top-15 无“太极统一场论”类明显无关论文
 - [ ] 每张入选卡片附筛选理由；相关度中位数较 M2-14 提升
+- [ ] 相关度分级（高度相关/部分相关）出现在卡片；gap 二次检索与引文雪球后 recall 进一步提升
+- [ ] 评测脚本输出 recall@20 / precision / 核验率 / 每查询成本延时指标表
 - [ ] 单候选论文下载失败率下降（Unpaywall 生效）
 - [ ] typecheck / test 全绿

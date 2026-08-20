@@ -32,6 +32,7 @@ updated: 2026-08-17
 | 调研：M2-8 内化清单逐项论证 | active | research/2026-08-15-m2-8-skill-internalization-rationale.md | 每项为什么用 / 为什么这么做 + MVP/M3 切分 |
 | 调研：M2-13 效果评审（真实运行复盘） | active | research/2026-08-17-m2-13-effect-audit.md | 逐文件审计 + 评估失真分析 + M3 效果路线 |
 | 评审：可交付性（截止 9/1 前） | active | research/2026-08-20-deliverable-readiness-audit.md | 差距清单 + 迭代轮数 + 时间线 + 赛题对照 |
+| 调研：华为赛题深度吸收方案 | active | research/2026-08-20-huawei-topic-absorption.md | 查询理解/迭代检索/排序/评测路线 + 参考系统对照 |
 | Plan: M2-3 学术检索 | archived | plans/close/2026-08-14-m2-3-academic-search.md | 已归档：实现完成 |
 | Issue: M2-4 Writer/Reviewer 证据引用 | archived | issues/close/2026-08-14-m2-4-evidence-citation.md | 已归档：证据引用实现完成 |
 | Plan: M2-4 Writer/Reviewer 证据引用 | archived | plans/close/2026-08-14-m2-4-evidence-citation.md | 已归档：实现完成 |
