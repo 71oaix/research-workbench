@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { AcademicSearchService } from '../../src/search/AcademicSearchService'
 import { loadSearchConfig } from '../../src/search/config'
+import { SearchHttpError } from '../../src/search/http'
 import type { Domain, SourceSpec } from '../../src/search/sources'
 import type { AcademicSearchClient, SearchPaper } from '../../src/search/types'
 
@@ -209,5 +210,85 @@ describe('AcademicSearchService', () => {
 
     expect(record.queries).toContain('episodic semantic memory')
     expect(record.queries.some((query) => /[\u4e00-\u9fff]/.test(query))).toBe(false)
+  })
+
+  it('marks a budget-429 source degraded and compensates on alive sources', async () => {
+    const record = { queries: [] as string[], limits: [] as number[] }
+    const deadClient: AcademicSearchClient = {
+      source: 'dead',
+      async search() {
+        throw new SearchHttpError(429, 'Insufficient budget. Add funds at https://openalex.org/pricing', true)
+      },
+    }
+    const aliveSpec = fakeSpec('alive', (query) => [makePaper('alive', `Paper ${query}`, 5)], record)
+    const deadSpec: SourceSpec = {
+      source: 'dead',
+      tier: 'T1',
+      domains: ['cs', 'cross-disciplinary', 'exhaustive', 'medical'] as Domain[],
+      create: () => deadClient,
+    }
+    const config = loadSearchConfig({ SEARCH_COMPENSATE_PER_QUERY: '50' })
+    const service = new AcademicSearchService([aliveSpec, deadSpec], config)
+    const plan = '## 检索关键词\n- memory agent'
+
+    const output = await service.search(plan)
+
+    expect(output.stats.degradedSources).toContain('dead(T1)')
+    expect(output.stats.compensatedQueries).toBeGreaterThan(0)
+    expect(record.limits).toContain(50)
+    expect(output.stats.failedSources).not.toContain(expect.stringContaining('dead'))
+  })
+
+  it('counts T3 source failures as degraded instead of failed', async () => {
+    const t3Client: AcademicSearchClient = {
+      source: 't3-s2',
+      async search() {
+        throw new SearchHttpError(429, 'Too Many Requests')
+      },
+    }
+    const aliveSpec = fakeSpec('alive', () => [makePaper('alive', 'Paper', 3)])
+    const t3Spec: SourceSpec = {
+      source: 't3-s2',
+      tier: 'T3',
+      domains: ['cs', 'cross-disciplinary', 'exhaustive', 'medical'] as Domain[],
+      create: () => t3Client,
+    }
+    const service = new AcademicSearchService([aliveSpec, t3Spec], loadSearchConfig({}))
+
+    const output = await service.search('## 检索关键词\n- memory')
+
+    expect(output.stats.degradedSources).toContain('t3-s2(T3)')
+    expect(output.stats.failedSources).not.toContain(expect.stringContaining('t3-s2'))
+  })
+
+  it('skips a source in cooldown after it was marked down', async () => {
+    let calls = 0
+    const deadClient: AcademicSearchClient = {
+      source: 'dead',
+      async search() {
+        calls++
+        throw new SearchHttpError(429, 'Insufficient budget. Add funds at https://openalex.org/pricing', true)
+      },
+    }
+    const aliveSpec = fakeSpec('alive', () => [makePaper('alive', 'Paper', 3)])
+    const deadSpec: SourceSpec = {
+      source: 'dead',
+      tier: 'T1',
+      domains: ['cs', 'cross-disciplinary', 'exhaustive', 'medical'] as Domain[],
+      create: () => deadClient,
+    }
+    const service = new AcademicSearchService(
+      [aliveSpec, deadSpec],
+      loadSearchConfig({ SEARCH_DEGRADE_COOLDOWN_MS: '300000' })
+    )
+    const plan = '## 检索关键词\n- memory'
+
+    const first = await service.search(plan)
+    const second = await service.search(plan)
+
+    expect(first.stats.degradedSources).toContain('dead(T1)')
+    expect(calls).toBe(1)
+    expect(second.stats.degradedSources).toContain('dead(T1)')
+    expect(second.stats.queries).toBeLessThan(first.stats.queries)
   })
 })

@@ -116,6 +116,8 @@ async function runOffline(queries, goldMap, mode) {
       totalHits: output.stats.totalHits,
       uniquePapers: output.stats.uniquePapers,
       failedSources: output.stats.failedSources,
+      degradedSources: output.stats.degradedSources ?? [],
+      compensatedQueries: output.stats.compensatedQueries ?? 0,
       goldSize: gold.length,
       recall20: gold.length > 0 ? hits / gold.length : null,
       hits,
@@ -205,19 +207,19 @@ function renderOfflineReport(rows) {
     `- 时间：${new Date().toISOString()}`,
     `- 查询数：${rows.length}（离线确定性检索，recall@${RECALL_TOP}）`,
     '',
-    '| id | 查询 | 耗时(s) | 查询组 | 请求数 | gap | 命中 | 去重 | 金标 | recall@20 | 失败源 |',
-    '|----|------|---------|--------|--------|-----|------|------|------|-----------|--------|',
+    '| id | 查询 | 耗时(s) | 查询组 | 请求数 | gap | 命中 | 去重 | 金标 | recall@20 | 失败源 | 降级源 |',
+    '|----|------|---------|--------|--------|-----|------|------|------|-----------|--------|--------|',
   ]
   const recallValues = []
   for (const row of rows) {
     if (row.error) {
-      lines.push(`| ${row.id} | ${row.query} | - | - | - | - | - | - | - | FAIL: ${row.error} | - |`)
+      lines.push(`| ${row.id} | ${row.query} | - | - | - | - | - | - | - | FAIL: ${row.error} | - | - |`)
       continue
     }
     const recall = row.recall20 === null ? '-' : `${(row.recall20 * 100).toFixed(0)}%`
     if (row.recall20 !== null) recallValues.push(row.recall20)
     lines.push(
-      `| ${row.id} | ${row.query} | ${(row.elapsedMs / 1000).toFixed(1)} | ${row.queryGroups} | ${row.queries} | ${row.gapQueries} | ${row.totalHits} | ${row.uniquePapers} | ${row.goldSize} | ${recall} | ${row.failedSources.join('、') || '无'} |`
+      `| ${row.id} | ${row.query} | ${(row.elapsedMs / 1000).toFixed(1)} | ${row.queryGroups} | ${row.queries} | ${row.gapQueries} | ${row.totalHits} | ${row.uniquePapers} | ${row.goldSize} | ${recall} | ${row.failedSources.join('、') || '无'} | ${row.degradedSources.join('、') || '无'}${row.compensatedQueries > 0 ? `（补偿 ${row.compensatedQueries}）` : ''} |`
     )
   }
   const avg =

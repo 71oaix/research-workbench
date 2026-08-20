@@ -39,7 +39,7 @@ export class CrossrefClient implements AcademicSearchClient {
     const items = (data as { message?: { items?: unknown[] } }).message?.items ?? []
     return items
       .map((raw, index) => normalizeCrossrefWork(raw, index))
-      .filter((paper) => paper.title.length > 0)
+      .filter((paper) => paper.title.length > 0 && !isCrossrefNoise(paper.title, paper.raw))
   }
 
   async lookup(doi: string): Promise<SearchPaper | null> {
@@ -69,6 +69,28 @@ export class CrossrefClient implements AcademicSearchClient {
       throw error
     }
   }
+}
+
+/**
+ * 过滤 Crossref 收录的图表/补充材料条目（图注、表注等被当作独立 work 收录，
+ * 元数据完整但并非论文）。type=component 直接过滤；其余要求"标题前缀 + 强结构信号"
+ * 同时成立，避免误杀 "Table-based…"、"Figure Ground…" 等合法论文标题。
+ */
+function isCrossrefNoise(title: string, rawJson: string | null): boolean {
+  let type: string | null = null
+  if (rawJson) {
+    try {
+      const raw = JSON.parse(rawJson) as { type?: unknown }
+      type = typeof raw.type === 'string' ? raw.type : null
+    } catch {
+      type = null
+    }
+  }
+  if (type === 'component') return true
+  const prefix =
+    /^(table|figure|fig\.?|supplementary( material| file| information)?|supporting information)\b/i
+  const strongSignal = /\d\s*[:.]|file\s+\d+/i
+  return prefix.test(title) && strongSignal.test(title)
 }
 
 function normalizeCrossrefWork(raw: unknown, index: number): SearchPaper {
