@@ -95,9 +95,18 @@ SEMANTIC_SCHOLAR_API_KEY=...   # 可选，提升 Semantic Scholar 限流
 OPENALEX_MAILTO=you@example.com  # 可选，进入 OpenAlex polite pool
 SEARCH_TOP_N=15                # 可选，论文卡片数量，默认 15
 SEARCH_PER_QUERY=25            # 可选，每个查询每源取多少条，默认 25
+SEARCH_COMPENSATE_ON_DEGRADE=true  # 可选，源稳定失效时对存活源补偿检索，默认 true
+SEARCH_DEGRADE_COOLDOWN_MS=300000  # 可选，失效源冷却期（毫秒），默认 300000（5 分钟）
 ```
 
-两个源都不配 key 也能跑通；配 key / mailto 后速度更稳。
+源状态说明（2026-08 实测）：
+
+- **OpenAlex 已改为计费制**：免费额度近乎为零（预算不足时返回 429 `Insufficient budget`），
+  系统会把这类 429 识别为"非可重试"，快速失败并自动把该源的任务补偿到存活源，
+  不再做无谓重试；当前阶段不推荐付费，靠 Crossref + arXiv + S2 即可覆盖主要学术库；
+- **Semantic Scholar 无 key 时降级为 T3**（单次尝试、零重试，失败计为降级而非失败），
+  建议申请免费 key（https://www.semanticscholar.org/product/api#api-key-form）后自动升 T1；
+- 配 key / mailto 后速度更稳；稳定失效的源进入冷却期（默认 5 分钟）自动跳过并定时重探。
 
 真实端到端验证（服务已启动且进程带 OPENCODE_GO_API_KEY）：
 
@@ -275,7 +284,7 @@ node scripts/verify-m2-13.mjs
 
 ## M2-14 检索召回与编号修复说明
 
-- cs 域检索源：arxiv + OpenAlex + Crossref + Semantic Scholar（有 key 时 T1，无 key 时 T2）；
+- cs 域检索源：arxiv + OpenAlex + Crossref + Semantic Scholar（有 key 时 T1，无 key 时 T3 降级）；
 - 源级熔断：某源连续失败 ≥3 次后停用该源剩余查询，失败源统计压缩为源级（如
   “semantic-scholar(T2) 失败 14 个查询，熔断跳过 2 个查询”），不再逐查询刷屏；
 - arxiv 查询：纯中文查询跳过；>4 实词英文查询精简到前 3 实词；空结果依次放宽到前 2 词、首词；
