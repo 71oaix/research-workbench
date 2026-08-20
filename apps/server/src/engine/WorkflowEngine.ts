@@ -188,10 +188,8 @@ export class WorkflowEngine {
   private modifyTarget(step: Step, steps: Step[]): Step {
     if (step.role === 'reviewer') {
       const writer = [...steps].reverse().find((candidate) => candidate.role === 'writer')
-      if (!writer) {
-        throw new EngineError('modify_target_not_found', 400)
-      }
-      return writer
+      // 调研模板（无 writer）下 reviewer 打回目标回退为自身重跑
+      return writer ?? step
     }
     return step
   }
