@@ -63,4 +63,5 @@ updated: 2026-08-21
 | Plan: M2-16 全量吸收 | active | plans/open/2026-08-20-m2-16-full-absorption.md | 已实现并测试（待真实运行验证后合并） |
 | Issue: 检索源可靠性 | active | issues/open/2026-08-21-search-source-reliability.md | OpenAlex 计费额度 / S2 无 key 限流导致源半瘫 |
 | Issue: Crossref 结果污染 | active | issues/open/2026-08-21-crossref-noise-filter.md | Table/Figure/Supplementary 图表标题挤占候选池 |
+| Plan: 检索层修复（源降级补偿 + Crossref 噪声过滤） | active | plans/open/2026-08-21-search-source-reliability.md | 覆盖上述两个 issue，待确认 |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |

@@ -7,6 +7,7 @@ kind: bug
 priority: high
 triage: actionable
 areas: [server]
+resolution_plan: "docs/plans/open/2026-08-21-search-source-reliability.md"
 ---
 
 # Crossref 结果污染：Table/Figure/Supplementary 图表标题挤占候选池

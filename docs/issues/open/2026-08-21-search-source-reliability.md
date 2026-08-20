@@ -7,6 +7,7 @@ kind: bug
 priority: high
 triage: actionable
 areas: [server, docs]
+resolution_plan: "docs/plans/open/2026-08-21-search-source-reliability.md"
 ---
 
 # 检索源可靠性：OpenAlex 计费额度 / S2 无 key 限流导致源半瘫
