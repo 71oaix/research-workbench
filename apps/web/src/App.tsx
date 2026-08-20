@@ -25,7 +25,9 @@ export default function App() {
   const reviewArtifact =
     detail?.artifacts.find((artifact) => artifact.name === '04-review.md') ?? null
   const planArtifact =
-    detail?.artifacts.find((artifact) => artifact.name === '01-plan.md') ?? null
+    detail?.artifacts
+      .filter((artifact) => artifact.name === '01-plan.md')
+      .sort((a, b) => b.version - a.version)[0] ?? null
   const canStart = detail !== null && detail.workflow.status === 'planning'
 
   return (

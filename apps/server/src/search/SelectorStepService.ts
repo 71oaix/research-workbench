@@ -322,7 +322,13 @@ export function parseSelectorOutput(content: string): {
     selections.push({
       index,
       selected,
-      level: selected ? ((levelMatch?.[1] ?? 'high') === '部分' ? 'partial' : 'high') : null,
+      level: selected
+        ? levelMatch
+          ? levelMatch[1] === '部分'
+            ? 'partial'
+            : 'high'
+          : null
+        : null,
       reason: reasonMatch?.[1]?.trim().slice(0, 200) ?? '',
     })
   }
