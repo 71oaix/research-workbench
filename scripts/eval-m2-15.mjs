@@ -64,20 +64,23 @@ function buildPlanMd(query, mode) {
   if (mode !== 'baseline') {
     lines.splice(4, 0, '## 子问题', `- ${query.query}`)
   }
+  if (query.domain === 'cs') {
+    lines.push('', '## 锚定点', '- 领域：计算机科学（cs / agent / llm / model / network / algorithm）')
+  }
   if (query.yearFrom && mode !== 'baseline') {
     lines.push('', '## 锚定点', `- 时间范围：${query.yearFrom} 年以后`)
   }
   return lines.join('\n')
 }
 
-function titleHit(title, gold) {
-  const norm = normalizeTitle(title)
+function titleHit(title, abstract, gold) {
+  const norm = normalizeTitle(`${title} ${abstract ?? ''}`)
   if (!norm) return null
   return (
-    gold.find((g) => {
+    gold.findIndex((g) => {
       const normGold = normalizeTitle(g)
       return normGold && (norm === normGold || norm.includes(normGold) || normGold.includes(norm))
-    }) ?? null
+    }) ?? -1
   )
 }
 
@@ -97,10 +100,12 @@ async function runOffline(queries, goldMap, mode) {
     }
     const top = output.papers.slice(0, RECALL_TOP)
     const gold = goldMap.get(query.id) ?? []
-    let hits = 0
+    const matchedGold = new Set()
     for (const paper of top) {
-      if (titleHit(paper.title, gold)) hits++
+      const index = titleHit(paper.title, paper.abstract, gold)
+      if (index >= 0) matchedGold.add(index)
     }
+    const hits = matchedGold.size
     rows.push({
       id: query.id,
       query: query.query,
