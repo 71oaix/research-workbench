@@ -37,6 +37,9 @@ updated: 2026-08-23
 | 竞赛材料：项目文档初稿（附件 2 模板） | active | specification/2026-08-21-competition-project-document.md | 概况/规划/实施方案/参考资料 |
 | 竞赛材料：作品简介草稿（300 字） | active | specification/2026-08-21-competition-intro.md | 296 字，待定稿转 PDF |
 | 竞赛材料：演示视频脚本与录制方案 | active | specification/2026-08-23-demo-video-script.md | 5 分钟分镜 + 录制清单 |
+| Issue: M3-1 模型精排 | active | issues/open/2026-08-23-m3-1-model-rerank.md | 候选卡片按细粒度相关度排序（需 plan） |
+| Issue: M3-2 评估与审查增强 | active | issues/open/2026-08-23-m3-2-eval-review-enhance.md | 六维完整评分制 + 完整性批评视角（需 plan） |
+| Issue: M3-3 导出与渲染打磨 | active | issues/open/2026-08-23-m3-3-export-render-polish.md | APA/GB-T 引用导出 + 产物 Markdown 渲染（需 plan） |
 | Plan: M2-3 学术检索 | archived | plans/close/2026-08-14-m2-3-academic-search.md | 已归档：实现完成 |
 | Issue: M2-4 Writer/Reviewer 证据引用 | archived | issues/close/2026-08-14-m2-4-evidence-citation.md | 已归档：证据引用实现完成 |
 | Plan: M2-4 Writer/Reviewer 证据引用 | archived | plans/close/2026-08-14-m2-4-evidence-citation.md | 已归档：实现完成 |
