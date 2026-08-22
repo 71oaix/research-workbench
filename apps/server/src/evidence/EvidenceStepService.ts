@@ -86,7 +86,7 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
     })
     const sixDim = computeSixDimScores({
       cards: pool.cards,
-      cardsMd: pool.cardsMd,
+      cardsMd: rawCards?.content ?? pool.cardsMd,
       themeTokens: references.themeTokens,
       planOutline: references.planOutline,
       draftMd: draft?.content ?? '',
