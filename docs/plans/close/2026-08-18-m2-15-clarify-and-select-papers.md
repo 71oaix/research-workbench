@@ -1,6 +1,6 @@
 ---
 title: M2-15 模糊问题澄清 + 标题摘要筛选 + 华为赛题性能吸收（plan）
-status: active
+status: archived
 created: 2026-08-18
 updated: 2026-08-20
 issue: 2026-08-18-m2-15-clarify-and-select-papers

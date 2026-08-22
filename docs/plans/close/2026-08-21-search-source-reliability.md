@@ -1,6 +1,6 @@
 ---
 title: 检索层修复：源降级补偿 + Crossref 噪声过滤（plan）
-status: active
+status: archived
 created: 2026-08-21
 updated: 2026-08-21
 issue:

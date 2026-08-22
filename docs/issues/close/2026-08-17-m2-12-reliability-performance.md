@@ -1,6 +1,6 @@
 ---
 title: M2-12 可靠性与性能加固（下载完整性、检索并发、Writer 思考与上下文、核验稳健）
-status: active
+status: archived
 created: 2026-08-17
 updated: 2026-08-17
 kind: feature

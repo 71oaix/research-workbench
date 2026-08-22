@@ -1,6 +1,6 @@
 ---
 title: M2-14 检索召回与产物编号修复（真实运行对比暴露）
-status: active
+status: archived
 created: 2026-08-17
 updated: 2026-08-17
 kind: bug

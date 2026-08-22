@@ -1,6 +1,6 @@
 ---
 title: M2-10 审查与评估（concern ledger + evaluation-report + UI）
-status: active
+status: archived
 created: 2026-08-16
 updated: 2026-08-16
 kind: feature
