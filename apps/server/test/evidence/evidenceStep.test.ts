@@ -134,6 +134,14 @@ describe('EvidenceStepServiceImpl', () => {
 
   it('prepareEvaluator builds reference data for the model evaluator', async () => {
     const repos = createRepositories(createDb())
+    const workflow = repos.workflows.create('调研')
+    const step = repos.steps.create({
+      workflowId: workflow.id,
+      label: '评估证据',
+      role: 'evaluator',
+      position: 1,
+      requiresApproval: false,
+    })
     const service = new EvidenceStepServiceImpl(repos, createEventBus())
     const plan = makeArtifact(
       '01-plan.md',
@@ -146,8 +154,8 @@ describe('EvidenceStepServiceImpl', () => {
     const draft = makeArtifact('03-draft.md', '草稿使用 [1]')
 
     const result = await service.prepareEvaluator({
-      workflowId: 'wf-1',
-      stepId: 'step-1',
+      workflowId: workflow.id,
+      stepId: step.id,
       inputArtifacts: [plan, cards, draft],
     })
 
@@ -155,6 +163,7 @@ describe('EvidenceStepServiceImpl', () => {
     expect(result.promptExtra).toContain('规则统计参考')
     expect(result.promptExtra).toContain('多智能体共享记忆')
     expect(result.promptExtra).toContain('综述草稿（评估对象）')
+    expect(result.promptExtra).toContain('六维完整评分')
   })
 
   it('throws when required artifacts are missing', async () => {

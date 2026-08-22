@@ -9,6 +9,7 @@ import { buildResearchCandidates, buildResearchCards } from './cards'
 import type { SearchConfig } from './config'
 import { mergeAndRank } from './merge'
 import { OpenAlexClient } from './openAlex'
+import { buildRerankMd, parseRerankReport, type RerankEntry } from './rerank'
 import type {
   KeywordGroup,
   MergedPaper,
@@ -138,6 +139,7 @@ export class SelectorStepServiceImpl implements SelectorStepService {
       newPapers,
       stats: input.stats,
       groups: input.groups,
+      rerank: parseRerankReport(input.output),
     }
     return { nextPrompt, state }
   }
@@ -163,6 +165,10 @@ export class SelectorStepServiceImpl implements SelectorStepService {
     const selectedFromCandidates = applySelections(state.candidates, state.selections)
     const selectedNew = applySelections(state.newPapers, newSelections)
     const finalPapers = [...selectedFromCandidates, ...selectedNew]
+    const rerank = mergeRerank(
+      state.rerank ?? [],
+      input.nextOutput ? parseRerankReport(input.nextOutput) : []
+    )
 
     // 全文下载（只对入选论文）+ 落库
     await this.downloadAndPersist(finalPapers, input)
@@ -178,6 +184,7 @@ export class SelectorStepServiceImpl implements SelectorStepService {
     const fullTextMd = buildFullTextMd(finalPapers)
     if (fullTextMd) this.persist('paper-fulltext.md', fullTextMd, input)
     this.persist('selector-report.md', buildSelectorReport(finalPapers, state, newSelections), input)
+    this.persist('rerank-report.md', buildRerankMd(rerank), input)
 
     return { cardsMd }
   }
@@ -345,6 +352,15 @@ export function parseSelectorOutput(content: string): {
     }
   }
   return { selections, gapQueries }
+}
+
+function mergeRerank(base: RerankEntry[], extra: RerankEntry[]): RerankEntry[] {
+  const byId = new Map<number, RerankEntry>()
+  for (const entry of [...base, ...extra]) {
+    const existing = byId.get(entry.id)
+    if (!existing || entry.score > existing.score) byId.set(entry.id, entry)
+  }
+  return [...byId.values()].sort((a, b) => b.score - a.score)
 }
 
 function applySelections(

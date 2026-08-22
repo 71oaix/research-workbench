@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildBibtex,
+  buildReferencesApa,
+  buildReferencesGbt,
   buildTopicGroups,
   parseSummaryCards,
 } from '../../src/evidence/summarizer'
@@ -57,6 +59,26 @@ describe('summarizer', () => {
     expect(rag?.primary).toContain(2)
     const other = groups.find((group) => group.concept === '其他')
     expect(other?.primary).toContain(3)
+  })
+
+  it('builds APA references with authors, year, title and DOI source', () => {
+    const apa = buildReferencesApa(parseSummaryCards(CARDS))
+    expect(apa).toContain('Alice (2024). Multi-Agent Shared Memory.')
+    expect(apa).toContain('https://doi.org/10.1/a')
+    expect(apa).toContain('Bob (2023). RAG for Scientific Writing.')
+    expect(apa).toContain('Cara (2022). Unrelated Paper.')
+    expect(apa).toContain('arXiv:2201.00001')
+  })
+
+  it('builds GB/T 7714 references with numeric ids and truncates many authors', () => {
+    const gbt = buildReferencesGbt(parseSummaryCards(CARDS))
+    expect(gbt).toContain('[1] Alice. Multi-Agent Shared Memory[J]. 2024.')
+    expect(gbt).toContain('https://doi.org/10.1/a')
+    expect(gbt).toContain('[2] Bob. RAG for Scientific Writing[J]. 2023.')
+    const manyAuthors = parseSummaryCards(
+      '# cards\n### [4] Long List\n- 年份：2024 | 作者：A, B, C, D\n- 摘要：x\n'
+    )
+    expect(buildReferencesGbt(manyAuthors)).toContain('[4] A 等.')
   })
 
   it('builds bibtex with only available fields', () => {

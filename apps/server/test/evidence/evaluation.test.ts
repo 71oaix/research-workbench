@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildEvaluationInputs,
+  computeSixDimScores,
   extractThemeTokens,
 } from '../../src/evidence/evaluation'
 import type { EvidencePoolCard } from '../../src/evidence/evidencePool'
@@ -76,5 +77,40 @@ describe('buildEvaluationInputs', () => {
     expect(ref.coreConcepts).toEqual([])
     expect(ref.planOutline).toEqual([])
     expect(ref.failedSourceCount).toBe(0)
+  })
+})
+
+describe('computeSixDimScores', () => {
+  it('computes six dimensions with notes and a composite score', () => {
+    const cardsMd = [
+      '### [1] Multi-Agent Memory',
+      '- 相关度：高',
+      '- 摘要：multi-agent shared memory architecture',
+      '### [2] RAG Survey',
+      '- 相关度：部分',
+      '- 摘要：retrieval augmented generation',
+    ].join('\n')
+    const result = computeSixDimScores({
+      cards: [
+        card('Multi-Agent Memory', 'multi-agent shared memory architecture'),
+        card('RAG Survey', 'retrieval augmented generation survey'),
+      ],
+      cardsMd,
+      themeTokens: ['memory', '多智能体', '架构'],
+      planOutline: ['引言', '大语言模型智能体', '记忆架构方法', '总结'],
+      draftMd: 'draft about 大语言模型智能体 and 记忆架构方法 引用 [1][2]',
+      failedSourceCount: 1,
+      draftUniqueRefs: 2,
+    })
+    expect(result.dims).toHaveLength(7)
+    const byName = Object.fromEntries(result.dims.map((item) => [item.dim, item.score]))
+    expect(byName['主题匹配']).toBeGreaterThanOrEqual(0)
+    expect(byName['相关度']).toBe(4)
+    expect(byName['大纲覆盖']).toBeGreaterThan(0)
+    expect(byName['来源失败']).toBe(4)
+    expect(byName['完整性']).toBeGreaterThanOrEqual(0)
+    expect(byName['综合']).toBeGreaterThanOrEqual(0)
+    expect(result.md).toContain('六维完整评分')
+    expect(result.md).toContain('|')
   })
 })
