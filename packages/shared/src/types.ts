@@ -95,6 +95,8 @@ export interface SearchStats {
   totalHits: number
   uniquePapers: number
   failedSources: string[]
+  degradedSources?: string[]
+  compensatedQueries?: number
   skippedPapers?: number
   topN: number
   gapQueries?: number

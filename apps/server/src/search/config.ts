@@ -12,6 +12,8 @@ export interface SearchConfig {
   readTop: number
   fullTextMaxChars: number
   timeoutMs: number
+  compensateOnDegrade: boolean
+  sourceDegradeCooldownMs: number
   semanticScholarApiKey?: string
   openAlexMailto?: string
   crossrefMailto?: string
@@ -33,6 +35,8 @@ export function loadSearchConfig(env: NodeJS.ProcessEnv = process.env): SearchCo
     readTop: positiveInt(env.SEARCH_READ_TOP, 8),
     fullTextMaxChars: positiveInt(env.SEARCH_FULLTEXT_MAX, 20_000),
     timeoutMs: positiveInt(env.SEARCH_TIMEOUT_MS, 30_000),
+    compensateOnDegrade: env.SEARCH_COMPENSATE_ON_DEGRADE !== 'false',
+    sourceDegradeCooldownMs: positiveInt(env.SEARCH_DEGRADE_COOLDOWN_MS, 300_000),
     semanticScholarApiKey: env.SEMANTIC_SCHOLAR_API_KEY?.trim() || undefined,
     openAlexMailto: env.OPENALEX_MAILTO?.trim() || undefined,
     crossrefMailto: env.CROSSREF_MAILTO?.trim() || undefined,

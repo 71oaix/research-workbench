@@ -3,9 +3,9 @@ import { loadSearchConfig } from '../../src/search/config'
 import { buildSourceRegistry, detectDomain, selectForDomain } from '../../src/search/sources'
 
 describe('source registry', () => {
-  it('marks Semantic Scholar T2 without key and T1 with key', () => {
+  it('marks Semantic Scholar T3 without key and T1 with key', () => {
     const withoutKey = buildSourceRegistry(loadSearchConfig({}))
-    expect(withoutKey.find((spec) => spec.source === 'semantic-scholar')?.tier).toBe('T2')
+    expect(withoutKey.find((spec) => spec.source === 'semantic-scholar')?.tier).toBe('T3')
     const withKey = buildSourceRegistry(
       loadSearchConfig({ SEMANTIC_SCHOLAR_API_KEY: 'test-key' })
     )

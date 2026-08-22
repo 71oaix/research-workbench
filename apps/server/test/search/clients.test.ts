@@ -4,6 +4,7 @@ import { CrossrefClient } from '../../src/search/crossref'
 import { OpenAlexClient } from '../../src/search/openAlex'
 import { RateLimiter } from '../../src/search/rateLimiter'
 import { SemanticScholarClient } from '../../src/search/semanticScholar'
+import { SearchHttpError } from '../../src/search/http'
 
 function jsonResponse(body: unknown, status = 200, headers: Record<string, string> = {}) {
   return {
@@ -75,12 +76,37 @@ describe('SemanticScholarClient', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
+  it('fails fast (no retry) on budget-type 429', async () => {
+    const body = JSON.stringify({
+      error: 'Rate limit exceeded',
+      message: 'Insufficient budget. This request costs $0.001 but you only have $0.0001 remaining.',
+    })
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(body, 429))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const client = new SemanticScholarClient({ maxRetries: 0, retryDelayMs: () => 0 })
+    const error = await client.search('query', 5).catch((reason: unknown) => reason)
+    expect(error).toBeInstanceOf(SearchHttpError)
+    expect((error as SearchHttpError).status).toBe(429)
+    expect((error as SearchHttpError).nonRetryable).toBe(true)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
   it('throws after retries are exhausted on persistent 429', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse('rate limited', 429))
     vi.stubGlobal('fetch', fetchMock)
 
     const client = new SemanticScholarClient({ maxRetries: 1, retryDelayMs: () => 0 })
     await expect(client.search('query', 5)).rejects.toMatchObject({ status: 429 })
+  })
+
+  it('no-key client makes a single attempt on 429 (maxRetries 0)', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse('Too Many Requests', 429))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const client = new SemanticScholarClient({ maxRetries: 0, retryDelayMs: () => 0 })
+    await expect(client.search('query', 5)).rejects.toMatchObject({ status: 429 })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -138,6 +164,22 @@ describe('OpenAlexClient', () => {
     const client = new OpenAlexClient({ retryDelayMs: () => 0 })
     await expect(client.search('query', 5)).resolves.toEqual([])
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('fails fast on budget-type 429 without retrying', async () => {
+    const body = JSON.stringify({
+      error: 'Rate limit exceeded',
+      message: 'Insufficient budget. Add funds at https://openalex.org/pricing',
+    })
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(body, 429))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const client = new OpenAlexClient({ retryDelayMs: () => 0 })
+    const error = await client.search('query', 5).catch((reason: unknown) => reason)
+    expect(error).toBeInstanceOf(SearchHttpError)
+    expect((error as SearchHttpError).status).toBe(429)
+    expect((error as SearchHttpError).nonRetryable).toBe(true)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
   it('applies year range filters to the works search URL', async () => {
@@ -274,5 +316,80 @@ describe('CrossrefClient', () => {
       citationCount: 42,
       abstract: 'Hello world',
     })
+  })
+
+  it('filters figure/table/supplementary captions from search results', async () => {
+    const body = {
+      message: {
+        items: [
+          {
+            DOI: '10.1000/junk1',
+            type: 'component',
+            title: ['Table 4: Evaluation metrics'],
+            issued: { 'date-parts': [[2024]] },
+          },
+          {
+            DOI: '10.1000/junk2',
+            title: ['Figure 11: False negatives in detection'],
+            issued: { 'date-parts': [[2024]] },
+          },
+          {
+            DOI: '10.1000/junk3',
+            title: ['Supplementary file 3. Curator-SciScore-disagreement'],
+            issued: { 'date-parts': [[2024]] },
+          },
+          {
+            DOI: '10.1000/legit1',
+            title: ['Table-based Methods for Semantic Parsing'],
+            issued: { 'date-parts': [[2024]] },
+          },
+          {
+            DOI: '10.1000/legit2',
+            title: ['Figure Ground Revisited'],
+            issued: { 'date-parts': [[2024]] },
+          },
+          {
+            DOI: '10.1000/legit3',
+            title: ['A Real Paper on Retrieval'],
+            issued: { 'date-parts': [[2024]] },
+          },
+        ],
+      },
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => JSON.stringify(body),
+      } as unknown as Response)
+    )
+    const client = new CrossrefClient({ rateLimiter: new RateLimiter(0) })
+    const papers = await client.search('table figure', 20)
+    expect(papers.map((paper) => paper.title)).toEqual([
+      'Table-based Methods for Semantic Parsing',
+      'Figure Ground Revisited',
+      'A Real Paper on Retrieval',
+    ])
+  })
+
+  it('keeps component records in direct lookup (citation verification path)', async () => {
+    const body = {
+      message: {
+        DOI: '10.1000/junk1',
+        type: 'component',
+        title: ['Table 4: Evaluation metrics'],
+        issued: { 'date-parts': [[2024]] },
+      },
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => JSON.stringify(body),
+      } as unknown as Response)
+    )
+    const client = new CrossrefClient({ rateLimiter: new RateLimiter(0) })
+    const paper = await client.lookup('10.1000/junk1')
+    expect(paper?.title).toBe('Table 4: Evaluation metrics')
   })
 })

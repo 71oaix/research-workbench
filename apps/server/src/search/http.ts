@@ -3,7 +3,8 @@ import type { RateLimiter } from './rateLimiter'
 export class SearchHttpError extends Error {
   constructor(
     readonly status: number,
-    message: string
+    message: string,
+    readonly nonRetryable = false
   ) {
     super(message)
   }
@@ -48,8 +49,13 @@ export async function fetchJson(url: string, options: FetchJsonOptions = {}): Pr
     }
 
     if (response.status === 429 || response.status >= 500) {
+      const body = await readBody(response)
+      // 预算型 429（如 OpenAlex 计费余额不足）重试不可能成功，快速失败并标记不可重试
+      if (response.status === 429 && isNonRetryableRateLimit(body)) {
+        throw new SearchHttpError(response.status, body || 'rate_limited_non_retryable', true)
+      }
       if (attempt >= maxRetries) {
-        throw new SearchHttpError(response.status, await readBody(response))
+        throw new SearchHttpError(response.status, body)
       }
       const retryAfter = parseRetryAfter(response.headers.get('retry-after'))
       const delay =
@@ -60,6 +66,16 @@ export async function fetchJson(url: string, options: FetchJsonOptions = {}): Pr
 
     throw new SearchHttpError(response.status, await readBody(response))
   }
+}
+
+/**
+ * 识别"重试无意义"的 429：OpenAlex 计费制下预算/额度耗尽
+ * （body 含 insufficient budget / add funds / prepaidRemaining / credits remaining）。
+ */
+function isNonRetryableRateLimit(body: string): boolean {
+  return /insufficient budget|prepaidremaining|add funds|credits? remaining|onetimecreditsremaining/i.test(
+    body
+  )
 }
 
 function parseRetryAfter(value: string | null): number | null {

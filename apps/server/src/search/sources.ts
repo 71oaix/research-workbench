@@ -16,7 +16,8 @@ export interface SourceSpec {
 }
 
 export function buildSourceRegistry(config: SearchConfig): SourceSpec[] {
-  const semanticScholarTier: SourceTier = config.semanticScholarApiKey ? 'T1' : 'T2'
+  // 无 key 的 S2 在共享免费池下稳定 429：降级为 T3（单次尝试、零重试、失败计为降级）
+  const semanticScholarTier: SourceTier = config.semanticScholarApiKey ? 'T1' : 'T3'
   return [
     {
       source: 'openalex',
@@ -41,7 +42,11 @@ export function buildSourceRegistry(config: SearchConfig): SourceSpec[] {
       tier: semanticScholarTier,
       domains: ['medical', 'cs', 'cross-disciplinary', 'exhaustive'],
       create: (cfg) =>
-        new SemanticScholarClient({ apiKey: cfg.semanticScholarApiKey, timeoutMs: cfg.timeoutMs }),
+        new SemanticScholarClient({
+          apiKey: cfg.semanticScholarApiKey,
+          timeoutMs: cfg.timeoutMs,
+          maxRetries: cfg.semanticScholarApiKey ? 3 : 0,
+        }),
     },
   ]
 }
