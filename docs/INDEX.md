@@ -34,6 +34,8 @@ updated: 2026-08-21
 | 评审：可交付性（截止 9/1 前） | active | research/2026-08-20-deliverable-readiness-audit.md | 差距清单 + 迭代轮数 + 时间线 + 赛题对照 |
 | 调研：华为赛题深度吸收方案 | active | research/2026-08-20-huawei-topic-absorption.md | 查询理解/迭代检索/排序/评测路线 + 参考系统对照 |
 | 评测：效果基线（检索/成本/真实运行） | active | research/2026-08-21-effect-baseline.md | recall 对比 + 成本表 + 真实运行指标 |
+| 竞赛材料：项目文档初稿（附件 2 模板） | active | specification/2026-08-21-competition-project-document.md | 概况/规划/实施方案/参考资料 |
+| 竞赛材料：作品简介草稿（300 字） | active | specification/2026-08-21-competition-intro.md | 296 字，待定稿转 PDF |
 | Plan: M2-3 学术检索 | archived | plans/close/2026-08-14-m2-3-academic-search.md | 已归档：实现完成 |
 | Issue: M2-4 Writer/Reviewer 证据引用 | archived | issues/close/2026-08-14-m2-4-evidence-citation.md | 已归档：证据引用实现完成 |
 | Plan: M2-4 Writer/Reviewer 证据引用 | archived | plans/close/2026-08-14-m2-4-evidence-citation.md | 已归档：实现完成 |
