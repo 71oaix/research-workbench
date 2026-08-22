@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import type { Artifact } from '@research-workbench/shared'
+import { Diff, FileText } from 'lucide-react'
+import { cn } from '../lib/cn'
 
 interface ArtifactMeta {
   group: string
@@ -8,76 +10,20 @@ interface ArtifactMeta {
 }
 
 const ARTIFACT_META: Record<string, ArtifactMeta> = {
-  '01-plan.md': {
-    group: '规划',
-    label: '检索计划',
-    description: 'Planner 生成：研究问题、锚定点、子问题、检索关键词、综述大纲。',
-  },
-  'research-cards.md': {
-    group: '检索证据',
-    label: '证据卡片',
-    description: 'Selector 筛选后的论文卡片：相关度分级、筛选理由、检索概览与失败源。',
-  },
-  'research-candidates.md': {
-    group: '检索证据',
-    label: '候选池',
-    description: 'Researcher 产出的检索候选池（标题+摘要，未筛选，供 Selector 判定）。',
-  },
-  'research-candidates.json': {
-    group: '检索证据',
-    label: '候选数据',
-    description: '候选池结构化数据（内部交接用，保留 OA 信息供下载与引文雪球）。',
-  },
-  'selector-report.md': {
-    group: '检索证据',
-    label: '筛选报告',
-    description: 'Selector 判定记录：入选/剔除、相关度分级、理由、二次检索与引文雪球统计。',
-  },
-  '02-research.md': {
-    group: '检索证据',
-    label: '文献清单',
-    description: 'Researcher 整理的论文清单（仅含卡片内的论文）。',
-  },
-  'paper-fulltext.md': {
-    group: '全文',
-    label: '论文全文',
-    description: '已下载并提取的论文全文（阅读证据），默认折叠。',
-  },
-  'citation-lint.md': {
-    group: '引用核验',
-    label: '引用检查',
-    description: '自动检查引用编号是否在证据池范围内。',
-  },
-  'citation-verification.md': {
-    group: '引用核验',
-    label: '引用核验',
-    description: 'Crossref / arXiv 字段级交叉核验，输出分级与置信度。',
-  },
-  'evaluation-report.md': {
-    group: '评估',
-    label: '评估报告',
-    description: '主题匹配门禁、相关度、大纲覆盖、来源失败。',
-  },
-  '03-draft.md': {
-    group: '草稿',
-    label: '综述初稿',
-    description: 'Writer 基于证据池与全文撰写的综述初稿，可对比上一版。',
-  },
-  '04-review.md': {
-    group: '审查',
-    label: '审查意见',
-    description: 'Reviewer 的可信引用清单、存疑引用与 Concern Ledger。',
-  },
-  '05-summary.md': {
-    group: '调研结果',
-    label: '调研摘要',
-    description: 'Summarizer 归纳：主题分组 + 相关度分级 + 引用清单（最终交付物）。',
-  },
-  'references.bib': {
-    group: '调研结果',
-    label: '引用清单',
-    description: 'BibTeX 引用清单（仅含必填字段，缺失字段不编造）。',
-  },
+  '01-plan.md': { group: '规划', label: '检索计划', description: 'Planner 生成：研究问题、锚定点、子问题、检索关键词、综述大纲。' },
+  'research-cards.md': { group: '检索证据', label: '证据卡片', description: 'Selector 筛选后的论文卡片：相关度分级、筛选理由、检索概览与失败源。' },
+  'research-candidates.md': { group: '检索证据', label: '候选池', description: 'Researcher 产出的检索候选池（标题+摘要，未筛选，供 Selector 判定）。' },
+  'research-candidates.json': { group: '检索证据', label: '候选数据', description: '候选池结构化数据（内部交接用，保留 OA 信息供下载与引文雪球）。' },
+  'selector-report.md': { group: '检索证据', label: '筛选报告', description: 'Selector 判定记录：入选/剔除、相关度分级、理由、二次检索与引文雪球统计。' },
+  '02-research.md': { group: '检索证据', label: '文献清单', description: 'Researcher 整理的论文清单（仅含卡片内的论文）。' },
+  'paper-fulltext.md': { group: '全文', label: '论文全文', description: '已下载并提取的论文全文（阅读证据），默认折叠。' },
+  'citation-lint.md': { group: '引用核验', label: '引用检查', description: '自动检查引用编号是否在证据池范围内。' },
+  'citation-verification.md': { group: '引用核验', label: '引用核验', description: 'Crossref / arXiv 字段级交叉核验，输出分级与置信度。' },
+  'evaluation-report.md': { group: '评估', label: '评估报告', description: '主题匹配门禁、相关度、大纲覆盖、来源失败。' },
+  '03-draft.md': { group: '草稿', label: '综述初稿', description: 'Writer 基于证据池与全文撰写的综述初稿，可对比上一版。' },
+  '04-review.md': { group: '审查', label: '审查意见', description: 'Reviewer 的可信引用清单、存疑引用与 Concern Ledger。' },
+  '05-summary.md': { group: '调研结果', label: '调研摘要', description: 'Summarizer 归纳：主题分组 + 相关度分级 + 引用清单（最终交付物）。' },
+  'references.bib': { group: '调研结果', label: '引用清单', description: 'BibTeX 引用清单（仅含必填字段，缺失字段不编造）。' },
 }
 
 const GROUP_ORDER = ['规划', '检索证据', '全文', '引用核验', '评估', '草稿', '审查', '调研结果']
@@ -96,10 +42,7 @@ export function ArtifactTabs({ artifacts }: { artifacts: Artifact[] }) {
   const grouped = groupArtifacts(artifacts)
   const current = grouped.find((item) => item.name === activeName) ?? grouped.at(-1) ?? null
   const latest = current?.versions.at(-1) ?? null
-  const previous =
-    current && current.versions.length > 1
-      ? current.versions[current.versions.length - 2]
-      : null
+  const previous = current && current.versions.length > 1 ? current.versions[current.versions.length - 2] : null
 
   const isFullText = latest?.name === 'paper-fulltext.md'
   const collapsed = isFullText && !showFullText && (latest?.content.length ?? 0) > 4000
@@ -108,54 +51,83 @@ export function ArtifactTabs({ artifacts }: { artifacts: Artifact[] }) {
     : (latest?.content ?? '（暂无产物）')
 
   return (
-    <section className="artifact-area">
-      <div className="artifact-groups">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="shrink-0 space-y-1 overflow-x-auto border-b border-line px-4 pt-3">
         {GROUP_ORDER.map((group) => {
           const items = grouped.filter((item) => item.meta.group === group)
           if (items.length === 0) return null
           return (
-            <div key={group} className="artifact-group">
-              <span className="artifact-group-label">{group}</span>
-              <div className="artifact-tabs">
-                {items.map((item) => (
-                  <button
-                    key={item.name}
-                    className={item.name === current?.name ? 'active' : ''}
-                    onClick={() => {
-                      setActiveName(item.name)
-                      setCompare(false)
-                    }}
-                  >
-                    {item.meta.label}
-                    {item.versions.length > 1 ? ` (v${item.versions.length})` : ''}
-                  </button>
-                ))}
+            <div key={group} className="flex items-center gap-1.5">
+              <span className="w-12 flex-none text-[10px] font-bold uppercase tracking-[.1em] text-ink3">
+                {group}
+              </span>
+              <div className="flex flex-1 gap-0.5 overflow-x-auto">
+                {items.map((item) => {
+                  const active = item.name === current?.name
+                  return (
+                    <button
+                      key={item.name}
+                      onClick={() => {
+                        setActiveName(item.name)
+                        setCompare(false)
+                      }}
+                      className={cn(
+                        'whitespace-nowrap rounded-t-md px-2.5 py-1.5 text-[12px] transition-colors',
+                        active
+                          ? 'border-b-2 border-accent font-semibold text-accent'
+                          : 'text-ink2 hover:bg-surface2 hover:text-ink'
+                      )}
+                    >
+                      {item.meta.label}
+                      {item.versions.length > 1 ? ` · v${item.versions.length}` : ''}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )
         })}
+        {grouped.length === 0 && (
+          <div className="px-2 py-4 text-[12px] text-ink3">产物会随步骤推进生成。</div>
+        )}
       </div>
+
       {current && latest && (
-        <div className="artifact-meta">
-          <span className="artifact-description">{current.meta.description}</span>
+        <div className="flex items-start gap-2 border-b border-line-soft px-4 py-2.5">
+          <FileText className="mt-0.5 size-3.5 flex-none text-ink3" />
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] font-semibold text-ink2">{current.meta.description}</div>
+          </div>
           {previous && (
-            <button className="diff-toggle" onClick={() => setCompare((value) => !value)}>
+            <button
+              onClick={() => setCompare((value) => !value)}
+              className="flex flex-none items-center gap-1 rounded-full border border-line-strong bg-surface px-2.5 py-1 text-[11px] font-medium text-ink2 transition-colors hover:bg-surface2"
+            >
+              <Diff className="size-3" />
               {compare ? '收起对比' : '对比上一版'}
             </button>
           )}
         </div>
       )}
-      {compare && latest && previous ? (
-        <StructureDiff prev={previous.content} next={latest.content} />
-      ) : (
-        <pre className="artifact-content">{display}</pre>
-      )}
-      {isFullText && collapsed && (
-        <button className="expand-fulltext" onClick={() => setShowFullText(true)}>
-          展开全文
-        </button>
-      )}
-    </section>
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+        {compare && latest && previous ? (
+          <StructureDiff prev={previous.content} next={latest.content} />
+        ) : (
+          <pre className="whitespace-pre-wrap break-words font-mono text-[12.5px] leading-relaxed text-ink">
+            {display}
+          </pre>
+        )}
+        {isFullText && collapsed && (
+          <button
+            onClick={() => setShowFullText(true)}
+            className="mt-2 rounded-full border border-line-strong bg-surface px-3 py-1 text-[11px] font-medium text-ink2 hover:bg-surface2"
+          >
+            展开全文
+          </button>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -191,21 +163,19 @@ function StructureDiff({ prev, next }: { prev: string; next: string }) {
   const addedRefs = nextRefs.filter((ref) => !prevRefs.includes(ref))
 
   return (
-    <div className="structure-diff">
-      <h4>结构差异（上一版 → 当前版）</h4>
-      {removedHeads.length > 0 && <p>移除章节：{removedHeads.join('；')}</p>}
-      {addedHeads.length > 0 && <p>新增章节：{addedHeads.join('；')}</p>}
-      {removedRefs.length > 0 && <p>不再引用的编号：{removedRefs.join(', ')}</p>}
-      {addedRefs.length > 0 && <p>新增引用的编号：{addedRefs.join(', ')}</p>}
-      {removedHeads.length === 0 && addedHeads.length === 0 && <p>章节结构无变化</p>}
+    <div className="space-y-2">
+      <div className="text-[13px] font-bold">结构差异（上一版 → 当前版）</div>
+      {removedHeads.length > 0 && <p className="text-[12.5px] text-ink2">移除章节：{removedHeads.join('；')}</p>}
+      {addedHeads.length > 0 && <p className="text-[12.5px] text-ink2">新增章节：{addedHeads.join('；')}</p>}
+      {removedRefs.length > 0 && <p className="text-[12.5px] text-ink2">不再引用的编号：{removedRefs.join(', ')}</p>}
+      {addedRefs.length > 0 && <p className="text-[12.5px] text-ink2">新增引用的编号：{addedRefs.join(', ')}</p>}
+      {removedHeads.length === 0 && addedHeads.length === 0 && <p className="text-[12.5px] text-ink2">章节结构无变化</p>}
     </div>
   )
 }
 
 function headings(md: string): string[] {
-  return (md.match(/^#{2,3} .+$/gm) ?? []).map((heading) =>
-    heading.replace(/^#+\s*/, '').trim()
-  )
+  return (md.match(/^#{2,3} .+$/gm) ?? []).map((heading) => heading.replace(/^#+\s*/, '').trim())
 }
 
 function refs(md: string): string[] {
