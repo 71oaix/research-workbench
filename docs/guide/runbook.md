@@ -361,6 +361,14 @@ npx tsx scripts/cost-report.mjs
 - 新建工作流时勾选“包含综述写作（Writer）”，不勾选即调研模板；
 - 无 writer 时 evaluator/reviewer 自动降级（证据池覆盖 / 证据调研审查），不会因缺草稿报错。
 
+## M3 产物与渲染说明（2026-08-23）
+
+- `rerank-report.md`：selector 模型精排——入选论文按与原问题细粒度相关度排序（0-100 + 理由），writer 按此顺序组织论述，不改动卡片编号；
+- `evaluation-scores.md`：确定性六维完整评分（0-5：主题匹配/相关度/大纲覆盖/引用可信/来源失败/完整性），供 evaluator 参考与前端展示；
+- 评估/审查提示已升级：evaluator 输出六维分 + 完整性批评（该覆盖未覆盖方向），reviewer 输出覆盖缺口；
+- 引用导出新增 `references-apa.md`（APA 风格）与 `references-gbt.md`（GB/T 7714），与 `references.bib`（BibTeX）并存；
+- 前端产物用 `MarkdownView` 安全渲染（标题/列表/加粗/引用/代码块/表格），HTML 转义防 XSS；`.json`/`.bib` 仍用 `<pre>` 展示。
+
 ## 常见问题
 
 - 端口被占用：设置环境变量 `PORT`（server）或修改

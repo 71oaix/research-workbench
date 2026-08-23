@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Artifact } from '@research-workbench/shared'
 import { Diff, FileText } from 'lucide-react'
 import { cn } from '../lib/cn'
+import { MarkdownView } from './MarkdownView'
 
 interface ArtifactMeta {
   group: string
@@ -16,14 +17,18 @@ const ARTIFACT_META: Record<string, ArtifactMeta> = {
   'research-candidates.json': { group: '检索证据', label: '候选数据', description: '候选池结构化数据（内部交接用，保留 OA 信息供下载与引文雪球）。' },
   'selector-report.md': { group: '检索证据', label: '筛选报告', description: 'Selector 判定记录：入选/剔除、相关度分级、理由、二次检索与引文雪球统计。' },
   '02-research.md': { group: '检索证据', label: '文献清单', description: 'Researcher 整理的论文清单（仅含卡片内的论文）。' },
+  'rerank-report.md': { group: '检索证据', label: '精排排序', description: '模型精排：入选论文按与原问题细粒度相关度排序（0-100，附理由）。' },
   'paper-fulltext.md': { group: '全文', label: '论文全文', description: '已下载并提取的论文全文（阅读证据），默认折叠。' },
   'citation-lint.md': { group: '引用核验', label: '引用检查', description: '自动检查引用编号是否在证据池范围内。' },
   'citation-verification.md': { group: '引用核验', label: '引用核验', description: 'Crossref / arXiv 字段级交叉核验，输出分级与置信度。' },
   'evaluation-report.md': { group: '评估', label: '评估报告', description: '主题匹配门禁、相关度、大纲覆盖、来源失败。' },
+  'evaluation-scores.md': { group: '评估', label: '六维评分', description: '确定性六维完整评分（0-5，规则口径，可横向比较）。' },
   '03-draft.md': { group: '草稿', label: '综述初稿', description: 'Writer 基于证据池与全文撰写的综述初稿，可对比上一版。' },
   '04-review.md': { group: '审查', label: '审查意见', description: 'Reviewer 的可信引用清单、存疑引用与 Concern Ledger。' },
   '05-summary.md': { group: '调研结果', label: '调研摘要', description: 'Summarizer 归纳：主题分组 + 相关度分级 + 引用清单（最终交付物）。' },
   'references.bib': { group: '调研结果', label: '引用清单', description: 'BibTeX 引用清单（仅含必填字段，缺失字段不编造）。' },
+  'references-apa.md': { group: '调研结果', label: '引用（APA）', description: 'APA 风格参考文献清单。' },
+  'references-gbt.md': { group: '调研结果', label: '引用（GB-T）', description: 'GB/T 7714 风格参考文献清单。' },
 }
 
 const GROUP_ORDER = ['规划', '检索证据', '全文', '引用核验', '评估', '草稿', '审查', '调研结果']
@@ -113,6 +118,8 @@ export function ArtifactTabs({ artifacts }: { artifacts: Artifact[] }) {
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
         {compare && latest && previous ? (
           <StructureDiff prev={previous.content} next={latest.content} />
+        ) : latest?.name.endsWith('.md') ? (
+          <MarkdownView content={display} />
         ) : (
           <pre className="whitespace-pre-wrap break-words font-mono text-[12.5px] leading-relaxed text-ink">
             {display}

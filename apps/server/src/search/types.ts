@@ -1,4 +1,5 @@
 import type { Paper, SearchStats } from '@research-workbench/shared'
+import type { RerankEntry } from './rerank'
 
 export type { SearchStats }
 
@@ -61,6 +62,7 @@ export interface SelectorStageState {
   newPapers: MergedPaper[]
   stats: SearchStats
   groups: KeywordGroup[]
+  rerank?: RerankEntry[]
 }
 
 export interface SelectorStepService {

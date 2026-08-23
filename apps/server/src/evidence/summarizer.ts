@@ -162,6 +162,55 @@ export function buildBibtex(cards: SummaryCard[]): string {
   )
 }
 
+export type ReferenceStyle = 'apa' | 'gbt'
+
+/**
+ * 生成 APA 风格参考文献（best-effort）：作者（年份）. 标题. 来源标识（DOI/URL）.
+ * 作者为语料自带的显示字符串，不做首字母缩写反转，避免误解析。
+ */
+export function buildReferencesApa(cards: SummaryCard[]): string {
+  if (cards.length === 0) return '（无卡片）'
+  return cards.map((card) => {
+    const authors = card.authors || 'Unknown'
+    const year = card.year ? `(${card.year}).` : '(n.d.).'
+    const source = citationSource(card)
+    return `${authors} ${year} ${card.title}. ${source ? source + '.' : ''}`.trim()
+  }).join('\n')
+}
+
+/**
+ * 生成 GB/T 7714-2015 风格参考文献（顺序编码制，best-effort）。
+ */
+export function buildReferencesGbt(cards: SummaryCard[]): string {
+  if (cards.length === 0) return '（无卡片）'
+  return cards.map((card) => {
+    const authors = card.authors ? abbreviateAuthors(card.authors) : '佚名'
+    const year = card.year ?? ''
+    const title = `${card.title}[J].`
+    const source = citationSource(card)
+    return `[${card.id}] ${authors}. ${title} ${year}. ${source}.`.replace(/\s+/g, ' ').trim()
+  }).join('\n')
+}
+
+export function buildReferences(cards: SummaryCard[], style: ReferenceStyle): string {
+  return style === 'apa' ? buildReferencesApa(cards) : buildReferencesGbt(cards)
+}
+
+function citationSource(card: SummaryCard): string {
+  return (
+    (card.doi ? `https://doi.org/${card.doi}` : null) ??
+    (card.url ?? null) ??
+    (card.arxivId ? `arXiv:${card.arxivId}` : null) ??
+    ''
+  )
+}
+
+function abbreviateAuthors(authors: string): string {
+  const parts = authors.split(/[;,，]/).map((part) => part.trim()).filter(Boolean)
+  if (parts.length > 3) return `${parts[0]} 等`
+  return parts.length > 0 ? parts.join('；') : authors
+}
+
 export function buildSummary(cardsMd: string, planMd: string): string {
   const cards = parseSummaryCards(cardsMd)
   const high = cards.filter((card) => card.level === 'high').length

@@ -5,9 +5,15 @@ import { buildCitationLint } from '../citations/lint'
 import type { WorkflowEventBus } from '../engine/eventBus'
 import { verifyCitations } from './citationVerifier'
 import type { CitationVerifierDeps } from './citationVerifier'
-import { buildEvaluationInputs } from './evaluation'
+import { buildEvaluationInputs, computeSixDimScores } from './evaluation'
 import { buildEvidencePool } from './evidencePool'
-import { buildBibtex, buildSummary, parseSummaryCards } from './summarizer'
+import {
+  buildBibtex,
+  buildReferencesApa,
+  buildReferencesGbt,
+  buildSummary,
+  parseSummaryCards,
+} from './summarizer'
 
 export interface EvidenceStepService {
   prepareEvaluator(input: {
@@ -49,10 +55,12 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
       throw new Error('缺少 research-cards.md，无法撰写综述')
     }
     const fullText = findLatestArtifact(input.inputArtifacts, 'paper-fulltext.md')
+    const rerank = findLatestArtifact(input.inputArtifacts, 'rerank-report.md')
     return {
       promptExtra: buildWriterSection(
         pool.cardsMd,
-        fullText ? buildFullTextExcerpts(fullText.content) : null
+        fullText ? buildFullTextExcerpts(fullText.content) : null,
+        rerank?.content ?? null
       ),
     }
   }
@@ -76,11 +84,28 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
       rawCardsMd: rawCards?.content ?? '',
       cards: pool.cards,
     })
+    const sixDim = computeSixDimScores({
+      cards: pool.cards,
+      cardsMd: rawCards?.content ?? pool.cardsMd,
+      themeTokens: references.themeTokens,
+      planOutline: references.planOutline,
+      draftMd: draft?.content ?? '',
+      failedSourceCount: references.failedSourceCount,
+      draftUniqueRefs: references.draftUniqueRefs,
+    })
+    const scoresArtifact = this.repos.artifacts.create({
+      workflowId: input.workflowId,
+      stepId: input.stepId,
+      name: 'evaluation-scores.md',
+      content: sixDim.md,
+    })
+    this.bus.emit({ type: 'artifact.updated', artifact: scoresArtifact })
     return {
       promptExtra: buildEvaluatorSection(
         pool.cardsMd,
         draft?.content ?? null,
-        references.md
+        references.md,
+        sixDim.md
       ),
     }
   }
@@ -156,6 +181,11 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
     const bib = buildBibtex(parseSummaryCards(cards.content))
     this.createArtifact(input, '05-summary.md', summaryMd)
     this.createArtifact(input, 'references.bib', bib || '（无卡片可导出）')
+    const parsed = parseSummaryCards(cards.content)
+    const apa = buildReferencesApa(parsed)
+    const gbt = buildReferencesGbt(parsed)
+    this.createArtifact(input, 'references-apa.md', apa || '（无卡片可导出）')
+    this.createArtifact(input, 'references-gbt.md', gbt || '（无卡片可导出）')
     return { summaryMd }
   }
 
@@ -177,7 +207,8 @@ export class EvidenceStepServiceImpl implements EvidenceStepService {
 function buildEvaluatorSection(
   cardsMd: string,
   draftMd: string | null,
-  referencesMd: string
+  referencesMd: string,
+  sixDimMd: string
 ): string {
   const hasDraft = Boolean(draftMd)
   return [
@@ -191,6 +222,9 @@ function buildEvaluatorSection(
     '',
     referencesMd,
     '',
+    '### 六维完整评分（确定性，供你参考核对）',
+    sixDimMd,
+    '',
     '评估要求：按系统提示词输出结构化评估报告；每项判定必须给理由；',
     '至少列出 2 条覆盖不足方向；不要顺着草稿说好话。',
     hasDraft
@@ -199,11 +233,21 @@ function buildEvaluatorSection(
   ].join('\n\n')
 }
 
-function buildWriterSection(cardsMd: string, fullTextExcerpts: string | null): string {
+function buildWriterSection(
+  cardsMd: string,
+  fullTextExcerpts: string | null,
+  rerankMd: string | null
+): string {
   const sections = ['## 证据池（仅以此为事实来源）', cardsMd]
   sections.push(buildEvidenceStatus(cardsMd))
   if (fullTextExcerpts) {
     sections.push('## 论文全文摘录（仅前 3 篇，其余论文只用摘要）', fullTextExcerpts)
+  }
+  if (rerankMd) {
+    sections.push(
+      '## 相关度排序（模型精排，供你按此顺序组织论述，不改动卡片编号）',
+      rerankMd
+    )
   }
   sections.push(
     '',

@@ -67,6 +67,97 @@ export function buildEvaluationInputs(input: {
   }
 }
 
+export interface SixDimScore {
+  dim: string
+  score: number | null
+  note: string
+}
+
+export interface SixDimResult {
+  md: string
+  dims: SixDimScore[]
+}
+
+/**
+ * 确定性"六维完整评分"（0-5）：主题匹配 / 相关度 / 大纲覆盖 / 引用可信 / 来源失败 / 完整性。
+ * 用规则统计计算，可横向比较、可测试；供 evaluator 参考与前端展示，不作为唯一判定。
+ */
+export function computeSixDimScores(input: {
+  cards: EvidencePoolCard[]
+  cardsMd: string
+  themeTokens: string[]
+  planOutline: string[]
+  draftMd: string
+  failedSourceCount: number
+  draftUniqueRefs: number
+}): SixDimResult {
+  const cards = input.cards
+  const total = Math.max(1, cards.length)
+
+  // 1 主题匹配：命中主题词的卡片占比
+  const themeHit = cards.filter((card) => {
+    const tokens = tokenize(`${card.title} ${card.abstract}`)
+    return input.themeTokens.some((token) => tokens.has(token))
+  }).length
+  const themeScore = roundScore((themeHit / total) * 5)
+
+  // 2 相关度：高/部分分级加权
+  const high = countLevel(input.cardsMd, '相关度：高')
+  const partial = countLevel(input.cardsMd, '相关度：部分')
+  const relevanceScore = roundScore(
+    (high * 5 + partial * 3) / Math.max(1, high + partial)
+  )
+
+  // 3 大纲覆盖：计划章节被草稿提及的比例（按章节标题词元与草稿交集）
+  const draftTokens = tokenize(input.draftMd)
+  const outlined = input.planOutline.length
+  const covered = input.planOutline.filter((chapter) =>
+    hasIntersection(tokenize(chapter), draftTokens)
+  ).length
+  const outlineScore = outlined === 0 ? 3 : roundScore((covered / outlined) * 5)
+
+  // 4 引用可信：草稿引用去重数相对卡片数的覆盖，越大越可信
+  const trustScore = roundScore(Math.min(5, (input.draftUniqueRefs / total) * 5))
+
+  // 5 来源失败：失败源越少越高
+  const sourceScore = input.failedSourceCount === 0
+    ? 5
+    : Math.max(1, 5 - input.failedSourceCount)
+
+  // 6 完整性：计划外未覆盖的章节越少越高
+  const uncovered = Math.max(0, outlined - covered)
+  const completenessScore = Math.max(0, 5 - uncovered)
+
+  const dims: SixDimScore[] = [
+    { dim: '主题匹配', score: themeScore, note: `${themeHit}/${total} 张卡片命中主题词` },
+    { dim: '相关度', score: relevanceScore, note: `高 ${high} / 部分 ${partial}` },
+    { dim: '大纲覆盖', score: outlineScore, note: `覆盖 ${covered}/${outlined} 个计划章节` },
+    { dim: '引用可信', score: trustScore, note: `草稿去重引用 ${input.draftUniqueRefs} / ${total} 张卡片` },
+    { dim: '来源失败', score: sourceScore, note: `失败源 ${input.failedSourceCount} 个` },
+    { dim: '完整性', score: completenessScore, note: `未覆盖章节 ${Math.max(0, outlined - covered)}` },
+  ]
+  const totalScore = roundScore(dims.reduce((sum, item) => sum + (item.score ?? 0), 0) / 5)
+  dims.push({ dim: '综合', score: totalScore, note: '六维平均（0-5）' })
+
+  const md = [
+    '## 六维完整评分（规则口径，0-5）',
+    '',
+    '| 维度 | 评分 | 说明 |',
+    '|------|------|------|',
+    ...dims.map((item) => `| ${item.dim} | ${item.score ?? '—'} | ${item.note} |`),
+  ].join('\n')
+  return { md, dims }
+}
+
+function countLevel(md: string, label: string): number {
+  const re = new RegExp(label.replace(/[：:]/g, '[：:]'), 'g')
+  return (md.match(re) ?? []).length
+}
+
+function roundScore(value: number): number {
+  return Math.round(value * 10) / 10
+}
+
 export function extractThemeTokens(planMd: string): Set<string> {
   const keywords = extractSection(planMd, '检索关键词')
   const source = keywords.length > 0 ? keywords : extractSection(planMd, '锚定点')
