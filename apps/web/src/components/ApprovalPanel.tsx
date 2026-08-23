@@ -21,6 +21,7 @@ export function ApprovalPanel({
   const clarification = planContent?.includes('## 澄清请求')
     ? extractClarificationQuestions(planContent)
     : []
+  const needsClarification = clarification.length > 0
   const blockingConcerns = reviewContent
     ? parseConcernLedger(reviewContent).filter((concern) => concern.blocking)
     : []
@@ -74,7 +75,9 @@ export function ApprovalPanel({
       <div className="mt-3.5 flex flex-wrap items-center gap-2.5">
         <button
           onClick={() => onDecide('approve')}
-          className="flex items-center gap-1.5 rounded-(--radius) bg-accent px-4.5 py-2 text-[13px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.15)] transition-transform duration-150 active:scale-[.96]"
+          disabled={needsClarification}
+          title={needsClarification ? '计划需要澄清，请用“打回修改”提交回答并重新规划' : undefined}
+          className="flex items-center gap-1.5 rounded-(--radius) bg-accent px-4.5 py-2 text-[13px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.15)] transition-transform duration-150 active:scale-[.96] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
         >
           <Check className="h-3.5 w-3.5" strokeWidth={2.2} />
           通过
@@ -85,7 +88,11 @@ export function ApprovalPanel({
           className="flex items-center gap-1.5 rounded-(--radius) border border-bad-line bg-bad-soft px-4.5 py-2 text-[13px] font-semibold text-bad transition-transform duration-150 active:scale-[.96] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.8} />
-          {isReviewer && blockingConcerns.length > 0 ? '打回 Writer' : '打回修改'}
+          {needsClarification
+            ? '提交回答并重新规划'
+            : isReviewer && blockingConcerns.length > 0
+              ? '打回 Writer'
+              : '打回修改'}
         </button>
         <button
           onClick={handleCancel}

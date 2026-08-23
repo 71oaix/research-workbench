@@ -193,4 +193,36 @@ describe('App workflow UI', () => {
       expect(body.note).toContain('C1 [blocking]')
     })
   })
+
+  it('disables approve and relabels the resubmit button when the plan needs clarification', async () => {
+    currentDetail = {
+      workflow,
+      steps: [
+        {
+          ...steps[0],
+          status: 'awaiting_approval',
+        },
+        steps[1],
+      ],
+      artifacts: [
+        {
+          id: 'a-plan-clarify',
+          workflowId: 'wf-1',
+          stepId: 's1',
+          name: '01-plan.md',
+          content: '# 计划\n\n## 澄清请求\n1. 你关注的是什么场景？',
+          version: 1,
+          createdAt: '2026-08-15T00:00:00.000Z',
+          updatedAt: '2026-08-15T00:00:00.000Z',
+        },
+      ],
+      decisions: [],
+    }
+    render(<App />)
+    const item = await screen.findByText('调研大模型测试')
+    item.click()
+    const approve = await screen.findByRole('button', { name: /通过/ })
+    expect((approve as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByRole('button', { name: /提交回答并重新规划/ })).toBeTruthy()
+  })
 })

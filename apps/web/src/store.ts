@@ -88,6 +88,8 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       set({ detail, workflows, error: null })
     } catch (e) {
       set({ error: e instanceof Error ? e.message : String(e) })
+      // 决策失败（如 step_not_found / step_not_awaiting_approval）时对账，清除过期审批卡
+      void get().refreshList()
     }
   },
 

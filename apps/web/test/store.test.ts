@@ -98,6 +98,32 @@ describe('workflow store', () => {
     })
   })
 
+  it('resyncs the workflow list after a failed decision', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes('/decision')) {
+        return Promise.resolve({ ok: false, text: async () => '{"error":"step_not_found"}' })
+      }
+      if (url.includes('/workflows') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => [workflow] })
+      }
+      return Promise.resolve({ ok: true, json: async () => ({ workflow, steps: [], artifacts: [], decisions: [] }) })
+    })
+    useWorkflowStore.setState({
+      selectedId: 'wf-1',
+      detail: { workflow, steps: [step], artifacts: [], decisions: [] },
+    })
+
+    await useWorkflowStore.getState().decide('wf-1', 's1', 'approve')
+
+    const calls = fetchMock.mock.calls.map((entry) => String(entry[0]))
+    expect(calls.some((url) => url.includes('/decision'))).toBe(true)
+    expect(calls.some((url) => url.endsWith('/api/workflows'))).toBe(true)
+    expect(useWorkflowStore.getState().error).toContain('step_not_found')
+  })
+
   it('refreshes the workflow list after a websocket reconnect', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => [workflow] })
     vi.stubGlobal('fetch', fetchMock)
