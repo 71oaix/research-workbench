@@ -36,6 +36,12 @@ updated: 2026-08-21
 | 评测：效果基线（检索/成本/真实运行） | active | research/2026-08-21-effect-baseline.md | recall 对比 + 成本表 + 真实运行指标 |
 | 竞赛材料：项目文档初稿（附件 2 模板） | active | specification/2026-08-21-competition-project-document.md | 概况/规划/实施方案/参考资料 |
 | 竞赛材料：作品简介草稿（300 字） | active | specification/2026-08-21-competition-intro.md | 296 字，待定稿转 PDF |
+| Issue: UX-1 布局与新建入口 | active | issues/open/2026-08-23-ux-layout-and-newtask.md | 中央输入区 + 详情页空白填充（需 plan） |
+| Issue: UX-2 澄清审批与步骤状态 | active | issues/open/2026-08-23-ux-clarify-and-step-status.md | 澄清隐藏"通过"，步骤状态对齐（需 plan） |
+| Issue: UX-3 检索流式进度 | active | issues/open/2026-08-23-ux-streaming-retrieval.md | 检索/筛选实时进度，别让人干等（需 plan） |
+| Issue: UX-4 右栏可用态与阅读 | active | issues/open/2026-08-23-ux-inspector-legibility.md | 可用态区分 + 狭长栏阅读优化（需 plan） |
+| Issue: UX-5 产物 HTML 与文献审批视图 | active | issues/open/2026-08-23-ux-artifact-html-and-review.md | 产物 HTML 化 + 文献可审批卡片（需 plan） |
+| Issue: BUG-1 无 Writer 评估与打回 | active | issues/open/2026-08-23-fix-no-writer-eval-and-review.md | 六维口径 + Reviewer 打回文案（需 plan） |
 | Plan: M3-1 模型精排 | active | plans/open/2026-08-23-m3-1-model-rerank.md | 已实现并测试（待真实运行验证） |
 | Plan: M3-2 评估与审查增强 | active | plans/open/2026-08-23-m3-2-eval-review-enhance.md | 已实现并测试（待真实运行验证） |
 | Plan: M3-3 导出与渲染打磨 | active | plans/open/2026-08-23-m3-3-export-render-polish.md | 已实现并测试 |
