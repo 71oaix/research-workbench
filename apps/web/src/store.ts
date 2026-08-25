@@ -12,6 +12,7 @@ interface WorkflowState {
   detail: WorkflowDetail | null
   wsStatus: WsStatus
   error: string | null
+  live: { hits: number; unique: number; papers: number }
   refreshList: () => Promise<void>
   createWorkflow: (goal: string, includeWriter?: boolean) => Promise<void>
   selectWorkflow: (id: string) => Promise<void>
@@ -32,6 +33,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   detail: null,
   wsStatus: 'closed',
   error: null,
+  live: { hits: 0, unique: 0, papers: 0 },
 
   async refreshList() {
     try {
@@ -62,7 +64,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   async selectWorkflow(id) {
     try {
       const detail = await api.getWorkflow(id)
-      set({ selectedId: id, detail, error: null })
+      set({ selectedId: id, detail, error: null, live: { hits: 0, unique: 0, papers: 0 } })
     } catch (e) {
       set({ error: e instanceof Error ? e.message : String(e) })
     }
@@ -123,8 +125,18 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         break
       }
       case 'search.completed':
-      case 'usage.recorded':
+        set({
+          live: {
+            ...state.live,
+            hits: event.stats.totalHits,
+            unique: event.stats.uniquePapers,
+          },
+        })
+        break
       case 'paper.created':
+        set({ live: { ...state.live, papers: state.live.papers + 1 } })
+        break
+      case 'usage.recorded':
       case 'hello':
       case 'error':
         break

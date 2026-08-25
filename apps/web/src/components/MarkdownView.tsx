@@ -6,7 +6,12 @@ import { useMemo } from 'react'
  */
 export function MarkdownView({ content }: { content: string }) {
   const html = useMemo(() => renderMarkdown(content), [content])
-  return <div className="leading-relaxed text-ink" dangerouslySetInnerHTML={{ __html: html }} />
+  return (
+    <div
+      className="overflow-x-auto leading-relaxed text-ink"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  )
 }
 
 function escapeHtml(text: string): string {
@@ -84,7 +89,7 @@ function renderMarkdown(source: string): string {
       closeList(); closeQuote(); closeTable()
       inTable = true
       const header = splitTable(tableRow[1]).map((cell) => `<th>${inline(cell)}</th>`).join('')
-      html.push(`<table class="my-2 w-full border-collapse text-[12.5px]"><thead><tr>${header}</tr></thead><tbody>`)
+      html.push(`<table class="my-2 min-w-[600px] border-collapse text-[12.5px]"><thead><tr>${header}</tr></thead><tbody>`)
       i += 2 // skip header + separator
       continue
     }

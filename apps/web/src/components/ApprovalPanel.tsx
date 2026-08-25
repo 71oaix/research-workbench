@@ -9,12 +9,14 @@ export function ApprovalPanel({
   onDecide,
   reviewContent,
   planContent,
+  hasWriter,
 }: {
   step: Step
   decisions: Decision[]
   onDecide: (type: 'approve' | 'modify' | 'reject', note?: string) => void
   reviewContent?: string | null
   planContent?: string | null
+  hasWriter?: boolean
 }) {
   const [note, setNote] = useState('')
   const isReviewer = step.role === 'reviewer'
@@ -91,7 +93,9 @@ export function ApprovalPanel({
           {needsClarification
             ? '提交回答并重新规划'
             : isReviewer && blockingConcerns.length > 0
-              ? '打回 Writer'
+              ? hasWriter
+                ? '打回 Writer'
+                : '打回重跑'
               : '打回修改'}
         </button>
         <button

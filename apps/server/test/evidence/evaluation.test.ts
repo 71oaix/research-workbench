@@ -92,8 +92,8 @@ describe('computeSixDimScores', () => {
     ].join('\n')
     const result = computeSixDimScores({
       cards: [
-        card('Multi-Agent Memory', 'multi-agent shared memory architecture'),
-        card('RAG Survey', 'retrieval augmented generation survey'),
+        { ...card('Multi-Agent Memory', 'multi-agent shared memory architecture'), doi: '10.1/a' },
+        { ...card('RAG Survey', 'retrieval augmented generation survey'), doi: '10.1/b' },
       ],
       cardsMd,
       themeTokens: ['memory', '多智能体', '架构'],
@@ -112,5 +112,36 @@ describe('computeSixDimScores', () => {
     expect(byName['综合']).toBeGreaterThanOrEqual(0)
     expect(result.md).toContain('六维完整评分')
     expect(result.md).toContain('|')
+  })
+
+  it('does not zero out draft-dependent dims when there is no draft (no writer)', () => {
+    const cardsMd = [
+      '### [1] Multi-Agent Memory',
+      '- 相关度：高',
+      '- DOI：10.1/a',
+      '- 摘要：multi-agent shared memory architecture',
+      '### [2] RAG Survey',
+      '- 相关度：部分',
+      '- DOI：10.1/b',
+      '- 摘要：retrieval augmented generation',
+    ].join('\n')
+    const result = computeSixDimScores({
+      cards: [
+        { ...card('Multi-Agent Memory', 'multi-agent shared memory architecture'), doi: '10.1/a' },
+        { ...card('RAG Survey', 'retrieval augmented generation survey'), doi: '10.1/b' },
+      ],
+      cardsMd,
+      themeTokens: ['memory', '多智能体'],
+      planOutline: ['引言', 'multi-agent shared memory', 'retrieval augmented generation', '总结'],
+      draftMd: '',
+      failedSourceCount: 0,
+      draftUniqueRefs: 0,
+    })
+    const byName = Object.fromEntries(result.dims.map((item) => [item.dim, item.score]))
+    // 无草稿时大纲覆盖应基于证据池命中章节而非为 0
+    expect(byName['大纲覆盖']).toBeGreaterThan(0)
+    expect(byName['引用可信']).toBeGreaterThan(0)
+    expect(byName['完整性']).toBeGreaterThanOrEqual(0)
+    expect(result.dims.find((d) => d.dim === '引用可信')?.note).toContain('可识别卡片')
   })
 })

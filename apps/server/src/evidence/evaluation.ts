@@ -109,15 +109,25 @@ export function computeSixDimScores(input: {
   )
 
   // 3 大纲覆盖：计划章节被草稿提及的比例（按章节标题词元与草稿交集）
-  const draftTokens = tokenize(input.draftMd)
   const outlined = input.planOutline.length
-  const covered = input.planOutline.filter((chapter) =>
-    hasIntersection(tokenize(chapter), draftTokens)
-  ).length
+  const noDraft = input.draftMd.trim().length === 0
+  const corpusTokens = tokenize(input.draftMd)
+  const cardCorpus = tokenize(
+    input.cards.map((card) => `${card.title} ${card.abstract}`).join(' ')
+  )
+  const covered = input.planOutline.filter((chapter) => {
+    const chapterTokens = tokenize(chapter)
+    return noDraft
+      ? hasIntersection(chapterTokens, cardCorpus)
+      : hasIntersection(chapterTokens, corpusTokens)
+  }).length
   const outlineScore = outlined === 0 ? 3 : roundScore((covered / outlined) * 5)
 
-  // 4 引用可信：草稿引用去重数相对卡片数的覆盖，越大越可信
-  const trustScore = roundScore(Math.min(5, (input.draftUniqueRefs / total) * 5))
+  // 4 引用可信：无草稿时用"卡片可识别（含 DOI/arXiv）"口径，有草稿时用草稿去重引用覆盖
+  const identifiable = input.cards.filter((card) => card.doi || card.arxivId).length
+  const trustScore = noDraft
+    ? roundScore(Math.min(5, (identifiable / total) * 5))
+    : roundScore(Math.min(5, (input.draftUniqueRefs / total) * 5))
 
   // 5 来源失败：失败源越少越高
   const sourceScore = input.failedSourceCount === 0
@@ -131,8 +141,8 @@ export function computeSixDimScores(input: {
   const dims: SixDimScore[] = [
     { dim: '主题匹配', score: themeScore, note: `${themeHit}/${total} 张卡片命中主题词` },
     { dim: '相关度', score: relevanceScore, note: `高 ${high} / 部分 ${partial}` },
-    { dim: '大纲覆盖', score: outlineScore, note: `覆盖 ${covered}/${outlined} 个计划章节` },
-    { dim: '引用可信', score: trustScore, note: `草稿去重引用 ${input.draftUniqueRefs} / ${total} 张卡片` },
+    { dim: '大纲覆盖', score: outlineScore, note: noDraft ? `证据池覆盖 ${covered}/${outlined} 个计划章节` : `覆盖 ${covered}/${outlined} 个计划章节` },
+    { dim: '引用可信', score: trustScore, note: noDraft ? `可识别卡片 ${identifiable}/${total}` : `草稿去重引用 ${input.draftUniqueRefs} / ${total} 张卡片` },
     { dim: '来源失败', score: sourceScore, note: `失败源 ${input.failedSourceCount} 个` },
     { dim: '完整性', score: completenessScore, note: `未覆盖章节 ${Math.max(0, outlined - covered)}` },
   ]

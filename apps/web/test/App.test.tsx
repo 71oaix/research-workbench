@@ -207,7 +207,7 @@ describe('App workflow UI', () => {
     render(<App />)
     const item = await screen.findByText('调研大模型测试')
     item.click()
-    const sendBack = await screen.findByText('打回 Writer')
+    const sendBack = await screen.findByText('打回重跑')
     sendBack.click()
     await waitFor(() => {
       const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls
