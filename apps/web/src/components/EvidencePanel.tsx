@@ -27,10 +27,10 @@ export function EvidencePanel({ artifacts }: { artifacts: Artifact[] }) {
     <div className="shrink-0 border-b border-line bg-surface2/60 px-4 py-2.5">
       <div className="flex flex-wrap gap-x-4 gap-y-1">
         {items.map((item) => (
-          <div key={item.label} className="flex items-center gap-1.5 text-[11.5px] text-ink2">
-            <item.icon className="size-3.5 text-ink3" strokeWidth={1.8} />
-            <span className="text-ink3">{item.label}</span>
-            <span className="num max-w-[150px] truncate font-semibold text-ink">{item.value}</span>
+          <div key={item.label} className="flex items-center gap-1.5 text-[11.5px] text-ink3">
+            <item.icon className="size-3.5" strokeWidth={1.8} />
+            <span>{item.label}</span>
+            <span className="num max-w-[150px] truncate font-semibold text-ink2">{item.value}</span>
           </div>
         ))}
       </div>

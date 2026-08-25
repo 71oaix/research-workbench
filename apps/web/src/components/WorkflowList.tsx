@@ -53,41 +53,61 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
       </button>
 
       {open && (
-        <div className="mt-2.5 rounded-(--radius) border border-line bg-white p-3 shadow-(--shadow-soft)">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-[12px] font-semibold text-ink">新的调研任务</span>
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink/20 p-4" onClick={() => setOpen(false)}>
+          <div
+            className="w-full max-w-[560px] rounded-(--radius-lg) border border-line-soft bg-surface p-5 shadow-(--shadow-lift) shadow-[inset_0_1px_0_rgba(255,255,255,.72)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-1 flex items-center justify-between">
+              <div className="text-[15px] font-bold tracking-[-.01em]">新的调研任务</div>
+              <button
+                aria-label="关闭"
+                onClick={() => setOpen(false)}
+                className="rounded-full p-1 text-ink3 hover:bg-surface2 hover:text-ink"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="mb-3 text-[12.5px] text-ink2">输入研究问题，研镜会自动规划、检索、筛选、写作并核验引用。</p>
+            <input
+              value={goal}
+              onChange={(event) => setGoal(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && goal.trim()) void handleCreate()
+              }}
+              placeholder="例如：研究下多智能体的记忆架构"
+              className="w-full rounded-(--radius) border border-line-strong bg-bg px-3 py-2.5 text-[14px] outline-none placeholder:text-ink3 focus:border-accent-line focus:ring-4 focus:ring-accent-soft"
+              autoFocus
+            />
+            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+              {['研究下多智能体的记忆架构', '大模型幻觉的检测与缓解'].map((value) => (
+                <button
+                  key={value}
+                  onClick={() => setGoal(value)}
+                  className="rounded-full border border-line bg-surface px-3 py-1 text-[12px] text-ink2 transition-colors hover:border-accent-line hover:bg-accent-soft hover:text-accent"
+                >
+                  {value}
+                </button>
+              ))}
+            </div>
+            <label className="mt-3 flex cursor-pointer items-center gap-1.5 text-[12px] text-ink2">
+              <input
+                type="checkbox"
+                checked={writing}
+                onChange={(event) => setWriting(event.target.checked)}
+                className="size-3.5 accent-[#0c665b]"
+              />
+              包含综述写作（Writer）
+            </label>
             <button
-              aria-label="关闭"
-              onClick={() => setOpen(false)}
-              className="rounded-full p-0.5 text-ink3 hover:bg-surface2 hover:text-ink"
+              onClick={() => void handleCreate()}
+              disabled={creating || goal.trim().length === 0}
+              className="mt-3.5 flex w-full items-center justify-center gap-1.5 rounded-(--radius) bg-accent py-2.5 text-[13px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.15)] transition-transform duration-150 active:scale-[.96] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <X className="h-3.5 w-3.5" />
+              <Sparkles className="h-3.5 w-3.5" strokeWidth={2} />
+              创建并开始
             </button>
           </div>
-          <input
-            value={goal}
-            onChange={(event) => setGoal(event.target.value)}
-            placeholder="例如：研究下多智能体的记忆架构"
-            className="w-full rounded-(--radius-sm) border border-line-strong bg-bg px-2.5 py-2 text-[13px] outline-none placeholder:text-ink3 focus:border-accent-line focus:ring-4 focus:ring-accent-soft"
-            autoFocus
-          />
-          <label className="mt-2 flex cursor-pointer items-center gap-1.5 text-[12px] text-ink2">
-            <input
-              type="checkbox"
-              checked={writing}
-              onChange={(event) => setWriting(event.target.checked)}
-              className="size-3.5 accent-[#0c665b]"
-            />
-            包含综述写作（Writer）
-          </label>
-          <button
-            onClick={() => void handleCreate()}
-            disabled={creating || goal.trim().length === 0}
-            className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-(--radius) bg-accent py-2 text-[13px] font-semibold text-white transition-transform duration-150 active:scale-[.96] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Sparkles className="h-3.5 w-3.5" strokeWidth={2} />
-            创建并开始
-          </button>
         </div>
       )}
 

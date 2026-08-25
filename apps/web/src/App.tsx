@@ -34,6 +34,7 @@ export default function App() {
   const startWorkflow = useWorkflowStore((state) => state.startWorkflow)
   const decide = useWorkflowStore((state) => state.decide)
   const createWorkflow = useWorkflowStore((state) => state.createWorkflow)
+  const live = useWorkflowStore((state) => state.live)
 
   useEffect(() => {
     void refreshList()
@@ -50,7 +51,7 @@ export default function App() {
   const canStart = detail !== null && detail.workflow.status === 'planning'
 
   return (
-    <div className="workbench relative grid h-screen grid-cols-[252px_1fr_348px]">
+    <div className="workbench relative grid h-screen grid-cols-[252px_1fr_400px]">
       <WorkflowList wsStatus={wsStatus} />
 
       <main className="relative min-w-0 overflow-y-auto bg-bg px-10 pb-12 pt-8">
@@ -92,6 +93,24 @@ export default function App() {
               </div>
             </header>
 
+            {(detail.workflow.status === 'executing' || detail.workflow.status === 'paused') && (
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-ink2">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="size-3 animate-spin rounded-full border-2 border-accent-line border-t-accent" />
+                  检索中
+                </span>
+                <span>
+                  已命中 <strong className="num font-semibold text-ink">{live.hits}</strong>
+                </span>
+                <span>
+                  去重 <strong className="num font-semibold text-ink">{live.unique}</strong>
+                </span>
+                <span>
+                  已下载 <strong className="num font-semibold text-ink">{live.papers}</strong> 篇
+                </span>
+              </div>
+            )}
+
             <StepTimeline steps={detail.steps} />
 
             {awaitingStep && (
@@ -100,6 +119,7 @@ export default function App() {
                 decisions={detail.decisions}
                 reviewContent={reviewArtifact?.content ?? null}
                 planContent={planArtifact?.content ?? null}
+                hasWriter={detail.steps.some((step) => step.role === 'writer')}
                 onDecide={(type, note) => void decide(awaitingStep.workflowId, awaitingStep.id, type, note)}
               />
             )}

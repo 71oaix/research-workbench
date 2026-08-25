@@ -3,6 +3,7 @@ import type { Artifact } from '@research-workbench/shared'
 import { Diff, FileText } from 'lucide-react'
 import { cn } from '../lib/cn'
 import { MarkdownView } from './MarkdownView'
+import { PaperCards } from './PaperCards'
 
 interface ArtifactMeta {
   group: string
@@ -118,6 +119,8 @@ export function ArtifactTabs({ artifacts }: { artifacts: Artifact[] }) {
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
         {compare && latest && previous ? (
           <StructureDiff prev={previous.content} next={latest.content} />
+        ) : latest?.name === 'research-cards.md' || latest?.name === 'research-candidates.md' ? (
+          <PaperCards content={latest.content} />
         ) : latest?.name.endsWith('.md') ? (
           <MarkdownView content={display} />
         ) : (
