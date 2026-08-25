@@ -143,6 +143,31 @@ describe('App workflow UI', () => {
     expect(screen.getByText('补充上下文工程方向')).toBeTruthy()
   })
 
+  it('omits the approve button and guides to resubmit when the plan needs clarification', async () => {
+    currentDetail = {
+      workflow,
+      steps: [{ ...steps[0], status: 'awaiting_approval' }, steps[1]],
+      artifacts: [
+        {
+          id: 'a-plan-clarify',
+          workflowId: 'wf-1',
+          stepId: 's1',
+          name: '01-plan.md',
+          content: '# 计划\n\n## 澄清请求\n1. 你关注的是什么场景？',
+          version: 1,
+          createdAt: '2026-08-15T00:00:00.000Z',
+          updatedAt: '2026-08-15T00:00:00.000Z',
+        },
+      ],
+      decisions: [],
+    }
+    render(<App />)
+    const item = await screen.findByText('调研大模型测试')
+    item.click()
+    await screen.findByRole('button', { name: /提交回答并重新规划/ })
+    expect(screen.queryByRole('button', { name: /^通过$/ })).toBeNull()
+  })
+
   it('pre-fills blocking concerns when sending a review back to the writer', async () => {
     currentDetail = {
       workflow,

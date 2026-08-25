@@ -36,6 +36,7 @@ updated: 2026-08-21
 | 评测：效果基线（检索/成本/真实运行） | active | research/2026-08-21-effect-baseline.md | recall 对比 + 成本表 + 真实运行指标 |
 | 竞赛材料：项目文档初稿（附件 2 模板） | active | specification/2026-08-21-competition-project-document.md | 概况/规划/实施方案/参考资料 |
 | 竞赛材料：作品简介草稿（300 字） | active | specification/2026-08-21-competition-intro.md | 296 字，待定稿转 PDF |
+| Plan: UX-2 澄清审批与步骤状态 | active | plans/open/2026-08-25-ux-2-clarify-and-step-status.md | 已实现并测试 |
 | Plan: M3-1 模型精排 | active | plans/open/2026-08-23-m3-1-model-rerank.md | 已实现并测试（待真实运行验证） |
 | Plan: M3-2 评估与审查增强 | active | plans/open/2026-08-23-m3-2-eval-review-enhance.md | 已实现并测试（待真实运行验证） |
 | Plan: M3-3 导出与渲染打磨 | active | plans/open/2026-08-23-m3-3-export-render-polish.md | 已实现并测试 |

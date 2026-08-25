@@ -105,11 +105,6 @@ export function StepTimeline({ steps }: { steps: Step[] }) {
                   {ROLE_LABELS[step.role]}
                 </span>
                 <span className={cn('text-[11px] font-semibold', status.class)}>{status.label}</span>
-                {step.requiresApproval && state !== 'done' && (
-                  <span className="rounded-full border border-warn-line bg-warn-soft px-1.5 py-px text-[10px] font-medium text-warn">
-                    需审批
-                  </span>
-                )}
               </span>
               <span className="mt-0.5 block text-[12px] text-ink2">{step.label}</span>
             </span>
