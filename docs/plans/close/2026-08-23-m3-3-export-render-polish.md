@@ -1,6 +1,6 @@
 ---
 title: M3-3 导出与渲染打磨（plan）
-status: active
+status: archived
 created: 2026-08-23
 updated: 2026-08-23
 issue: "docs/issues/open/2026-08-23-m3-3-export-render-polish.md"

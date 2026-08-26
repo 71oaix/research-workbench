@@ -1,6 +1,6 @@
 ---
 title: M3-2 评估与审查增强（plan）
-status: active
+status: archived
 created: 2026-08-23
 updated: 2026-08-23
 issue: "docs/issues/open/2026-08-23-m3-2-eval-review-enhance.md"

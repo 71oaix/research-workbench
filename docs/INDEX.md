@@ -40,9 +40,9 @@ updated: 2026-08-21
 | Issue: M4-2 缺口驱动二次检索+覆盖矩阵 | active | issues/open/2026-08-27-m4-2-gap-driven-retrieval.md | 计划子问题覆盖检查，缺失自动补检索（需 plan） |
 | Issue: M4-3 缺口→相关论文路由 | active | issues/open/2026-08-27-m4-3-gap-to-related-routing.md | 无专论时引导到最相关相邻工作（需 plan） |
 | Plan: UX-2 澄清审批与步骤状态 | active | plans/open/2026-08-25-ux-2-clarify-and-step-status.md | 已实现并测试 |
-| Plan: M3-1 模型精排 | active | plans/open/2026-08-23-m3-1-model-rerank.md | 已实现并测试（待真实运行验证） |
-| Plan: M3-2 评估与审查增强 | active | plans/open/2026-08-23-m3-2-eval-review-enhance.md | 已实现并测试（待真实运行验证） |
-| Plan: M3-3 导出与渲染打磨 | active | plans/open/2026-08-23-m3-3-export-render-polish.md | 已实现并测试 |
+| Plan: M3-1 模型精排 | archived | plans/close/2026-08-23-m3-1-model-rerank.md | 已实现并测试（待真实运行验证） |
+| Plan: M3-2 评估与审查增强 | archived | plans/close/2026-08-23-m3-2-eval-review-enhance.md | 已实现并测试（待真实运行验证） |
+| Plan: M3-3 导出与渲染打磨 | archived | plans/close/2026-08-23-m3-3-export-render-polish.md | 已实现并测试 |
 | Plan: M2-3 学术检索 | archived | plans/close/2026-08-14-m2-3-academic-search.md | 已归档：实现完成 |
 | Issue: M2-4 Writer/Reviewer 证据引用 | archived | issues/close/2026-08-14-m2-4-evidence-citation.md | 已归档：证据引用实现完成 |
 | Plan: M2-4 Writer/Reviewer 证据引用 | archived | plans/close/2026-08-14-m2-4-evidence-citation.md | 已归档：实现完成 |
