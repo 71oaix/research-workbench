@@ -111,9 +111,10 @@ export default function App() {
               </div>
             )}
 
-            <StepTimeline steps={detail.steps} />
+            <StepTimeline steps={detail.steps} workflowStatus={detail.workflow.status} />
 
-            {awaitingStep && (
+            {awaitingStep &&
+              (detail.workflow.status === 'paused' || detail.workflow.status === 'planning') && (
               <ApprovalPanel
                 step={awaitingStep}
                 decisions={detail.decisions}

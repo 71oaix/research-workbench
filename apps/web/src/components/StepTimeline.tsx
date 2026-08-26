@@ -41,7 +41,12 @@ function visualState(step: Step): VisualState {
   return 'wait'
 }
 
-function statusText(step: Step): { label: string; class: string } {
+function statusText(step: Step, workflowStatus: string): { label: string; class: string } {
+  const awaitingActive = workflowStatus === 'paused' || workflowStatus === 'planning'
+  // executing / completed 下若残留 awaiting_approval，视为已通过，避免"第一步还没结束"的错觉
+  if (step.status === 'awaiting_approval' && !awaitingActive) {
+    return { label: '已通过', class: 'text-ok' }
+  }
   switch (step.status) {
     case 'running':
       return { label: '进行中', class: 'text-run' }
@@ -60,13 +65,13 @@ function statusText(step: Step): { label: string; class: string } {
   }
 }
 
-export function StepTimeline({ steps }: { steps: Step[] }) {
+export function StepTimeline({ steps, workflowStatus }: { steps: Step[]; workflowStatus: string }) {
   return (
     <ol className="mt-6 max-w-[760px]">
       {steps.map((step, index) => {
         const state = visualState(step)
         const Icon = ROLE_ICONS[step.role]
-        const status = statusText(step)
+        const status = statusText(step, workflowStatus)
         return (
           <li
             key={step.id}
