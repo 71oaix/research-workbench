@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Artifact, Decision, Step } from '@research-workbench/shared'
 import { cn } from '../lib/cn'
 import { ApprovalPanel } from './ApprovalPanel'
@@ -17,6 +17,38 @@ const ROLE_ICONS: Record<Step['role'], (s: { size?: number }) => ReturnType<type
 const ROLE_ARTIFACT: Record<Step['role'], string> = {
   planner: '01-plan.md', researcher: 'research-candidates.md', selector: 'research-cards.md',
   writer: '03-draft.md', evaluator: 'evaluation-report.md', reviewer: '04-review.md', summarizer: '05-summary.md',
+}
+
+const PHRASES: Record<Step['role'], string[]> = {
+  planner: ['正在拆解问题…', '正在锚定方向…', '正在勾勒检索蓝图…'],
+  researcher: ['正在翻阅浩瀚文献…', '正在检索领域要义…', '正在比对候选…', '正在甄选关键工作…'],
+  selector: ['正在逐篇审视…', '正在权衡相关性…', '正在剔除噪音…'],
+  writer: ['正在构思综述…', '正在落笔成章…', '正在编织证据…'],
+  evaluator: ['正在评估证据…', '正在核对覆盖…'],
+  reviewer: ['正在核验引用…', '正在审查可信度…'],
+  summarizer: ['正在归纳成果…', '正在收束成稿…'],
+}
+
+function CyclingLabel({ role }: { role: Step['role'] }) {
+  const phrases = PHRASES[role]
+  const [i, setI] = useState(0)
+  const [faded, setFaded] = useState(false)
+  useEffect(() => {
+    if (phrases.length < 2) return
+    const timer = setInterval(() => {
+      setFaded(true)
+      setTimeout(() => {
+        setI((index) => (index + 1) % phrases.length)
+        setFaded(false)
+      }, 260)
+    }, 3000)
+    return () => clearInterval(timer)
+  }, [phrases.length])
+  return (
+    <span className={cn('transition-opacity duration-300 ease-out text-run', faded && 'opacity-0')}>
+      {phrases[i]}
+    </span>
+  )
 }
 
 function statusMeta(step: Step, workflowStatus: string): { label: string; cls: string } {
@@ -44,7 +76,7 @@ export function ChatFlow({
 }) {
   return (
     <div className="mx-auto max-w-[720px] space-y-3.5">
-      {steps.map((step) => (
+      {steps.filter((step) => step.status !== 'pending').map((step) => (
         <StepBubble
           key={step.id}
           step={step}
@@ -102,7 +134,11 @@ function StepBubble({
           {isDone ? <IconCheck size={14} /> : step.status === 'running' ? <IconSpin className="animate-spin text-accent" /> : <Icon size={14} />}
         </span>
         <span className="text-[14px] font-semibold tracking-[-.005em]">{ROLE_LABELS[step.role]}</span>
-        <span className={cn('text-[11px] font-semibold', status.cls)}>{status.label}</span>
+        {step.status === 'running' ? (
+          <CyclingLabel role={step.role} />
+        ) : (
+          <span className={cn('text-[11px] font-semibold', status.cls)}>{status.label}</span>
+        )}
         <span className="ml-auto text-[11px] text-ink3">{step.label}</span>
       </div>
 
