@@ -36,6 +36,9 @@ updated: 2026-08-21
 | 评测：效果基线（检索/成本/真实运行） | active | research/2026-08-21-effect-baseline.md | recall 对比 + 成本表 + 真实运行指标 |
 | 竞赛材料：项目文档初稿（附件 2 模板） | active | specification/2026-08-21-competition-project-document.md | 概况/规划/实施方案/参考资料 |
 | 竞赛材料：作品简介草稿（300 字） | active | specification/2026-08-21-competition-intro.md | 296 字，待定稿转 PDF |
+| Issue: M4-1 每步质量门+迭代回环 | active | issues/open/2026-08-27-m4-1-step-quality-gates.md | 检索/筛选/写作自检，不合格自动重做（需 plan） |
+| Issue: M4-2 缺口驱动二次检索+覆盖矩阵 | active | issues/open/2026-08-27-m4-2-gap-driven-retrieval.md | 计划子问题覆盖检查，缺失自动补检索（需 plan） |
+| Issue: M4-3 缺口→相关论文路由 | active | issues/open/2026-08-27-m4-3-gap-to-related-routing.md | 无专论时引导到最相关相邻工作（需 plan） |
 | Plan: UX-2 澄清审批与步骤状态 | active | plans/open/2026-08-25-ux-2-clarify-and-step-status.md | 已实现并测试 |
 | Plan: M3-1 模型精排 | active | plans/open/2026-08-23-m3-1-model-rerank.md | 已实现并测试（待真实运行验证） |
 | Plan: M3-2 评估与审查增强 | active | plans/open/2026-08-23-m3-2-eval-review-enhance.md | 已实现并测试（待真实运行验证） |
