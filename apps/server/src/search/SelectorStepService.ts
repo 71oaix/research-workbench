@@ -10,6 +10,7 @@ import type { SearchConfig } from './config'
 import { mergeAndRank } from './merge'
 import { OpenAlexClient } from './openAlex'
 import { buildRerankMd, parseRerankReport, type RerankEntry } from './rerank'
+import { buildCoverageMatrix } from './coverage'
 import type {
   KeywordGroup,
   MergedPaper,
@@ -170,23 +171,62 @@ export class SelectorStepServiceImpl implements SelectorStepService {
       input.nextOutput ? parseRerankReport(input.nextOutput) : []
     )
 
+    // 覆盖驱动质量门 + 迭代回环：缺失/部分子问题自动 gap 二次检索补足（≤2 轮，失败静默）
+    const planContent = this.latestPlanContent(input.workflowId)
+    let coverage = buildCoverageMatrix(planContent, finalPapers)
+    let poolPapers = [...finalPapers]
+    let retries = 0
+    while (coverage.uncoveredQueries.length > 0 && retries < 2) {
+      try {
+        const gapOutput = await this.search.search(planContent, {
+          gapQueries: coverage.uncoveredQueries,
+          onlyGapQueries: true,
+        })
+        const known = new Set(poolPapers.map((paper) => fullTextKey(paper)))
+        const fresh = gapOutput.papers.filter((paper) => !known.has(fullTextKey(paper)))
+        if (fresh.length === 0) break
+        fresh.forEach((paper) => {
+          paper.relevanceLevel = paper.relevanceLevel ?? 'partial'
+          paper.selectionReason = '缺口补检索自动纳入'
+        })
+        poolPapers = [...poolPapers, ...fresh]
+        coverage = buildCoverageMatrix(planContent, poolPapers)
+        retries++
+      } catch {
+        break
+      }
+    }
+
     // 全文下载（只对入选论文）+ 落库
-    await this.downloadAndPersist(finalPapers, input)
+    await this.downloadAndPersist(poolPapers, input)
 
     const groups = [
       ...state.groups,
       ...state.gapQueries.map((query, index) => ({ label: `gap-${index + 1}`, query })),
     ]
-    const extraOverview = buildSelectorOverview(finalPapers, state, selectedFromCandidates.length)
-    const cardsMd = buildResearchCards(finalPapers, state.stats, groups, extraOverview)
+    const extraOverview = buildSelectorOverview(poolPapers, state, selectedFromCandidates.length)
+    const cardsMd = buildResearchCards(poolPapers, state.stats, groups, extraOverview)
 
     this.persist('research-cards.md', cardsMd, input)
-    const fullTextMd = buildFullTextMd(finalPapers)
+    const fullTextMd = buildFullTextMd(poolPapers)
     if (fullTextMd) this.persist('paper-fulltext.md', fullTextMd, input)
-    this.persist('selector-report.md', buildSelectorReport(finalPapers, state, newSelections), input)
+    this.persist('selector-report.md', buildSelectorReport(poolPapers, state, newSelections), input)
     this.persist('rerank-report.md', buildRerankMd(rerank), input)
+    this.persist('coverage-matrix.md', coverage.md, input)
 
     return { cardsMd }
+  }
+
+  private latestPlanContent(workflowId: string): string {
+    try {
+      const plan = this.repos.artifacts
+        .listByWorkflow(workflowId)
+        .filter((artifact) => artifact.name === '01-plan.md')
+        .sort((a, b) => b.version - a.version)[0]
+      return plan?.content ?? ''
+    } catch {
+      return ''
+    }
   }
 
   private async snowball(

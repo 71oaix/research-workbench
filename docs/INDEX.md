@@ -36,6 +36,9 @@ updated: 2026-08-21
 | 评测：效果基线（检索/成本/真实运行） | active | research/2026-08-21-effect-baseline.md | recall 对比 + 成本表 + 真实运行指标 |
 | 竞赛材料：项目文档初稿（附件 2 模板） | active | specification/2026-08-21-competition-project-document.md | 概况/规划/实施方案/参考资料 |
 | 竞赛材料：作品简介草稿（300 字） | active | specification/2026-08-21-competition-intro.md | 296 字，待定稿转 PDF |
+| Plan: M4-1 覆盖质量门+迭代回环 | active | plans/open/2026-08-27-m4-1-step-quality-gates.md | 已实现并测试 |
+| Plan: M4-2 缺口驱动二次检索+覆盖矩阵 | active | plans/open/2026-08-27-m4-2-gap-driven-retrieval.md | 已实现并测试 |
+| Plan: M4-3 缺口→相关论文路由 | active | plans/open/2026-08-27-m4-3-gap-to-related-routing.md | 已实现并测试 |
 | Issue: 布局重构 v2（对话流+进度跳转+版本tab+文件tab） | active | issues/open/2026-08-26-layout-v2-chat-flow.md | 中间对话流 + 右侧控制区，自绘 SVG（需 plan） |
 | Plan: 布局重构 v2 | active | plans/open/2026-08-26-layout-v2-chat-flow.md | 已实现并测试 |
 | Plan: UX-2 澄清审批与步骤状态 | active | plans/open/2026-08-25-ux-2-clarify-and-step-status.md | 已实现并测试 |

@@ -112,6 +112,8 @@ function StepBubble({
   const latest = group.at(-1) ?? null
   const [activeVersion, setActiveVersion] = useState<number | null>(latest?.version ?? null)
   const active = group.find((item) => item.version === activeVersion) ?? latest ?? null
+  const coverageMd =
+    artifacts.filter((artifact) => artifact.name === 'coverage-matrix.md').at(-1)?.content ?? null
 
   const reviewContent = artifacts
     .filter((artifact) => artifact.name === '04-review.md')
@@ -164,6 +166,11 @@ function StepBubble({
           )}
           <div className="p-4">
             {renderContent(artifactName, active?.content ?? '')}
+            {artifactName === 'research-cards.md' && coverageMd && (
+              <div className="mt-4 border-t border-line-soft pt-3">
+                <MarkdownView content={coverageMd} />
+              </div>
+            )}
           </div>
         </div>
       )}
