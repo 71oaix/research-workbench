@@ -4,6 +4,7 @@ import { IconFile, IconPlan, IconSearch, IconShield, IconPen, IconFilter } from 
 
 const ORDER = [
   { name: '01-plan.md', label: '检索计划', icon: IconPlan },
+  { name: 'research-candidates.md', label: '候选论文', icon: IconSearch },
   { name: '02-research.md', label: '文献清单', icon: IconSearch },
   { name: 'research-cards.md', label: '证据卡片', icon: IconFilter },
   { name: '03-draft.md', label: '综述初稿', icon: IconPen },

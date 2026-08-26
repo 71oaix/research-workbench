@@ -15,7 +15,7 @@ const ROLE_ICONS: Record<Step['role'], (s: { size?: number }) => ReturnType<type
   evaluator: IconScale, reviewer: IconShield, summarizer: IconPlan,
 }
 const ROLE_ARTIFACT: Record<Step['role'], string> = {
-  planner: '01-plan.md', researcher: '02-research.md', selector: 'research-cards.md',
+  planner: '01-plan.md', researcher: 'research-candidates.md', selector: 'research-cards.md',
   writer: '03-draft.md', evaluator: 'evaluation-report.md', reviewer: '04-review.md', summarizer: '05-summary.md',
 }
 
