@@ -133,18 +133,14 @@ function StepBubble({
       )}
 
       {(step.status === 'awaiting_approval' && (workflowStatus === 'paused' || workflowStatus === 'planning')) && (
-        <div className="overflow-hidden rounded-(--radius-lg) border border-warn-line bg-surface shadow-(--shadow-lift)">
-          <div className="p-4">
-            <ApprovalPanel
-              step={step}
-              decisions={decisions}
-              reviewContent={reviewContent}
-              planContent={planContent}
-              hasWriter={hasWriter}
-              onDecide={(type, note) => onDecide(step.workflowId, step.id, type, note)}
-            />
-          </div>
-        </div>
+        <ApprovalPanel
+          step={step}
+          decisions={decisions}
+          reviewContent={reviewContent}
+          planContent={planContent}
+          hasWriter={hasWriter}
+          onDecide={(type, note) => onDecide(step.workflowId, step.id, type, note)}
+        />
       )}
     </div>
   )

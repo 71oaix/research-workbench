@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { BookMarked, Plus, Sparkles, X } from 'lucide-react'
 import { useWorkflowStore } from '../store'
 import { cn } from '../lib/cn'
+import { IconBook, IconPlus, IconSpark, IconX } from './icons'
 
 const STATUS_DOT: Record<string, string> = {
   planning: 'bg-accent',
@@ -34,7 +34,7 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
     <aside className="flex h-full flex-col overflow-hidden border-r border-line bg-sidebar px-3 pb-3 pt-4">
       <div className="flex items-center gap-2.5 px-2 pb-4">
         <div className="grid h-8 w-8 place-items-center rounded-[9px] bg-accent text-white shadow-[inset_0_1px_0_rgba(255,255,255,.18)]">
-          <BookMarked className="h-4 w-4" strokeWidth={1.9} />
+          <IconBook size={17} />
         </div>
         <div className="leading-none">
           <div className="text-[16px] font-bold tracking-[.01em]">研镜</div>
@@ -48,7 +48,7 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
         onClick={() => setOpen((value) => !value)}
         className="flex w-full items-center justify-center gap-1.5 rounded-(--radius) bg-accent py-2.5 text-[13px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.15)] transition-transform duration-150 active:scale-[.96]"
       >
-        <Plus className="h-4 w-4" strokeWidth={2.2} />
+        <IconPlus size={15} />
         新建调研
       </button>
 
@@ -65,7 +65,7 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
                 onClick={() => setOpen(false)}
                 className="rounded-full p-1 text-ink3 hover:bg-surface2 hover:text-ink"
               >
-                <X className="h-4 w-4" />
+                <IconX size={16} />
               </button>
             </div>
             <p className="mb-3 text-[12.5px] text-ink2">输入研究问题，研镜会自动规划、检索、筛选、写作并核验引用。</p>
@@ -104,7 +104,7 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
               disabled={creating || goal.trim().length === 0}
               className="mt-3.5 flex w-full items-center justify-center gap-1.5 rounded-(--radius) bg-accent py-2.5 text-[13px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.15)] transition-transform duration-150 active:scale-[.96] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Sparkles className="h-3.5 w-3.5" strokeWidth={2} />
+              <IconSpark size={15} />
               创建并开始
             </button>
           </div>

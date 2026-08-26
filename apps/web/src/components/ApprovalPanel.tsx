@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Decision, Step } from '@research-workbench/shared'
 import { parseConcernLedger } from '@research-workbench/shared'
-import { Check, RotateCcw, XCircle, AlertTriangle } from 'lucide-react'
+import { IconAlert, IconCheck, IconRotate, IconXCircle } from './icons'
 
 export function ApprovalPanel({
   step,
@@ -48,7 +48,7 @@ export function ApprovalPanel({
     <section className="mt-7 max-w-[760px] rounded-(--radius-lg) border border-line-soft border-t-2 border-t-warn-line bg-surface p-5 shadow-(--shadow-lift) shadow-[inset_0_1px_0_rgba(255,255,255,.72)]">
       <div className="flex items-center gap-2.5">
         <span className="grid size-8 flex-none place-items-center rounded-[9px] bg-warn-soft text-warn">
-          <AlertTriangle className="h-4 w-4" />
+          <IconAlert size={16} />
         </span>
         <div>
           <div className="text-[15px] font-bold tracking-[-.01em]">审批：{step.label}</div>
@@ -80,7 +80,7 @@ export function ApprovalPanel({
             onClick={() => onDecide('approve')}
             className="flex items-center gap-1.5 rounded-(--radius) bg-accent px-4.5 py-2 text-[13px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.15)] transition-transform duration-150 active:scale-[.96]"
           >
-            <Check className="h-3.5 w-3.5" strokeWidth={2.2} />
+            <IconCheck size={14} />
             通过
           </button>
         )}
@@ -89,7 +89,7 @@ export function ApprovalPanel({
           disabled={!canModify}
           className="flex items-center gap-1.5 rounded-(--radius) border border-bad-line bg-bad-soft px-4.5 py-2 text-[13px] font-semibold text-bad transition-transform duration-150 active:scale-[.96] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.8} />
+          <IconRotate size={14} />
           {needsClarification
             ? '提交回答并重新规划'
             : isReviewer && blockingConcerns.length > 0
@@ -102,7 +102,7 @@ export function ApprovalPanel({
           onClick={handleCancel}
           className="flex items-center gap-1.5 rounded-(--radius) border border-line-strong bg-surface px-4.5 py-2 text-[13px] font-semibold text-ink2 transition-transform duration-150 active:scale-[.96]"
         >
-          <XCircle className="h-3.5 w-3.5" strokeWidth={1.8} />
+          <IconXCircle size={14} />
           取消任务
         </button>
       </div>

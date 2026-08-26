@@ -111,29 +111,31 @@ export default function App() {
           )}
         </div>
 
-        <div className="pointer-events-none absolute inset-x-7 bottom-0 bg-gradient-to-t from-bg via-bg/70 to-transparent px-0 pb-5 pt-3">
-          <div className="pointer-events-auto mx-auto flex max-w-[720px] items-center gap-2 rounded-(--radius-lg) border border-line-strong bg-surface p-1.5 shadow-(--shadow-lift) focus-within:border-accent-line focus-within:ring-4 focus-within:ring-accent-soft">
-            <input
-              value={goal}
-              onChange={(event) => setGoal(event.target.value)}
-              onKeyDown={(event) => { if (event.key === 'Enter' && goal.trim()) void submit() }}
-              placeholder="输入研究问题，或回答澄清 / 给修改意见…"
-              className="flex-1 bg-transparent px-2.5 py-2 text-[14px] text-ink outline-none placeholder:text-ink3"
-            />
-            <label className="flex flex-none cursor-pointer items-center gap-1.5 pr-2 text-[12px] text-ink2">
-              <input type="checkbox" checked={writing} onChange={(event) => setWriting(event.target.checked)} className="size-3.5 accent-[#0c665b]" />
-              Writer
-            </label>
-            <button
-              onClick={() => void submit()}
-              disabled={busy || !goal.trim()}
-              className="flex flex-none items-center gap-1.5 rounded-(--radius) bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-transform duration-150 active:scale-[.96] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <IconSpark size={14} />
-              发送
-            </button>
+        {detail && (
+          <div className="pointer-events-none absolute inset-x-7 bottom-0 bg-gradient-to-t from-bg via-bg/70 to-transparent px-0 pb-5 pt-3">
+            <div className="pointer-events-auto mx-auto flex max-w-[720px] items-center gap-2 rounded-(--radius-lg) border border-line-strong bg-surface p-1.5 shadow-(--shadow-lift) focus-within:border-accent-line focus-within:ring-4 focus-within:ring-accent-soft">
+              <input
+                value={goal}
+                onChange={(event) => setGoal(event.target.value)}
+                onKeyDown={(event) => { if (event.key === 'Enter' && goal.trim()) void submit() }}
+                placeholder="输入研究问题，或回答澄清 / 给修改意见…"
+                className="flex-1 bg-transparent px-2.5 py-2 text-[14px] text-ink outline-none placeholder:text-ink3"
+              />
+              <label className="flex flex-none cursor-pointer items-center gap-1.5 pr-2 text-[12px] text-ink2">
+                <input type="checkbox" checked={writing} onChange={(event) => setWriting(event.target.checked)} className="size-3.5 accent-[#0c665b]" />
+                Writer
+              </label>
+              <button
+                onClick={() => void submit()}
+                disabled={busy || !goal.trim()}
+                className="flex flex-none items-center gap-1.5 rounded-(--radius) bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-transform duration-150 active:scale-[.96] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <IconSpark size={14} />
+                发送
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
       <aside className="flex min-w-0 flex-col border-l border-line bg-surface">
