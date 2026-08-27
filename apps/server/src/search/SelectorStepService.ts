@@ -240,8 +240,9 @@ export class SelectorStepServiceImpl implements SelectorStepService {
   }
 
   /**
-   * 模型复核精判：仅把规则判为非 covered 的行送审（covered 行信任规则），
-   * 模型结论优先；任何异常（无 key/超时/解析失败）静默回退规则结果。
+   * 模型复核精判：全部子问题行批量送审（规则的假阳性不会自行暴露，
+   * 全量送审才能发现"词元撞上但无实质支撑"的误判）；模型结论优先；
+   * 任何异常（无 key/超时/解析失败）静默回退规则结果。
    */
   private async refineWithJudge(
     planContent: string,
@@ -249,12 +250,11 @@ export class SelectorStepServiceImpl implements SelectorStepService {
     coverage: Awaited<ReturnType<typeof buildCoverageMatrix>>
   ) {
     if (!this.coverageJudge) return coverage
-    const pending = coverage.rows.filter((row) => row.coverage !== 'covered')
-    if (pending.length === 0) return coverage
+    if (coverage.rows.length === 0 || papers.length === 0) return coverage
     try {
       const anchors = extractBilingualKeywords(planContent).map((pair) => `${pair.zh} / ${pair.en}`)
       const verdicts = await this.coverageJudge.judge({
-        questions: pending.map((row) => ({ id: row.id, question: row.question })),
+        questions: coverage.rows.map((row) => ({ id: row.id, question: row.question })),
         papers: papers.map((paper, index) => ({
           id: index + 1,
           title: paper.title,

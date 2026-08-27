@@ -63,14 +63,20 @@ export function parseJudgeOutput(output: string, maxPaperId: number): JudgeVerdi
 
 /**
  * 用模型结论升级规则矩阵行（仅替换送审的行；papers 列表原样采用模型结果）。
- * 未出现在 verdicts 里的行保持规则结果。
+ * 被升级的行标记 source='model' 以便矩阵展示判定依据；未出现在 verdicts 里的行保持规则结果。
  */
 export function refineCoverage(rows: CoverageRow[], verdicts: JudgeVerdict[]): CoverageRow[] {
   const byId = new Map(verdicts.map((verdict) => [verdict.id, verdict]))
   return rows.map((row) => {
     const verdict = byId.get(row.id)
     if (!verdict) return row
-    return { ...row, coverage: verdict.coverage, papers: verdict.papers.slice(0, 5) }
+    if (
+      verdict.coverage === row.coverage &&
+      verdict.papers.join(',') === row.papers.join(',')
+    ) {
+      return { ...row }
+    }
+    return { ...row, coverage: verdict.coverage, papers: verdict.papers.slice(0, 5), source: 'model' }
   })
 }
 

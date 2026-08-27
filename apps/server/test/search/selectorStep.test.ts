@@ -317,11 +317,63 @@ describe('SelectorStepServiceImpl', () => {
         { id: 2, title: 'Quantum Codex Beta', abstract: expect.any(String) },
       ],
     })
+    // 规则判 missing 的行经模型复核升为 covered，缺口清单应清空 → gap 循环不触发
     expect(search.search).not.toHaveBeenCalled()
     const matrix = repos.artifacts
       .listByWorkflow(workflow.id)
       .find((artifact) => artifact.name === 'coverage-matrix.md')
     expect(matrix?.content).toMatch(/\|\s*1\. .+\|\s*covered\s*\|/)
+  })
+
+  it('refineWithJudge demotes a false-positive covered row and triggers the gap loop', async () => {
+    const papers = [makeCandidate('Survey of Agent Memory', 1), makeCandidate('Unrelated Paper', 2)]
+    const { repos, workflow, step } = makeCandidatesArtifacts('wf', 'step', papers)
+    acquireFullTextMock.mockReset()
+    acquireFullTextMock.mockResolvedValue({
+      result: { text: 't '.repeat(50), url: 'https://x', source: 'oa' },
+      reason: 'ok',
+    })
+    const search = { search: vi.fn().mockRejectedValue(new Error('no gap results')) } as unknown as AcademicSearchService
+    // 全部行送审；第 1 行被模型降级为 partial（模拟规则假阳性）
+    const judge = {
+      judge: vi.fn().mockResolvedValue([
+        { id: 1, coverage: 'partial', papers: [1] },
+        { id: 2, coverage: 'missing', papers: [] },
+      ]),
+    }
+    const service = new SelectorStepServiceImpl(search, repos, createEventBus(), loadSearchConfig({}), judge)
+    const state = {
+      candidates: papers,
+      selections: [
+        { index: 1, selected: true, level: 'high' as const, reason: '核心' },
+        { index: 2, selected: true, level: 'partial' as const, reason: '相关' },
+      ],
+      gapQueries: [],
+      newPapers: [],
+      stats: {
+        queryGroups: 1,
+        sources: ['semantic-scholar'],
+        keywordsUsed: 1,
+        queries: 1,
+        minCitations: 0,
+        totalHits: 2,
+        uniquePapers: 2,
+        failedSources: [],
+        topN: 15,
+      },
+      groups: [],
+    }
+
+    await service.commit({ workflowId: workflow.id, stepId: step.id, state, nextOutput: null })
+
+    expect(judge.judge).toHaveBeenCalledTimes(1)
+    const matrix = repos.artifacts
+      .listByWorkflow(workflow.id)
+      .find((artifact) => artifact.name === 'coverage-matrix.md')
+    expect(matrix?.content).toMatch(/partial/)
+    expect(matrix?.content).toMatch(/（模型复核）/)
+    // 降级行进入缺口清单并触发了 gap 检索尝试
+    expect(search.search).toHaveBeenCalled()
   })
 
   it('refineWithJudge falls back to rule matrix silently when judge throws', async () => {

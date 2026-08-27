@@ -3,8 +3,8 @@ import {
   buildJudgePrompt,
   parseJudgeOutput,
   refineCoverage,
-  type CoverageRow,
 } from '../../src/search/coverageJudge'
+import type { CoverageRow } from '../../src/search/coverage'
 
 describe('parseJudgeOutput', () => {
   it('parses JSON array from noisy output and keeps valid verdicts', () => {
@@ -45,6 +45,13 @@ describe('refineCoverage', () => {
     expect(refined[0]).toBe(rows[0])
     expect(refined[1].coverage).toBe('covered')
     expect(refined[1].papers).toEqual([1, 2, 3, 4, 5])
+    expect(refined[1].source).toBe('model')
+  })
+
+  it('marks source model only when the verdict actually changes the row', () => {
+    const refined = refineCoverage(rows, [{ id: 2, coverage: 'missing', papers: [] }])
+    expect(refined[1].coverage).toBe('missing')
+    expect(refined[1].source).toBeUndefined()
   })
 
   it('keeps rule results when verdict list is empty', () => {

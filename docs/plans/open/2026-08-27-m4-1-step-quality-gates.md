@@ -74,6 +74,9 @@ v1 真实运行暴露：纯词元交叠误判明显——中文子问题与英�
 - [minor] 中文子问题 vs 英文论文的对应关系仍难 → 修正：prompt 中附带双语检索关键词锚点对，帮模型搭桥。
 - [minor] 论文多时 prompt 过长 → 修正：摘要截断至 600 字符/篇，仅送入选论文（通常 ≤25 篇）。
 
+### 真实验证后的决策修正（2026-08-28）
+- **[major→修正原"仅非 covered 行送审"]改为全量行送审**：真实运行证明规则判定对综述型主题天然全绿（中文 bigram + 双语锚点使词元交叠几乎必 ≥2），规则假阳性不会自行暴露——若只送非 covered 行，复核永远不触发。现在所有子问题行一次批量送审，模型可降级误判行（covered→partial/missing）从而真正驱动 gap 补检索；judge 失败时回退规则结果。矩阵中被模型改动结论的行标注"（模型复核）"。
+
 ### 实现步骤
 1. `src/search/coverageJudge.ts`：定义 `CoverageJudge` 类型 + `parseJudgeOutput`（JSON 提取、值域校验、id 过滤、与规则行合并函数 `refineCoverage`）。
 2. `src/runtime/PiCoverageJudge.ts`：用 PiRuntimeProvider 建一次性 selector 会话，组装批量判定 prompt，90s 超时，异常返回 null。
