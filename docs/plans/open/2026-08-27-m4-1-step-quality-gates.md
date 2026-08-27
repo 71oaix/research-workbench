@@ -2,7 +2,7 @@
 title: M4-1 覆盖驱动质量门 + 自动迭代回环（plan）
 status: active
 created: 2026-08-27
-updated: 2026-08-27
+updated: 2026-08-28
 issue: "docs/issues/open/2026-08-27-m4-1-step-quality-gates.md"
 areas: [server]
 ---
@@ -47,8 +47,51 @@ areas: [server]
 - [ ] ≤3 轮上限，达到标注"仍未覆盖"
 - [ ] typecheck / test 全绿
 
+## v2 追加：模型辅助覆盖判定（2026-08-28）
+
+### 任务摘要
+在规则判定之上加"模型复核"：规则先跑（快、免费、可测），非 covered 行批量交模型精判，判定升级后 gap 回环按升级结果走。规则结果始终保留为失败兜底。
+
+### 为什么做
+v1 真实运行暴露：纯词元交叠误判明显——中文子问题与英文论文即使有双语搭桥，仍把"记忆评测基准"等子问题误判为 covered（表面词元撞上）或 missing（语义相关但词元不交）。用户 8/25 反馈"好几个问题都不能被支撑"，其中一部分是**判不准**而不是真缺失。
+
+### 预计效果
+- 覆盖矩阵三档判定准确率显著提升（抽查 8/25 例子，误判行从 2+ 降到 ≤1）；
+- 每轮 gap 回环新增 ≤1 次批量判定调用（≤3 轮 → 全流程最多 3 次，约 ¥0.01-0.03）；
+- 判定调用失败/超时/解析失败时静默回退规则结果，流程不断。
+
+### 关键决策
+| 决策点 | 选择 | 放弃 | 理由 |
+|---|---|---|---|
+| 判定时机 | commit 内每轮 buildCoverageMatrix 后 | 并入 selector stage 输出 | commit 在 gap 回环内需反复重判；stage 改动面大且解析已有回退问题 |
+| 注入方式 | SelectorStepServiceImpl 第 5 个可选依赖 `CoverageJudge` | service 内直接建 runtime | 保持 search 层无 runtime 依赖；测试注入 fake 即可；缺省 undefined=纯规则（旧测试零破坏） |
+| 规则与模型关系 | 非 covered 行才送审，模型结论优先、id 校验防幻觉 | 每行全量送审 / 模型为兜底 | 控成本控延迟；规则已 covered 的无需复核；id 不在候选范围则丢弃该行 |
+| 判定输出 | 仅 JSON 数组（id/coverage/papers） | Markdown 表格 | JSON 解析确定性最高 |
+
+### Review 发现与修正
+- [major] 模型可能引用不存在的论文编号（幻觉）→ 修正：合并前校验 id ∈ 候选序号集合，越界丢弃。
+- [major] 判定调用挂死会阻塞工作流 → 修正：PiRuntimeHandle 已有超时机制，judge 外再包 try/catch，任何异常回退规则矩阵（与现有 gap loop catch 语义一致）。
+- [minor] 中文子问题 vs 英文论文的对应关系仍难 → 修正：prompt 中附带双语检索关键词锚点对，帮模型搭桥。
+- [minor] 论文多时 prompt 过长 → 修正：摘要截断至 600 字符/篇，仅送入选论文（通常 ≤25 篇）。
+
+### 实现步骤
+1. `src/search/coverageJudge.ts`：定义 `CoverageJudge` 类型 + `parseJudgeOutput`（JSON 提取、值域校验、id 过滤、与规则行合并函数 `refineCoverage`）。
+2. `src/runtime/PiCoverageJudge.ts`：用 PiRuntimeProvider 建一次性 selector 会话，组装批量判定 prompt，90s 超时，异常返回 null。
+3. `SelectorStepService.commit`：build 后调用 refine（含 gap 循环内重判）；构造函数加可选 judge 参数。
+4. `index.ts` 装配：new PiCoverageJudge(provider) 传入 selector。
+5. 测试：coverageJudge.test.ts（解析/过滤/合并）+ selectorStep.test.ts 追加 fake judge 升级行与失败回退两用例。
+
+### 测试与验证
+- 单测：见实现步骤 5。
+- 真实："研究下多智能体的记忆架构"完整跑一轮，对比 v1/v2 覆盖矩阵行判定差异。
+
+### 验收标准
+- [ ] 非 covered 行经模型复核后误判减少（矩阵内展示"判定依据=模型/规则"）
+- [ ] judge 失败静默回退，typecheck/test 全绿
+- [ ] 全流程模型判定调用 ≤3 次
+
 ## 文档更新清单
-- `docs/guide/runbook.md`：coverage-matrix 说明。
+- `docs/guide/runbook.md`：coverage-matrix 说明 + 模型复核行为。
 
 ## 涉及 UI/预览
 覆盖矩阵作为产物在对话流/文件 tab（MarkdownView 表格渲染）。
