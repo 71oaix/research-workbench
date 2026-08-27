@@ -1,6 +1,6 @@
 ---
 title: M2-11 真实案例复盘修复（plan）
-status: active
+status: archived
 created: 2026-08-16
 updated: 2026-08-16
 issue: 2026-08-16-m2-11-runtime-review-fixes

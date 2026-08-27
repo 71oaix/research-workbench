@@ -37,14 +37,14 @@ updated: 2026-08-21
 | 竞赛材料：项目文档初稿（附件 2 模板） | active | specification/2026-08-21-competition-project-document.md | 概况/规划/实施方案/参考资料 |
 | 竞赛材料：作品简介草稿（300 字） | active | specification/2026-08-21-competition-intro.md | 296 字，待定稿转 PDF |
 | Plan: M4-1 覆盖质量门+迭代回环 | active | plans/open/2026-08-27-m4-1-step-quality-gates.md | 已实现并测试 |
-| Plan: M4-2 缺口驱动二次检索+覆盖矩阵 | active | plans/open/2026-08-27-m4-2-gap-driven-retrieval.md | 已实现并测试 |
-| Plan: M4-3 缺口→相关论文路由 | active | plans/open/2026-08-27-m4-3-gap-to-related-routing.md | 已实现并测试 |
-| Issue: 布局重构 v2（对话流+进度跳转+版本tab+文件tab） | active | issues/open/2026-08-26-layout-v2-chat-flow.md | 中间对话流 + 右侧控制区，自绘 SVG（需 plan） |
-| Plan: 布局重构 v2 | active | plans/open/2026-08-26-layout-v2-chat-flow.md | 已实现并测试 |
-| Plan: UX-2 澄清审批与步骤状态 | active | plans/open/2026-08-25-ux-2-clarify-and-step-status.md | 已实现并测试 |
-| Plan: M3-1 模型精排 | active | plans/open/2026-08-23-m3-1-model-rerank.md | 已实现并测试（待真实运行验证） |
-| Plan: M3-2 评估与审查增强 | active | plans/open/2026-08-23-m3-2-eval-review-enhance.md | 已实现并测试（待真实运行验证） |
-| Plan: M3-3 导出与渲染打磨 | active | plans/open/2026-08-23-m3-3-export-render-polish.md | 已实现并测试 |
+| Plan: M4-2 缺口驱动二次检索+覆盖矩阵 | archived | plans/close/2026-08-27-m4-2-gap-driven-retrieval.md | 已实现并测试 |
+| Plan: M4-3 缺口→相关论文路由 | archived | plans/close/2026-08-27-m4-3-gap-to-related-routing.md | 已实现并测试 |
+| Issue: 布局重构 v2（对话流+进度跳转+版本tab+文件tab） | archived | issues/close/2026-08-26-layout-v2-chat-flow.md | 中间对话流 + 右侧控制区，自绘 SVG（需 plan） |
+| Plan: 布局重构 v2 | archived | plans/close/2026-08-26-layout-v2-chat-flow.md | 已实现并测试 |
+| Plan: UX-2 澄清审批与步骤状态 | archived | plans/close/2026-08-25-ux-2-clarify-and-step-status.md | 已实现并测试 |
+| Plan: M3-1 模型精排 | archived | plans/close/2026-08-23-m3-1-model-rerank.md | 已实现并测试（待真实运行验证） |
+| Plan: M3-2 评估与审查增强 | archived | plans/close/2026-08-23-m3-2-eval-review-enhance.md | 已实现并测试（待真实运行验证） |
+| Plan: M3-3 导出与渲染打磨 | archived | plans/close/2026-08-23-m3-3-export-render-polish.md | 已实现并测试 |
 | Plan: M2-3 学术检索 | archived | plans/close/2026-08-14-m2-3-academic-search.md | 已归档：实现完成 |
 | Issue: M2-4 Writer/Reviewer 证据引用 | archived | issues/close/2026-08-14-m2-4-evidence-citation.md | 已归档：证据引用实现完成 |
 | Plan: M2-4 Writer/Reviewer 证据引用 | archived | plans/close/2026-08-14-m2-4-evidence-citation.md | 已归档：实现完成 |
@@ -58,21 +58,21 @@ updated: 2026-08-21
 | Plan: M2-8 全文获取与证据闭环 | archived | plans/close/2026-08-16-m2-8-fulltext-evidence.md | 已归档：实现完成并合并 |
 | Issue: M2-9 引用核验升级 | archived | issues/close/2026-08-16-m2-9-citation-verification.md | 已归档：实现完成并合并 |
 | Plan: M2-9 引用核验升级 | archived | plans/close/2026-08-16-m2-9-citation-verification.md | 已归档：实现完成并合并 |
-| Issue: M2-10 审查与评估 | active | issues/open/2026-08-16-m2-10-review-evaluation.md | concern ledger + evaluation-report + UI |
-| Plan: M2-10 审查与评估 | active | plans/open/2026-08-16-m2-10-review-evaluation.md | 已实现，待合并 |
-| Issue: M2-11 真实案例复盘修复 | active | issues/open/2026-08-16-m2-11-runtime-review-fixes.md | 全文提取 / 流程恢复 / 核验误报 / 评估指标 / 产物呈现 |
-| Plan: M2-11 真实案例复盘修复 | active | plans/open/2026-08-16-m2-11-runtime-review-fixes.md | 已实现，待合并 |
-| Issue: M2-12 可靠性与性能加固 | active | issues/open/2026-08-17-m2-12-reliability-performance.md | 下载 / 检索并发 / Writer 思考与上下文 / 核验稳健 |
-| Plan: M2-12 可靠性与性能加固 | active | plans/open/2026-08-17-m2-12-reliability-performance.md | 已实现，待合并 |
-| Issue: M2-13 效果修复 | active | issues/open/2026-08-17-m2-13-effect-audit-fixes.md | 核验批量/兜底 + 评估重设计 + 检索下载覆盖 |
-| Plan: M2-13 效果修复 | active | plans/open/2026-08-17-m2-13-effect-audit-fixes.md | 已实现，待真实运行验证后合并 |
-| Issue: M2-14 检索召回与产物编号修复 | active | issues/open/2026-08-17-m2-14-search-recall-and-artifact-ids.md | 真实运行对比暴露：召回退化 + 编号错位 |
-| Plan: M2-14 检索召回与产物编号修复 | active | plans/open/2026-08-17-m2-14-search-recall-and-artifact-ids.md | 已实现，待真实运行验证后合并 |
-| Issue: M2-15 模糊问题澄清 + 标题摘要筛选 | active | issues/open/2026-08-18-m2-15-clarify-and-select-papers.md | 澄清锚点 + selector 筛选 + Unpaywall 候选 |
-| Plan: M2-15 澄清 + 筛选 + 华为赛题吸收 | active | plans/open/2026-08-18-m2-15-clarify-and-select-papers.md | 已实现并真实运行验证（待合并） |
-| Issue: M2-16 全量吸收 | active | issues/open/2026-08-20-m2-16-full-absorption.md | 归纳整理 + 评测闭环 + 成本落地 + writer 可选项 |
-| Plan: M2-16 全量吸收 | active | plans/open/2026-08-20-m2-16-full-absorption.md | 已实现并测试（待真实运行验证后合并） |
-| Issue: 检索源可靠性 | active | issues/open/2026-08-21-search-source-reliability.md | OpenAlex 计费额度 / S2 无 key 限流导致源半瘫 |
-| Issue: Crossref 结果污染 | active | issues/open/2026-08-21-crossref-noise-filter.md | Table/Figure/Supplementary 图表标题挤占候选池 |
-| Plan: 检索层修复（源降级补偿 + Crossref 噪声过滤） | active | plans/open/2026-08-21-search-source-reliability.md | 覆盖上述两个 issue，待确认 |
+| Issue: M2-10 审查与评估 | archived | issues/close/2026-08-16-m2-10-review-evaluation.md | concern ledger + evaluation-report + UI |
+| Plan: M2-10 审查与评估 | archived | plans/close/2026-08-16-m2-10-review-evaluation.md | 已实现，待合并 |
+| Issue: M2-11 真实案例复盘修复 | archived | issues/close/2026-08-16-m2-11-runtime-review-fixes.md | 全文提取 / 流程恢复 / 核验误报 / 评估指标 / 产物呈现 |
+| Plan: M2-11 真实案例复盘修复 | archived | plans/close/2026-08-16-m2-11-runtime-review-fixes.md | 已实现，待合并 |
+| Issue: M2-12 可靠性与性能加固 | archived | issues/close/2026-08-17-m2-12-reliability-performance.md | 下载 / 检索并发 / Writer 思考与上下文 / 核验稳健 |
+| Plan: M2-12 可靠性与性能加固 | archived | plans/close/2026-08-17-m2-12-reliability-performance.md | 已实现，待合并 |
+| Issue: M2-13 效果修复 | archived | issues/close/2026-08-17-m2-13-effect-audit-fixes.md | 核验批量/兜底 + 评估重设计 + 检索下载覆盖 |
+| Plan: M2-13 效果修复 | archived | plans/close/2026-08-17-m2-13-effect-audit-fixes.md | 已实现，待真实运行验证后合并 |
+| Issue: M2-14 检索召回与产物编号修复 | archived | issues/close/2026-08-17-m2-14-search-recall-and-artifact-ids.md | 真实运行对比暴露：召回退化 + 编号错位 |
+| Plan: M2-14 检索召回与产物编号修复 | archived | plans/close/2026-08-17-m2-14-search-recall-and-artifact-ids.md | 已实现，待真实运行验证后合并 |
+| Issue: M2-15 模糊问题澄清 + 标题摘要筛选 | archived | issues/close/2026-08-18-m2-15-clarify-and-select-papers.md | 澄清锚点 + selector 筛选 + Unpaywall 候选 |
+| Plan: M2-15 澄清 + 筛选 + 华为赛题吸收 | archived | plans/close/2026-08-18-m2-15-clarify-and-select-papers.md | 已实现并真实运行验证（待合并） |
+| Issue: M2-16 全量吸收 | archived | issues/close/2026-08-20-m2-16-full-absorption.md | 归纳整理 + 评测闭环 + 成本落地 + writer 可选项 |
+| Plan: M2-16 全量吸收 | archived | plans/close/2026-08-20-m2-16-full-absorption.md | 已实现并测试（待真实运行验证后合并） |
+| Issue: 检索源可靠性 | archived | issues/close/2026-08-21-search-source-reliability.md | OpenAlex 计费额度 / S2 无 key 限流导致源半瘫 |
+| Issue: Crossref 结果污染 | archived | issues/close/2026-08-21-crossref-noise-filter.md | Table/Figure/Supplementary 图表标题挤占候选池 |
+| Plan: 检索层修复（源降级补偿 + Crossref 噪声过滤） | archived | plans/close/2026-08-21-search-source-reliability.md | 覆盖上述两个 issue，待确认 |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |

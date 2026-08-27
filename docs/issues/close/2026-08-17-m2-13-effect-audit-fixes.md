@@ -1,6 +1,6 @@
 ---
 title: M2-13 效果修复：核验可靠性 + 评估指标重设计 + 检索/下载覆盖
-status: active
+status: archived
 created: 2026-08-17
 updated: 2026-08-17
 kind: feature

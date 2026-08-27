@@ -1,6 +1,6 @@
 ---
 title: UX-2 澄清审批交互与步骤状态显示（plan）
-status: active
+status: archived
 created: 2026-08-25
 updated: 2026-08-25
 issue: "docs/issues/open/2026-08-23-ux-clarify-and-step-status.md"

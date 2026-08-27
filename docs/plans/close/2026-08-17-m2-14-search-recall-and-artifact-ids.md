@@ -1,6 +1,6 @@
 ---
 title: M2-14 检索召回与产物编号修复（plan）
-status: active
+status: archived
 created: 2026-08-17
 updated: 2026-08-17
 issue: 2026-08-17-m2-14-search-recall-and-artifact-ids

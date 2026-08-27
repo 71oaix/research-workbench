@@ -1,6 +1,6 @@
 ---
 title: M2-11 真实案例复盘修复（全文提取、流程恢复、核验误报、评估指标、产物呈现）
-status: active
+status: archived
 created: 2026-08-16
 updated: 2026-08-16
 kind: feature
