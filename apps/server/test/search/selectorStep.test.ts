@@ -35,7 +35,12 @@ function makeCandidate(title: string, index: number, overrides: Partial<MergedPa
   }
 }
 
-function makeCandidatesArtifacts(workflowId: string, _stepId: string, papers: MergedPaper[]) {
+function makeCandidatesArtifacts(
+  workflowId: string,
+  _stepId: string,
+  papers: MergedPaper[],
+  planContent = '# 计划\n\n## 研究问题\n多智能体记忆\n\n## 检索关键词\n- multi-agent memory'
+) {
   const repos = createRepositories(createDb())
   const workflow = repos.workflows.create('调研')
   const step = repos.steps.create({
@@ -75,7 +80,7 @@ function makeCandidatesArtifacts(workflowId: string, _stepId: string, papers: Me
     workflowId: workflow.id,
     stepId: null,
     name: '01-plan.md',
-    content: '# 计划\n\n## 研究问题\n多智能体记忆\n\n## 检索关键词\n- multi-agent memory',
+    content: planContent,
   })
   return { repos, workflow, step, artifacts: [md, json, plan] as Artifact[] }
 }
@@ -262,5 +267,105 @@ describe('SelectorStepServiceImpl', () => {
     expect(result.cardsMd).toContain('筛选理由：核心论文')
     expect(result.cardsMd).toContain('筛选：候选 3 篇 → 入选 2 篇（高相关 1 / 部分相关 1）')
     expect(result.cardsMd).not.toContain('Paper Rejected')
+  })
+
+  it('refineWithJudge upgrades rule rows via judge verdicts and skips gap loop when covered', async () => {
+    const papers = [makeCandidate('Quantum Codex Alpha', 1), makeCandidate('Quantum Codex Beta', 2)]
+    const { repos, workflow, step } = makeCandidatesArtifacts(
+      'wf',
+      'step',
+      papers,
+      '# 计划\n\n## 研究问题\n量子引力纠错'
+    )
+    acquireFullTextMock.mockReset()
+    acquireFullTextMock.mockResolvedValue({
+      result: { text: 't '.repeat(50), url: 'https://x', source: 'oa' },
+      reason: 'ok',
+    })
+    const search = { search: vi.fn() } as unknown as AcademicSearchService
+    const judge = { judge: vi.fn().mockResolvedValue([{ id: 1, coverage: 'covered', papers: [1] }]) }
+    const service = new SelectorStepServiceImpl(search, repos, createEventBus(), loadSearchConfig({}), judge)
+    const state = {
+      candidates: papers,
+      selections: [
+        { index: 1, selected: true, level: 'high' as const, reason: '核心' },
+        { index: 2, selected: true, level: 'partial' as const, reason: '相关' },
+      ],
+      gapQueries: [],
+      newPapers: [],
+      stats: {
+        queryGroups: 1,
+        sources: ['semantic-scholar'],
+        keywordsUsed: 1,
+        queries: 1,
+        minCitations: 0,
+        totalHits: 2,
+        uniquePapers: 2,
+        failedSources: [],
+        topN: 15,
+      },
+      groups: [],
+    }
+
+    await service.commit({ workflowId: workflow.id, stepId: step.id, state, nextOutput: null })
+
+    expect(judge.judge).toHaveBeenCalledTimes(1)
+    expect(judge.judge).toHaveBeenCalledWith({
+      questions: [{ id: 1, question: expect.any(String) }],
+      papers: [
+        { id: 1, title: 'Quantum Codex Alpha', abstract: expect.any(String) },
+        { id: 2, title: 'Quantum Codex Beta', abstract: expect.any(String) },
+      ],
+    })
+    expect(search.search).not.toHaveBeenCalled()
+    const matrix = repos.artifacts
+      .listByWorkflow(workflow.id)
+      .find((artifact) => artifact.name === 'coverage-matrix.md')
+    expect(matrix?.content).toMatch(/\|\s*1\. .+\|\s*covered\s*\|/)
+  })
+
+  it('refineWithJudge falls back to rule matrix silently when judge throws', async () => {
+    const papers = [makeCandidate('Quantum Codex Alpha', 1)]
+    const { repos, workflow, step } = makeCandidatesArtifacts(
+      'wf',
+      'step',
+      papers,
+      '# 计划\n\n## 研究问题\n量子引力纠错'
+    )
+    acquireFullTextMock.mockReset()
+    acquireFullTextMock.mockResolvedValue({
+      result: { text: 't '.repeat(50), url: 'https://x', source: 'oa' },
+      reason: 'ok',
+    })
+    const search = { search: vi.fn().mockRejectedValue(new Error('gap down')) } as unknown as AcademicSearchService
+    const judge = { judge: vi.fn().mockRejectedValue(new Error('judge unavailable')) }
+    const service = new SelectorStepServiceImpl(search, repos, createEventBus(), loadSearchConfig({}), judge)
+    const state = {
+      candidates: papers,
+      selections: [{ index: 1, selected: true, level: 'high' as const, reason: '核心' }],
+      gapQueries: [],
+      newPapers: [],
+      stats: {
+        queryGroups: 1,
+        sources: ['semantic-scholar'],
+        keywordsUsed: 1,
+        queries: 1,
+        minCitations: 0,
+        totalHits: 1,
+        uniquePapers: 1,
+        failedSources: [],
+        topN: 15,
+      },
+      groups: [],
+    }
+
+    await expect(
+      service.commit({ workflowId: workflow.id, stepId: step.id, state, nextOutput: null })
+    ).resolves.toBeTruthy()
+
+    const matrix = repos.artifacts
+      .listByWorkflow(workflow.id)
+      .find((artifact) => artifact.name === 'coverage-matrix.md')
+    expect(matrix?.content).toMatch(/missing/)
   })
 })

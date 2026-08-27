@@ -11,6 +11,7 @@ import { EvidenceStepServiceImpl } from './evidence/EvidenceStepService'
 import { createVerifierDeps } from './evidence/citationVerifier'
 import { MockStepRunner } from './runtime/MockStepRunner'
 import { PiRuntimeProvider } from './runtime/PiRuntimeProvider'
+import { PiCoverageJudge } from './runtime/PiCoverageJudge'
 import { PiStepRunner } from './runtime/PiStepRunner'
 import { PiConfigError, loadPiConfig } from './runtime/piConfig'
 import { AcademicSearchService } from './search/AcademicSearchService'
@@ -145,7 +146,13 @@ function createDefaultStepRunner(
   const searchConfig = loadSearchConfig()
   const searchService = new AcademicSearchService(buildSourceRegistry(searchConfig), searchConfig)
   const researcher = new ResearcherStepServiceImpl(searchService, repos, bus, searchConfig)
-  const selector = new SelectorStepServiceImpl(searchService, repos, bus, searchConfig)
+  const selector = new SelectorStepServiceImpl(
+    searchService,
+    repos,
+    bus,
+    searchConfig,
+    new PiCoverageJudge(provider)
+  )
   const crossref = new CrossrefClient({
     mailto: searchConfig.crossrefMailto,
     timeoutMs: searchConfig.timeoutMs,

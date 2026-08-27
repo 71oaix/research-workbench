@@ -60,7 +60,12 @@ export function buildCoverageMatrix(planContent: string, papers: MergedPaper[]):
   return { md: render(rows), rows, uncoveredQueries }
 }
 
-function extractBilingualKeywords(planMd: string): { zh: string; en: string }[] {
+/** 将判定行渲染为矩阵 Markdown（导出供模型复核后重建）。 */
+export function renderCoverageRows(rows: CoverageRow[]): string {
+  return render(rows)
+}
+
+export function extractBilingualKeywords(planMd: string): { zh: string; en: string }[] {
   const result: { zh: string; en: string }[] = []
   const lines = planMd.split('\n')
   let inKw = false
