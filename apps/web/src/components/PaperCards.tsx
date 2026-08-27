@@ -24,6 +24,7 @@ export function PaperCards({ content }: { content: string }) {
       {cards.map((card) => (
         <div
           key={card.id}
+          data-card-id={card.id}
           className="rounded-(--radius) border border-line-soft bg-surface p-3 shadow-(--shadow-soft)"
         >
           <div className="flex items-start gap-2">
@@ -68,7 +69,7 @@ function MarkdownFallback({ content }: { content: string }): ReactNode {
   return <pre className="whitespace-pre-wrap break-words font-mono text-[12.5px] text-ink">{content}</pre>
 }
 
-function parseCards(content: string): PaperCard[] {
+export function parseCards(content: string): PaperCard[] {
   const cards: PaperCard[] = []
   const blocks = content.split(/###\s*\[(\d+)\]\s+/)
   for (let i = 1; i < blocks.length; i += 2) {

@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Artifact, Decision, Step } from '@research-workbench/shared'
 import { cn } from '../lib/cn'
+import { parseVerificationTable, type CiteMeta } from '../lib/citations'
 import { ApprovalPanel } from './ApprovalPanel'
 import { MarkdownView } from './MarkdownView'
-import { PaperCards } from './PaperCards'
+import { PaperCards, parseCards } from './PaperCards'
+import { StructureDiff } from './StructureDiff'
 import { IconCheck, IconFilter, IconPen, IconPlan, IconScale, IconSearch, IconShield, IconSpin, IconUser } from './icons'
 
 const ROLE_LABELS: Record<Step['role'], string> = {
@@ -84,6 +86,7 @@ export function ChatFlow({
           decisions={decisions}
           workflowStatus={workflowStatus}
           hasWriter={steps.some((candidate) => candidate.role === 'writer')}
+          selectorStepId={steps.find((candidate) => candidate.role === 'selector')?.id ?? null}
           onDecide={onDecide}
         />
       ))}
@@ -92,13 +95,14 @@ export function ChatFlow({
 }
 
 function StepBubble({
-  step, artifacts, decisions, workflowStatus, hasWriter, onDecide,
+  step, artifacts, decisions, workflowStatus, hasWriter, selectorStepId, onDecide,
 }: {
   step: Step
   artifacts: Artifact[]
   decisions: Decision[]
   workflowStatus: string
   hasWriter: boolean
+  selectorStepId: string | null
   onDecide: (workflowId: string, stepId: string, type: 'approve' | 'modify' | 'reject', note?: string) => void
 }) {
   const Icon = ROLE_ICONS[step.role]
@@ -111,6 +115,7 @@ function StepBubble({
     .sort((a, b) => a.version - b.version)
   const latest = group.at(-1) ?? null
   const [activeVersion, setActiveVersion] = useState<number | null>(latest?.version ?? null)
+  const [showDiff, setShowDiff] = useState(false)
   const active = group.find((item) => item.version === activeVersion) ?? latest ?? null
   const coverageMd =
     artifacts.filter((artifact) => artifact.name === 'coverage-matrix.md').at(-1)?.content ?? null
@@ -121,6 +126,36 @@ function StepBubble({
   const planContent = artifacts
     .filter((artifact) => artifact.name === '01-plan.md')
     .sort((a, b) => b.version - a.version)[0]?.content ?? null
+
+  const isDraft = artifactName === '03-draft.md'
+  const citations = useMemo(() => {
+    if (!isDraft) return undefined
+    const cardsArtifact = artifacts.filter((artifact) => artifact.name === 'research-cards.md').at(-1)
+    const verification = artifacts.filter((artifact) => artifact.name === 'citation-verification.md').at(-1)
+    const cards = cardsArtifact ? parseCards(cardsArtifact.content) : []
+    const meta = parseVerificationTable(verification?.content ?? null)
+    for (const [id, item] of meta) {
+      const card = cards.find((candidate) => candidate.id === id)
+      if (card) {
+        item.title = card.title
+        item.year = card.year
+      }
+    }
+    return meta
+  }, [isDraft, artifacts])
+
+  function handleCiteClick(id: number) {
+    if (!citations?.get(id) || citations.get(id)!.status === 'unknown') return
+    const root = selectorStepId ? document.getElementById(`step-${selectorStepId}`) : null
+    const card = root?.querySelector(`[data-card-id="${id}"]`)
+    if (!card) return
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    card.classList.add('cite-flash')
+    setTimeout(() => card.classList.remove('cite-flash'), 1700)
+  }
+
+  const activeIndex = group.findIndex((item) => item.version === activeVersion)
+  const diffBase = activeIndex > 0 ? group[activeIndex - 1] : null
 
   return (
     <div id={`step-${step.id}`} className="scroll-mt-4">
@@ -145,13 +180,16 @@ function StepBubble({
       </div>
 
       {group.length > 0 && (
-        <div className="overflow-hidden rounded-(--radius-lg) border border-line-soft bg-surface shadow-(--shadow-soft) shadow-[inset_0_1px_0_rgba(255,255,255,.72)]">
+        <div className="rounded-(--radius-lg) border border-line-soft bg-surface shadow-(--shadow-soft) shadow-[inset_0_1px_0_rgba(255,255,255,.72)]">
           {group.length > 1 && (
             <div className="flex items-center gap-1 overflow-x-auto border-b border-line-soft px-3 pt-1.5">
               {group.map((item) => (
                 <button
                   key={item.version}
-                  onClick={() => setActiveVersion(item.version)}
+                  onClick={() => {
+                    setActiveVersion(item.version)
+                    setShowDiff(false)
+                  }}
                   className={cn(
                     'border-b-2 px-2.5 py-1.5 text-[12px] transition-colors',
                     item.version === activeVersion
@@ -159,13 +197,30 @@ function StepBubble({
                       : 'border-transparent text-ink2 hover:text-ink'
                   )}
                 >
-                  版本 v{item.version}
+                  v{item.version}
                 </button>
               ))}
+              <button
+                onClick={() => setShowDiff((value) => !value)}
+                disabled={activeIndex < 1}
+                className={cn(
+                  'ml-auto flex-none rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                  showDiff
+                    ? 'border-accent-line bg-accent-soft text-accent'
+                    : 'border-line-strong bg-surface text-ink2 hover:bg-surface2'
+                )}
+              >
+                结构对比
+              </button>
             </div>
           )}
           <div className="p-4">
-            {renderContent(artifactName, active?.content ?? '')}
+            {showDiff && diffBase && active && (
+              <div className="mb-3 rounded-(--radius) border border-line-soft bg-surface2/50 p-3">
+                <StructureDiff prev={diffBase.content} next={active.content} />
+              </div>
+            )}
+            {renderContent(artifactName, active?.content ?? '', citations, handleCiteClick)}
             {artifactName === 'research-cards.md' && coverageMd && (
               <div className="mt-4 border-t border-line-soft pt-3">
                 <MarkdownView content={coverageMd} />
@@ -189,8 +244,14 @@ function StepBubble({
   )
 }
 
-function renderContent(name: string, content: string) {
+function renderContent(
+  name: string,
+  content: string,
+  citations?: Map<number, CiteMeta>,
+  onCiteClick?: (id: number) => void
+) {
   if (name === 'research-cards.md') return <PaperCards content={content} />
+  if (name === '03-draft.md') return <MarkdownView content={content} doc citations={citations} onCiteClick={onCiteClick} />
   if (name.endsWith('.md')) return <MarkdownView content={content} />
   return <pre className="whitespace-pre-wrap break-words font-mono text-[12.5px] text-ink">{content}</pre>
 }
