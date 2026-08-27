@@ -26,4 +26,22 @@ describe('MarkdownView', () => {
     expect(html).toContain('&lt;script&gt;')
     expect(screen.getByText(/ok/)).toBeTruthy()
   })
+
+  it('renders thematic breaks, ordered lists and scoped table wrapper', () => {
+    render(
+      <MarkdownView
+        content={'---\n\n1. 第一\n2. 第二\n\n| A | B |\n|---|---|\n| 1 | 2 |'}
+      />
+    )
+    expect(document.querySelector('hr')).not.toBeNull()
+    expect(document.querySelector('ol li')).not.toBeNull()
+    expect(screen.getByText('第一')).toBeTruthy()
+    expect(document.querySelector('.md-table-wrap table th')).not.toBeNull()
+    expect(document.querySelectorAll('tbody td').length).toBe(2)
+  })
+
+  it('applies doc mode class for draft rendering', () => {
+    const { container } = render(<MarkdownView content={'# 标题'} doc />)
+    expect(container.firstElementChild?.classList.contains('md-doc')).toBe(true)
+  })
 })

@@ -75,10 +75,15 @@ updated: 2026-08-28
 | Issue: 检索源可靠性 | archived | issues/close/2026-08-21-search-source-reliability.md | OpenAlex 计费额度 / S2 无 key 限流导致源半瘫 |
 | Issue: Crossref 结果污染 | archived | issues/close/2026-08-21-crossref-noise-filter.md | Table/Figure/Supplementary 图表标题挤占候选池 |
 | Plan: 检索层修复（源降级补偿 + Crossref 噪声过滤） | archived | plans/close/2026-08-21-search-source-reliability.md | 覆盖上述两个 issue，待确认 |
-| Issue: UI 设计全量审查（总纲） | active | issues/open/2026-08-28-ui-design-review.md | 设计师视角评分卡 + 5 个专项 issue 路线 |
-| Issue: 状态语义与语言一致性 | active | issues/open/2026-08-28-status-semantics.md | paused 假 spinner / raw English / WS 指示灯 |
-| Issue: 产物排版体系 | active | issues/open/2026-08-28-artifact-typography.md | MarkdownView 标题层级 / 表格 / hr / 文档感 |
-| Issue: 引用 [n] 可溯源交互 | active | issues/open/2026-08-28-citation-affordance.md | 引用标记化 + hover 预览 + 点击定位 |
-| Issue: 工作流列表信息架构 | active | issues/open/2026-08-28-workflow-list-ia.md | 搜索 / 状态过滤 / 副信息中文化 |
-| Issue: 壳层布局、空态与可访问性 | active | issues/open/2026-08-28-shell-layout-states.md | 右栏收敛 / 响应式 / 对比度 / 死代码 |
+| Issue: UI 设计全量审查（总纲） | archived | issues/close/2026-08-28-ui-design-review.md | 设计师视角评分卡 + 5 个专项 issue 路线 |
+| Issue: 状态语义与语言一致性 | archived | issues/close/2026-08-28-status-semantics.md | paused 假 spinner / raw English / WS 指示灯 |
+| Issue: 产物排版体系 | archived | issues/close/2026-08-28-artifact-typography.md | MarkdownView 标题层级 / 表格 / hr / 文档感 |
+| Issue: 引用 [n] 可溯源交互 | archived | issues/close/2026-08-28-citation-affordance.md | 引用标记化 + hover 预览 + 点击定位 |
+| Issue: 工作流列表信息架构 | archived | issues/close/2026-08-28-workflow-list-ia.md | 搜索 / 状态过滤 / 副信息中文化 |
+| Issue: 壳层布局、空态与可访问性 | archived | issues/close/2026-08-28-shell-layout-states.md | 右栏收敛 / 响应式 / 对比度 / 死代码 |
+| Plan: 状态语义与语言一致性 | archived | plans/close/2026-08-28-status-semantics.md | 已实现并测试 |
+| Plan: 产物排版体系 | archived | plans/close/2026-08-28-artifact-typography.md | 已实现并测试 |
+| Plan: 引用 [n] 可溯源交互 | archived | plans/close/2026-08-28-citation-affordance.md | 已实现并测试 |
+| Plan: 工作流列表信息架构 | archived | plans/close/2026-08-28-workflow-list-ia.md | 已实现并测试 |
+| Plan: 壳层布局、空态与可访问性 | archived | plans/close/2026-08-28-shell-layout-states.md | 已实现并测试 |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |

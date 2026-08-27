@@ -48,6 +48,9 @@ export const IconShield = (s: { size?: number } = {}) => (
 export const IconFile = (s: { size?: number } = {}) => (
   <Icon {...s}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></Icon>
 )
+export const IconPanel = (s: { size?: number } = {}) => (
+  <Icon {...s}><rect x="3" y="4" width="18" height="16" rx="2.5" /><path d="M15 4v16" /></Icon>
+)
 export const IconSpark = (s: { size?: number } = {}) => (
   <Icon {...s}><path d="M12 3l1.8 4.8L18 9.6l-4.2 1.8L12 16l-1.8-4.6L6 9.6l4.2-1.8z" /><path d="M18 15l.9 2.4 2.1.9-2.1.9L18 22l-.9-2.8L15 18.3l2.1-.9z" /></Icon>
 )
