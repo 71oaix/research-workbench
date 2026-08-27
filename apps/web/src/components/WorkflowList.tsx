@@ -1,16 +1,18 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useWorkflowStore } from '../store'
 import { cn } from '../lib/cn'
+import { EXAMPLE_GOALS } from '../lib/examples'
+import { relativeTime, STATUS_DOT_FALLBACK, STATUS_LABEL, STATUS_META, WS_STATUS_META } from '../lib/labels'
 import { IconBook, IconPlus, IconSpark, IconX } from './icons'
 
-const STATUS_DOT: Record<string, string> = {
-  planning: 'bg-accent',
-  executing: 'bg-run',
-  paused: 'bg-warn',
-  completed: 'bg-ok',
-  cancelled: 'bg-ink3',
-  failed: 'bg-bad',
-}
+const FILTERS = [
+  { key: 'all', label: '全部' },
+  { key: 'executing', label: '进行中' },
+  { key: 'paused', label: '待审批' },
+  { key: 'completed', label: '已完成' },
+] as const
+
+type FilterKey = (typeof FILTERS)[number]['key']
 
 export function WorkflowList({ wsStatus }: { wsStatus: string }) {
   const workflows = useWorkflowStore((state) => state.workflows)
@@ -21,6 +23,27 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
   const [writing, setWriting] = useState(true)
   const [creating, setCreating] = useState(false)
   const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [filter, setFilter] = useState<FilterKey>('all')
+
+  const counts = useMemo(() => {
+    const result: Record<FilterKey, number> = { all: workflows.length, executing: 0, paused: 0, completed: 0 }
+    for (const workflow of workflows) {
+      if (workflow.status === 'executing') result.executing += 1
+      else if (workflow.status === 'paused') result.paused += 1
+      else if (workflow.status === 'completed') result.completed += 1
+    }
+    return result
+  }, [workflows])
+
+  const visible = useMemo(() => {
+    const keyword = query.trim()
+    return workflows.filter(
+      (workflow) =>
+        (filter === 'all' || workflow.status === filter) &&
+        (!keyword || workflow.goal.toLowerCase().includes(keyword.toLowerCase()))
+    )
+  }, [workflows, filter, query])
 
   async function handleCreate() {
     setCreating(true)
@@ -29,6 +52,8 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
     setOpen(false)
     setCreating(false)
   }
+
+  const wsMeta = WS_STATUS_META[wsStatus] ?? WS_STATUS_META.closed
 
   return (
     <aside className="flex h-full flex-col overflow-hidden border-r border-line bg-sidebar px-3 pb-3 pt-4">
@@ -45,7 +70,7 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
       </div>
 
       <button
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => setOpen(true)}
         className="flex w-full items-center justify-center gap-1.5 rounded-(--radius) bg-accent py-2.5 text-[13px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.15)] transition-transform duration-150 active:scale-[.96]"
       >
         <IconPlus size={15} />
@@ -80,7 +105,7 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
               autoFocus
             />
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
-              {['研究下多智能体的记忆架构', '大模型幻觉的检测与缓解'].map((value) => (
+              {EXAMPLE_GOALS.map((value) => (
                 <button
                   key={value}
                   onClick={() => setGoal(value)}
@@ -111,26 +136,70 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
         </div>
       )}
 
-      <div className="mt-5 flex min-h-0 flex-1 flex-col px-2">
+      {workflows.length > 0 && (
+        <div className="mt-3 px-2">
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') setQuery('')
+              if (event.key === 'Enter' && query.trim()) {
+                setGoal(query.trim())
+                setQuery('')
+                setOpen(true)
+              }
+            }}
+            aria-label="搜索工作流"
+            placeholder="搜索工作流…"
+            className="w-full rounded-(--radius) border border-line bg-surface px-2.5 py-1.5 text-[12.5px] outline-none placeholder:text-ink3 focus:border-accent-line focus:ring-4 focus:ring-accent-soft"
+          />
+        </div>
+      )}
+
+      {workflows.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1 px-2">
+          {FILTERS.map((item) => (
+            <button
+              key={item.key}
+              onClick={() => setFilter(item.key)}
+              aria-pressed={filter === item.key}
+              className={cn(
+                'rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors',
+                filter === item.key
+                  ? 'bg-accent-soft font-semibold text-accent'
+                  : 'text-ink2 hover:bg-white/60'
+              )}
+            >
+              {item.label}
+              <span className="num ml-1 text-[10px] text-ink3">{counts[item.key]}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-4 flex min-h-0 flex-1 flex-col px-2">
         <div className="mb-2 flex items-center justify-between text-[10.5px] font-bold uppercase tracking-[.11em] text-ink3">
           最近工作流
         </div>
         <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pb-2">
-          {workflows.map((workflow) => {
+          {visible.map((workflow) => {
             const active = workflow.id === selectedId
+            const statusText = STATUS_LABEL[workflow.status] ?? workflow.status
             return (
               <li key={workflow.id}>
                 <button
                   onClick={() => void selectWorkflow(workflow.id)}
                   className={cn(
                     'flex w-full gap-2 rounded-(--radius) px-2.5 py-2 text-left transition-colors',
-                    active ? 'bg-white shadow-(--shadow-soft)' : 'hover:bg-white/60'
+                    active
+                      ? 'bg-white shadow-(--shadow-soft) shadow-[inset_2px_0_0_var(--color-accent)]'
+                      : 'hover:bg-white/60'
                   )}
                 >
                   <span
                     className={cn(
-                      'mt-[7px] size-1.5 flex-none rounded-full shadow-[0_0_0_3px_rgba(255,255,255,.6)]',
-                      STATUS_DOT[workflow.status]
+                      'mt-[7px] size-1.5 flex-none rounded-full',
+                      STATUS_META[workflow.status]?.dot ?? STATUS_DOT_FALLBACK
                     )}
                   />
                   <span className="min-w-0">
@@ -138,22 +207,36 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
                       {workflow.goal}
                     </span>
                     <span className="mt-0.5 block text-[11px] text-ink3">
-                      {workflow.createdAt.slice(0, 10)} · {workflow.id.slice(0, 8)}
+                      {relativeTime(workflow.createdAt)} · {statusText}
                     </span>
                   </span>
                 </button>
               </li>
             )
           })}
+          {workflows.length > 0 && visible.length === 0 && (
+            <li className="px-2 py-3 text-[12px] text-ink3">无匹配结果，换个关键词试试。</li>
+          )}
           {workflows.length === 0 && (
-            <li className="px-2 py-3 text-[12px] text-ink3">暂无工作流，先新建一个。</li>
+            <li className="px-2 py-6 text-center">
+              <div className="mx-auto mb-2 grid size-9 place-items-center rounded-[10px] bg-surface text-ink3 shadow-(--shadow-soft)">
+                <IconSpark size={16} />
+              </div>
+              <p className="text-[12px] text-ink2">还没有调研任务</p>
+              <button
+                onClick={() => setOpen(true)}
+                className="mt-2 text-[12px] font-semibold text-accent hover:underline"
+              >
+                新建第一个调研 →
+              </button>
+            </li>
           )}
         </ul>
       </div>
 
       <div className="mt-auto flex items-center gap-2 border-t border-line-soft px-2 pt-3 text-[12px] text-ink2">
-        <span className="size-2 rounded-full bg-ok shadow-[0_0_0_3px_var(--color-ok-soft)]" />
-        本地运行 · WS {wsStatus}
+        <span className={cn('size-2 rounded-full', wsMeta.dot)} />
+        本地运行 · {wsMeta.label}
       </div>
     </aside>
   )

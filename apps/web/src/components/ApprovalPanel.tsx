@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Decision, Step } from '@research-workbench/shared'
 import { parseConcernLedger } from '@research-workbench/shared'
+import { DECISION_LABEL, relativeTime } from '../lib/labels'
 import { IconAlert, IconCheck, IconRotate, IconXCircle } from './icons'
 
 export function ApprovalPanel({
@@ -114,9 +115,10 @@ export function ApprovalPanel({
             {decisions.map((decision) => (
               <li key={decision.id} className="flex items-start gap-2 text-[12.5px]">
                 <span className="mt-0.5 flex-none rounded-full bg-surface2 px-2 py-px text-[11px] font-semibold text-ink2">
-                  {decision.type}
+                  {DECISION_LABEL[decision.type] ?? decision.type}
                 </span>
-                <span className="min-w-0 text-ink2">{decision.note ?? ''}</span>
+                <span className="min-w-0 flex-1 text-ink2">{decision.note ?? ''}</span>
+                <span className="mt-0.5 flex-none text-[11px] text-ink3">{relativeTime(decision.createdAt)}</span>
               </li>
             ))}
           </ul>

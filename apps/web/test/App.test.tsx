@@ -103,7 +103,8 @@ describe('App workflow UI', () => {
     render(<App />)
     const item = await screen.findByText('调研大模型测试')
     item.click()
-    expect(await screen.findByText(/状态：planning/)).toBeTruthy()
+    expect(await screen.findByText('待启动')).toBeTruthy()
+    expect(screen.getByText(/个步骤/)).toBeTruthy()
     expect(screen.getByText('启动工作流')).toBeTruthy()
   })
 
@@ -138,9 +139,10 @@ describe('App workflow UI', () => {
     render(<App />)
     const item = await screen.findByText('调研大模型测试')
     item.click()
-    expect(await screen.findByText('打回修改')).toBeTruthy()
+    expect(await screen.findByText('补充上下文工程方向')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /打回修改/ })).toBeTruthy()
     expect(screen.getByText('取消任务')).toBeTruthy()
-    expect(screen.getByText('补充上下文工程方向')).toBeTruthy()
+    expect(screen.getAllByText('打回修改').length).toBeGreaterThanOrEqual(2)
   })
 
   it('omits the approve button and guides to resubmit when the plan needs clarification', async () => {
