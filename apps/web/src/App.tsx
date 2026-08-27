@@ -3,18 +3,11 @@ import { ArtifactFileTabs } from './components/ArtifactFileTabs'
 import { ChatFlow } from './components/ChatFlow'
 import { ProgressRail } from './components/ProgressRail'
 import { WorkflowList } from './components/WorkflowList'
-import { IconPlus, IconSpark } from './components/icons'
+import { IconPanel, IconPlus, IconSpark } from './components/icons'
 import { useWorkflowStore } from './store'
 import { cn } from './lib/cn'
-
-const STATUS_LABEL: Record<string, string> = {
-  planning: '待启动', executing: '运行中', paused: '待审批',
-  completed: '已完成', cancelled: '已取消', failed: '失败',
-}
-const STATUS_PILL: Record<string, string> = {
-  planning: 'bg-surface2 text-ink2', executing: 'bg-run-soft text-run', paused: 'bg-warn-soft text-warn',
-  completed: 'bg-ok-soft text-ok', cancelled: 'bg-surface2 text-ink2', failed: 'bg-bad-soft text-bad',
-}
+import { EXAMPLE_GOALS } from './lib/examples'
+import { STATUS_LABEL, STATUS_PILL } from './lib/labels'
 
 export default function App() {
   const detail = useWorkflowStore((state) => state.detail)
@@ -33,9 +26,30 @@ export default function App() {
   }, [refreshList, connectWs])
 
   const canStart = detail !== null && detail.workflow.status === 'planning'
+  const [railOpen, setRailOpen] = useState(false)
+
+  useEffect(() => {
+    setRailOpen(false)
+  }, [detail?.workflow.id])
+
+  useEffect(() => {
+    if (!railOpen) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setRailOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [railOpen])
 
   return (
-    <div className="workbench relative grid h-screen grid-cols-[216px_1fr_276px]">
+    <div
+      className={cn(
+        'workbench relative grid h-screen',
+        detail
+          ? 'grid-cols-[216px_minmax(0,1fr)] lg:grid-cols-[216px_minmax(0,1fr)_240px] xl:grid-cols-[216px_minmax(0,1fr)_276px]'
+          : 'grid-cols-[216px_minmax(0,1fr)]'
+      )}
+    >
       <WorkflowList wsStatus={wsStatus} />
 
       <main className="relative flex min-w-0 flex-col overflow-hidden bg-bg">
@@ -59,11 +73,20 @@ export default function App() {
                   >
                     {STATUS_LABEL[detail.workflow.status] ?? detail.workflow.status}
                   </span>
+                  <button
+                    aria-label="打开进度与产出面板"
+                    onClick={() => setRailOpen(true)}
+                    className="ml-auto mt-0.5 hidden size-8 flex-none place-items-center rounded-(--radius) border border-line-strong bg-surface text-ink2 transition-colors hover:text-ink max-lg:grid"
+                  >
+                    <IconPanel size={15} />
+                  </button>
                 </div>
                 <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] text-ink2">
-                  <span>状态：{detail.workflow.status}</span>
-                  <span>步骤 <strong className="num font-semibold text-ink">{detail.steps.length}</strong> 步</span>
-                  <span>产物 {detail.artifacts.length} 项</span>
+                  <span>
+                    <strong className="num font-semibold text-ink">{detail.steps.length}</strong> 个步骤
+                    <span className="mx-1.5 text-ink3">·</span>
+                    <strong className="num font-semibold text-ink">{detail.artifacts.length}</strong> 份产物
+                  </span>
                   {canStart && (
                     <button
                       onClick={() => void startWorkflow()}
@@ -74,7 +97,7 @@ export default function App() {
                     </button>
                   )}
                 </div>
-                {(detail.workflow.status === 'executing' || detail.workflow.status === 'paused') && (
+                {detail.workflow.status === 'executing' && (
                   <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-ink2">
                     <span className="inline-flex items-center gap-1.5">
                       <span className="size-3 animate-spin rounded-full border-2 border-accent-line border-t-accent" />
@@ -102,10 +125,22 @@ export default function App() {
 
       </main>
 
-      <aside className="flex min-w-0 flex-col border-l border-line bg-surface">
-        <ProgressRail steps={detail?.steps ?? []} workflowStatus={detail?.workflow.status ?? 'planning'} />
-        <ArtifactFileTabs artifacts={detail?.artifacts ?? []} steps={detail?.steps ?? []} />
-      </aside>
+      {detail && (
+        <>
+          {railOpen && (
+            <div className="fixed inset-0 z-30 bg-ink/20 lg:hidden" onClick={() => setRailOpen(false)} />
+          )}
+          <aside
+            className={cn(
+              'fixed inset-y-0 right-0 z-40 flex w-[276px] max-w-[85vw] flex-col border-l border-line bg-surface shadow-(--shadow-lift) transition-transform duration-200 lg:static lg:z-auto lg:w-auto lg:translate-x-0 lg:shadow-none',
+              railOpen ? 'translate-x-0' : 'translate-x-full'
+            )}
+          >
+            <ProgressRail steps={detail.steps} workflowStatus={detail.workflow.status} />
+            <ArtifactFileTabs artifacts={detail.artifacts} steps={detail.steps} />
+          </aside>
+        </>
+      )}
     </div>
   )
 }
@@ -135,6 +170,18 @@ function EmptyState({ onCreate }: { onCreate: (goal: string, includeWriter?: boo
         <input type="checkbox" checked={writing} onChange={(event) => setWriting(event.target.checked)} className="size-3.5 accent-[#0c665b]" />
         包含综述写作（Writer）
       </label>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <span className="text-[12px] text-ink3">试试：</span>
+        {EXAMPLE_GOALS.map((value) => (
+          <button
+            key={value}
+            onClick={() => setGoal(value)}
+            className="rounded-full border border-line bg-surface px-3 py-1 text-[12px] text-ink2 transition-colors hover:border-accent-line hover:bg-accent-soft hover:text-accent"
+          >
+            {value}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
