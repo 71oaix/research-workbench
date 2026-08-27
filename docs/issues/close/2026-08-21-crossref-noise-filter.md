@@ -1,6 +1,6 @@
 ---
 title: Crossref 结果污染：Table/Figure/Supplementary 图表标题挤占候选池
-status: active
+status: archived
 created: 2026-08-21
 updated: 2026-08-21
 kind: bug

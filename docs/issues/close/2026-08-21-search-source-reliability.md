@@ -1,6 +1,6 @@
 ---
 title: 检索源可靠性：OpenAlex 计费额度 / S2 无 key 限流导致源半瘫
-status: active
+status: archived
 created: 2026-08-21
 updated: 2026-08-21
 kind: bug

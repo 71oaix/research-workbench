@@ -1,6 +1,6 @@
 ---
 title: M2-13 效果修复（plan）：核验批量 + 模型评估 + 全量下载
-status: active
+status: archived
 created: 2026-08-17
 updated: 2026-08-17
 issue: 2026-08-17-m2-13-effect-audit-fixes

@@ -1,6 +1,6 @@
 ---
 title: 布局重构 v2：对话流 + 右侧进度跳转 + 版本 tab + 文件 tab（plan）
-status: active
+status: archived
 created: 2026-08-26
 updated: 2026-08-26
 issue: "docs/issues/open/2026-08-26-layout-v2-chat-flow.md"

@@ -1,6 +1,6 @@
 ---
 title: M2-16 全量吸收：结果归纳整理 + 评测闭环 + 成本落地 + writer 可选项（plan）
-status: active
+status: archived
 created: 2026-08-20
 updated: 2026-08-20
 issue: 2026-08-20-m2-16-full-absorption

@@ -1,6 +1,6 @@
 ---
 title: M2-12 可靠性与性能加固（plan）
-status: active
+status: archived
 created: 2026-08-17
 updated: 2026-08-17
 issue: 2026-08-17-m2-12-reliability-performance

@@ -1,6 +1,6 @@
 ---
 title: M2-15 模糊问题澄清 + 标题摘要筛选 + 下载候选增强
-status: active
+status: archived
 created: 2026-08-18
 updated: 2026-08-18
 kind: feature
