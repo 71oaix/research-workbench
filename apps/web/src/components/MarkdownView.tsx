@@ -84,22 +84,25 @@ function renderMarkdown(source: string): string {
       continue
     }
 
-    const tableRow = line.match(/^\|(.+)\|\s*$/)
-    if (tableRow && i + 1 < lines.length && /^\|[\s:-|]+\|\s*$/.test(lines[i + 1])) {
+    if (line.trimStart().startsWith('|')) {
       closeList(); closeQuote(); closeTable()
-      inTable = true
-      const header = splitTable(tableRow[1]).map((cell) => `<th>${inline(cell)}</th>`).join('')
-      html.push(`<table class="my-2 min-w-[600px] border-collapse text-[12.5px]"><thead><tr>${header}</tr></thead><tbody>`)
-      i += 2 // skip header + separator
-      continue
-    }
-
-    if (inTable && line.trimStart().startsWith('|')) {
-      const row = splitTable(line.replace(/^\|/, '').replace(/\|\s*$/, ''))
-        .map((cell) => `<td>${inline(cell)}</td>`)
-        .join('')
-      html.push(`<tr>${row}</tr>`)
-      i++
+      const block: string[] = []
+      while (i < lines.length && lines[i].trimStart().startsWith('|')) {
+        block.push(lines[i])
+        i++
+      }
+      let header = block[0] ?? ''
+      let body = block.slice(1)
+      if (body.length > 0 && /^\|[\s:-|]+\|\s*$/.test(body[0].trim())) {
+        body = body.slice(1)
+      }
+      const headCells = splitTable(header).map((cell) => `<th>${inline(cell)}</th>`).join('')
+      html.push(`<table class="my-2 min-w-[560px] border-collapse text-[12.5px]"><thead><tr>${headCells}</tr></thead><tbody>`)
+      for (const row of body) {
+        const cells = splitTable(row).map((cell) => `<td>${inline(cell)}</td>`).join('')
+        html.push(`<tr>${cells}</tr>`)
+      }
+      html.push('</tbody></table>')
       continue
     }
 
