@@ -1,6 +1,6 @@
 ---
 title: 壳层布局、空态与可访问性（右栏收敛 / 响应式 / 对比度 / favicon / 死代码）
-status: active
+status: archived
 created: 2026-08-28
 updated: 2026-08-28
 kind: accessibility

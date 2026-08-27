@@ -1,6 +1,6 @@
 ---
 title: 引用 [n] 可溯源交互（核心卖点可视化：标记化 + hover 预览 + 点击定位）
-status: active
+status: archived
 created: 2026-08-28
 updated: 2026-08-28
 kind: feature

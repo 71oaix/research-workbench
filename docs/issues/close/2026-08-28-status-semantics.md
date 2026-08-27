@@ -1,6 +1,6 @@
 ---
 title: 状态语义与语言一致性（quick win：paused 假 spinner、raw English、WS 指示灯失真）
-status: active
+status: archived
 created: 2026-08-28
 updated: 2026-08-28
 kind: bug

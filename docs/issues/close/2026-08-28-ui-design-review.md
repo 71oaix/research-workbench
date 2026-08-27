@@ -1,6 +1,6 @@
 ---
 title: UI 设计全量审查（设计师视角）：总纲与评分
-status: active
+status: archived
 created: 2026-08-28
 updated: 2026-08-28
 kind: ux

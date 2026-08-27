@@ -1,6 +1,6 @@
 ---
 title: 产物排版体系（MarkdownView 升级：标题层级 / 表格 / 分隔线 / 文档感）
-status: active
+status: archived
 created: 2026-08-28
 updated: 2026-08-28
 kind: ux

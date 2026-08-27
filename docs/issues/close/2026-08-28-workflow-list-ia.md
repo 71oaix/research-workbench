@@ -1,6 +1,6 @@
 ---
 title: 工作流列表信息架构（搜索 / 状态过滤 / 有意义的副信息）
-status: active
+status: archived
 created: 2026-08-28
 updated: 2026-08-28
 kind: ux
