@@ -8,6 +8,8 @@ export interface CoverageRow {
   papers: number[]
   gapQuery: string
   related: { id: number; reason: string; strength: string }[]
+  /** 判定依据：规则（默认）或模型复核升级。 */
+  source?: 'rule' | 'model'
 }
 
 export interface CoverageResult {
@@ -60,7 +62,12 @@ export function buildCoverageMatrix(planContent: string, papers: MergedPaper[]):
   return { md: render(rows), rows, uncoveredQueries }
 }
 
-function extractBilingualKeywords(planMd: string): { zh: string; en: string }[] {
+/** 将判定行渲染为矩阵 Markdown（导出供模型复核后重建）。 */
+export function renderCoverageRows(rows: CoverageRow[]): string {
+  return render(rows)
+}
+
+export function extractBilingualKeywords(planMd: string): { zh: string; en: string }[] {
   const result: { zh: string; en: string }[] = []
   const lines = planMd.split('\n')
   let inKw = false
@@ -116,6 +123,7 @@ function render(rows: CoverageRow[]): string {
     '|--------|------|----------|------------------------|',
   ]
   for (const row of rows) {
+    const sourceTag = row.source === 'model' ? '（模型复核）' : ''
     const strong = row.related
       .filter((item) => item.strength !== '可迁移')
       .map((item) => `[${item.id}] ${item.reason}（${item.strength}）`)
@@ -128,7 +136,7 @@ function render(rows: CoverageRow[]): string {
         : row.coverage === 'partial'
           ? `部分：${row.papers || '无'}；建议补强：${row.gapQuery}${strong.length > 0 ? '；相关：' + strong.join('；') : ''}`
           : row.papers.join('、')
-    lines.push(`| ${row.id}. ${row.question} | ${row.coverage} | ${row.papers.length ? row.papers.join('、') : '（无）'} | ${suggestion} |`)
+    lines.push(`| ${row.id}. ${row.question}${sourceTag} | ${row.coverage} | ${row.papers.length ? row.papers.join('、') : '（无）'} | ${suggestion} |`)
   }
   return lines.join('\n')
 }

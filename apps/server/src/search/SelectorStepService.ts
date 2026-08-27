@@ -10,7 +10,13 @@ import type { SearchConfig } from './config'
 import { mergeAndRank } from './merge'
 import { OpenAlexClient } from './openAlex'
 import { buildRerankMd, parseRerankReport, type RerankEntry } from './rerank'
-import { buildCoverageMatrix } from './coverage'
+import { buildCoverageMatrix, extractBilingualKeywords, renderCoverageRows } from './coverage'
+import {
+  buildJudgePrompt,
+  parseJudgeOutput,
+  refineCoverage,
+  type CoverageJudge,
+} from './coverageJudge'
 import type {
   KeywordGroup,
   MergedPaper,
@@ -38,7 +44,8 @@ export class SelectorStepServiceImpl implements SelectorStepService {
     private readonly search: AcademicSearchService,
     private readonly repos: Repositories,
     private readonly bus: WorkflowEventBus,
-    private readonly config: SearchConfig
+    private readonly config: SearchConfig,
+    private readonly coverageJudge?: CoverageJudge
   ) {}
 
   async prepare(input: {
@@ -172,8 +179,10 @@ export class SelectorStepServiceImpl implements SelectorStepService {
     )
 
     // 覆盖驱动质量门 + 迭代回环：缺失/部分子问题自动 gap 二次检索补足（≤2 轮，失败静默）
+    // v2：规则判定后，非 covered 行批量交模型复核精判；judge 失败静默保留规则结果
     const planContent = this.latestPlanContent(input.workflowId)
     let coverage = buildCoverageMatrix(planContent, finalPapers)
+    coverage = await this.refineWithJudge(planContent, finalPapers, coverage)
     let poolPapers = [...finalPapers]
     let retries = 0
     while (coverage.uncoveredQueries.length > 0 && retries < 2) {
@@ -191,6 +200,7 @@ export class SelectorStepServiceImpl implements SelectorStepService {
         })
         poolPapers = [...poolPapers, ...fresh]
         coverage = buildCoverageMatrix(planContent, poolPapers)
+        coverage = await this.refineWithJudge(planContent, poolPapers, coverage)
         retries++
       } catch {
         break
@@ -226,6 +236,43 @@ export class SelectorStepServiceImpl implements SelectorStepService {
       return plan?.content ?? ''
     } catch {
       return ''
+    }
+  }
+
+  /**
+   * 模型复核精判：全部子问题行批量送审（规则的假阳性不会自行暴露，
+   * 全量送审才能发现"词元撞上但无实质支撑"的误判）；模型结论优先；
+   * 任何异常（无 key/超时/解析失败）静默回退规则结果。
+   */
+  private async refineWithJudge(
+    planContent: string,
+    papers: MergedPaper[],
+    coverage: Awaited<ReturnType<typeof buildCoverageMatrix>>
+  ) {
+    if (!this.coverageJudge) return coverage
+    if (coverage.rows.length === 0 || papers.length === 0) return coverage
+    try {
+      const anchors = extractBilingualKeywords(planContent).map((pair) => `${pair.zh} / ${pair.en}`)
+      const verdicts = await this.coverageJudge.judge({
+        questions: coverage.rows.map((row) => ({ id: row.id, question: row.question })),
+        papers: papers.map((paper, index) => ({
+          id: index + 1,
+          title: paper.title,
+          abstract: paper.abstract ?? '',
+        })),
+      })
+      if (!verdicts || verdicts.length === 0) return coverage
+      const guarded = verdicts.map((verdict) => ({
+        ...verdict,
+        papers: verdict.papers.filter((paperId) => paperId >= 1 && paperId <= papers.length),
+      }))
+      const rows = refineCoverage(coverage.rows, guarded)
+      const uncoveredQueries = rows
+        .filter((row) => row.coverage !== 'covered')
+        .map((row) => row.gapQuery)
+      return { ...coverage, rows, md: renderCoverageRows(rows), uncoveredQueries }
+    } catch {
+      return coverage
     }
   }
 

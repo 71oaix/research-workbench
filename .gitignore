@@ -39,3 +39,6 @@ e2e-screenshots/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+.pi-judge-probe/
+apps/server/data/
