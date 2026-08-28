@@ -1,12 +1,41 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Artifact, Decision, Step } from '@research-workbench/shared'
 import { cn } from '../lib/cn'
 import { parseVerificationTable, type CiteMeta } from '../lib/citations'
 import { ApprovalPanel } from './ApprovalPanel'
+import { Collapsible } from './Collapsible'
 import { MarkdownView } from './MarkdownView'
 import { PaperCards, parseCards } from './PaperCards'
 import { StructureDiff } from './StructureDiff'
 import { IconCheck, IconFilter, IconPen, IconPlan, IconScale, IconSearch, IconShield, IconSpin, IconUser } from './icons'
+
+/** stepId → 展开回调：跳转（进度/引用/文件 tab）前先展开折叠的产物卡 */
+const expandRegistry = new Map<string, () => void>()
+
+export function expandStep(stepId: string): void {
+  expandRegistry.get(stepId)?.()
+}
+
+function shouldCollapse(artifactName: string, content: string): boolean {
+  if (!content) return false
+  if (content.length > 800) return true
+  if (artifactName === 'research-cards.md' && parseCards(content).length > 10) return true
+  return false
+}
+
+function artifactLabel(name: string): string {
+  return (
+    {
+      '01-plan.md': '检索计划',
+      'research-candidates.md': '候选论文',
+      'research-cards.md': '证据卡片',
+      '03-draft.md': '综述初稿',
+      'evaluation-report.md': '评估报告',
+      '04-review.md': '审查意见',
+      '05-summary.md': '调研摘要',
+    }[name] ?? name
+  )
+}
 
 const ROLE_LABELS: Record<Step['role'], string> = {
   planner: '规划', researcher: '检索', selector: '筛选', writer: '写作',
@@ -68,12 +97,13 @@ function statusMeta(step: Step, workflowStatus: string): { label: string; cls: s
 }
 
 export function ChatFlow({
-  steps, artifacts, decisions, workflowStatus, onDecide,
+  steps, artifacts, decisions, workflowStatus, streamBuffers, onDecide,
 }: {
   steps: Step[]
   artifacts: Artifact[]
   decisions: Decision[]
   workflowStatus: string
+  streamBuffers?: Record<string, { text: string; thinking: string }>
   onDecide: (workflowId: string, stepId: string, type: 'approve' | 'modify' | 'reject', note?: string) => void
 }) {
   return (
@@ -87,6 +117,8 @@ export function ChatFlow({
           workflowStatus={workflowStatus}
           hasWriter={steps.some((candidate) => candidate.role === 'writer')}
           selectorStepId={steps.find((candidate) => candidate.role === 'selector')?.id ?? null}
+          streamText={streamBuffers?.[step.id]?.text}
+          streamThinking={streamBuffers?.[step.id]?.thinking}
           onDecide={onDecide}
         />
       ))}
@@ -95,7 +127,7 @@ export function ChatFlow({
 }
 
 function StepBubble({
-  step, artifacts, decisions, workflowStatus, hasWriter, selectorStepId, onDecide,
+  step, artifacts, decisions, workflowStatus, hasWriter, selectorStepId, streamText, streamThinking, onDecide,
 }: {
   step: Step
   artifacts: Artifact[]
@@ -103,6 +135,8 @@ function StepBubble({
   workflowStatus: string
   hasWriter: boolean
   selectorStepId: string | null
+  streamText?: string
+  streamThinking?: string
   onDecide: (workflowId: string, stepId: string, type: 'approve' | 'modify' | 'reject', note?: string) => void
 }) {
   const Icon = ROLE_ICONS[step.role]
@@ -146,7 +180,9 @@ function StepBubble({
 
   function handleCiteClick(id: number) {
     if (!citations?.get(id) || citations.get(id)!.status === 'unknown') return
-    const root = selectorStepId ? document.getElementById(`step-${selectorStepId}`) : null
+    if (!selectorStepId) return
+    expandStep(selectorStepId)
+    const root = document.getElementById(`step-${selectorStepId}`)
     const card = root?.querySelector(`[data-card-id="${id}"]`)
     if (!card) return
     card.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -156,6 +192,33 @@ function StepBubble({
 
   const activeIndex = group.findIndex((item) => item.version === activeVersion)
   const diffBase = activeIndex > 0 ? group[activeIndex - 1] : null
+
+  // 折叠：长产物默认折叠（综述/候选池/多卡），其余展开
+  const [collapsed, setCollapsed] = useState(() => shouldCollapse(artifactName, latest?.content ?? ''))
+  // 展开注册表：跳转（进度/引用/文件 tab）前先展开
+  useEffect(() => {
+    expandRegistry.set(step.id, () => setCollapsed(false))
+    return () => {
+      expandRegistry.delete(step.id)
+    }
+  }, [step.id])
+  useEffect(() => {
+    if (step.status === 'running' && (streamText || streamThinking)) setCollapsed(false)
+  }, [step.status, streamText, streamThinking])
+
+  const cardCount = artifactName === 'research-cards.md' && latest ? parseCards(latest.content).length : 0
+  const summary =
+    cardCount > 0
+      ? `${cardCount} 张卡片`
+      : latest
+        ? `约 ${Math.max(1, Math.round(latest.content.length / 1000))}k 字`
+        : null
+  const header = (
+    <>
+      <span className="text-[13px] font-semibold text-ink">{ROLE_LABELS[step.role]} · {artifactLabel(artifactName)}</span>
+      {group.length > 1 && <span className="text-[11.5px] text-ink3">{group.length} 个版本</span>}
+    </>
+  )
 
   return (
     <div id={`step-${step.id}`} className="scroll-mt-4">
@@ -178,6 +241,10 @@ function StepBubble({
         )}
         <span className="ml-auto text-[12px] text-ink3">{step.label}</span>
       </div>
+
+      {step.status === 'running' && (streamText || streamThinking) && (
+        <StreamPreview text={streamText} thinking={streamThinking} />
+      )}
 
       {group.length > 0 && (
         <div className="rounded-(--radius-lg) border border-line-soft bg-surface shadow-(--shadow-soft) shadow-[inset_0_1px_0_rgba(255,255,255,.72)]">
@@ -214,7 +281,14 @@ function StepBubble({
               </button>
             </div>
           )}
-          <div className="p-4">
+          <Collapsible
+            open={!collapsed}
+            onToggle={() => setCollapsed((value) => !value)}
+            header={header}
+            summary={summary}
+            flush={group.length > 1}
+            bodyClassName="p-4 pt-3"
+          >
             {showDiff && diffBase && active && (
               <div className="mb-3 rounded-(--radius) border border-line-soft bg-surface2/50 p-3">
                 <StructureDiff prev={diffBase.content} next={active.content} />
@@ -226,7 +300,7 @@ function StepBubble({
                 <MarkdownView content={coverageMd} />
               </div>
             )}
-          </div>
+          </Collapsible>
         </div>
       )}
 
@@ -254,4 +328,50 @@ function renderContent(
   if (name === '03-draft.md') return <MarkdownView content={content} doc citations={citations} onCiteClick={onCiteClick} />
   if (name.endsWith('.md')) return <MarkdownView content={content} />
   return <pre className="whitespace-pre-wrap break-words font-mono text-[12.5px] text-ink">{content}</pre>
+}
+
+/** 流式预览：思考块（浅色斜体，自动滚底）+ 正文流式（尾部光标）。thinking 停止后标签切为"已思考 N 秒"。 */
+function StreamPreview({ text, thinking }: { text?: string; thinking?: string }) {
+  const thinkingRef = useRef<HTMLDivElement>(null)
+  const [startedAt] = useState(() => Date.now())
+  const [, tick] = useState(0)
+  const thinkingDone = Boolean(text)
+
+  useEffect(() => {
+    const el = thinkingRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [thinking])
+
+  useEffect(() => {
+    if (thinkingDone) return
+    const timer = setInterval(() => tick((value) => value + 1), 1000)
+    return () => clearInterval(timer)
+  }, [thinkingDone])
+
+  const seconds = Math.max(1, Math.round((Date.now() - startedAt) / 1000))
+
+  return (
+    <div className="rounded-(--radius-lg) border border-line-soft bg-surface shadow-(--shadow-soft)">
+      <div className="flex items-center gap-2 border-b border-line-soft px-3 py-1.5 text-[11.5px] font-bold uppercase tracking-[.11em] text-ink3">
+        <span className="size-1.5 animate-pulse rounded-full bg-accent" />
+        实时输出
+      </div>
+      <div className="p-4">
+        {thinking && (
+          <div ref={thinkingRef} className="stream-thinking">
+            <span className="stream-thinking-label">
+              {thinkingDone ? `已思考 ${seconds} 秒` : `思考中 · ${seconds}s`}
+            </span>
+            {thinking}
+          </div>
+        )}
+        {text && (
+          <div className="md-body streaming">
+            <MarkdownView content={text} />
+            <span className="stream-cursor" />
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }

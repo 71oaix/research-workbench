@@ -1,5 +1,6 @@
 import type { Step } from '@research-workbench/shared'
 import { cn } from '../lib/cn'
+import { expandStep } from './ChatFlow'
 import { IconCheck, IconFilter, IconPen, IconPlan, IconScale, IconSearch, IconShield } from './icons'
 
 const ICONS: Record<Step['role'], (s: { size?: number }) => ReturnType<typeof IconPlan>> = {
@@ -30,9 +31,10 @@ export function ProgressRail({ steps, workflowStatus }: { steps: Step[]; workflo
           return (
             <button
               key={step.id}
-              onClick={() =>
+              onClick={() => {
+                expandStep(step.id)
                 document.getElementById(`step-${step.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-              }
+              }}
               className={cn(
                 'flex w-full items-center gap-2.5 rounded-[10px] px-2 py-1.5 text-left text-[14px] transition-colors',
                 current ? 'bg-accent-soft font-semibold text-ink' : 'text-ink2 hover:bg-surface2'

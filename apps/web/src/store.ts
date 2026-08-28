@@ -13,6 +13,7 @@ interface WorkflowState {
   wsStatus: WsStatus
   error: string | null
   live: { hits: number; unique: number; papers: number }
+  streamBuffers: Record<string, { text: string; thinking: string }>
   refreshList: () => Promise<void>
   createWorkflow: (goal: string, includeWriter?: boolean) => Promise<void>
   selectWorkflow: (id: string) => Promise<void>
@@ -34,6 +35,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   wsStatus: 'closed',
   error: null,
   live: { hits: 0, unique: 0, papers: 0 },
+  streamBuffers: {},
 
   async refreshList() {
     try {
@@ -64,7 +66,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   async selectWorkflow(id) {
     try {
       const detail = await api.getWorkflow(id)
-      set({ selectedId: id, detail, error: null, live: { hits: 0, unique: 0, papers: 0 } })
+      set({ selectedId: id, detail, error: null, live: { hits: 0, unique: 0, papers: 0 }, streamBuffers: {} })
     } catch (e) {
       set({ error: e instanceof Error ? e.message : String(e) })
     }
@@ -107,12 +109,30 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       }
       case 'step.updated': {
         if (!detail || detail.workflow.id !== event.step.workflowId) break
-        set({ detail: { ...detail, steps: upsertStep(detail.steps, event.step) } })
+        const buffers = { ...state.streamBuffers }
+        delete buffers[event.step.id]
+        set({ detail: { ...detail, steps: upsertStep(detail.steps, event.step) }, streamBuffers: buffers })
         break
       }
       case 'artifact.updated': {
         if (!detail || detail.workflow.id !== event.artifact.workflowId) break
-        set({ detail: { ...detail, artifacts: upsertArtifact(detail.artifacts, event.artifact) } })
+        const buffers = { ...state.streamBuffers }
+        if (event.artifact.stepId) delete buffers[event.artifact.stepId]
+        set({ detail: { ...detail, artifacts: upsertArtifact(detail.artifacts, event.artifact) }, streamBuffers: buffers })
+        break
+      }
+      case 'step.stream': {
+        // 仅累积当前选中工作流的增量；buffer 清理先于 artifact/step 的 early-return（见上两 case）
+        if (!detail || detail.workflow.id !== event.workflowId) break
+        const prev = state.streamBuffers[event.stepId] ?? { text: '', thinking: '' }
+        const buffers = {
+          ...state.streamBuffers,
+          [event.stepId]: {
+            text: event.kind === 'text' ? prev.text + event.delta : prev.text,
+            thinking: event.kind === 'thinking' ? prev.thinking + event.delta : prev.thinking,
+          },
+        }
+        set({ streamBuffers: buffers })
         break
       }
       case 'decision.created': {

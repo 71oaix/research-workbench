@@ -1,5 +1,6 @@
 import type { Artifact, Step } from '@research-workbench/shared'
 import { cn } from '../lib/cn'
+import { expandStep } from './ChatFlow'
 import { IconFile, IconPlan, IconSearch, IconShield, IconPen, IconFilter } from './icons'
 
 const ORDER = [
@@ -31,7 +32,9 @@ export function ArtifactFileTabs({ artifacts, steps }: { artifacts: Artifact[]; 
               key={item.name}
               onClick={() => {
                 const id = step?.id ?? parts[0]?.stepId ?? undefined
-                if (id) document.getElementById(`step-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                if (!id) return
+                expandStep(id)
+                document.getElementById(`step-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
               }}
               className="flex w-full items-center gap-2.5 rounded-[10px] px-2 py-2 text-left text-[14px] text-ink2 transition-colors hover:bg-surface2"
             >

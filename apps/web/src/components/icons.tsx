@@ -10,9 +10,9 @@ const base = {
   strokeLinejoin: 'round' as const,
 }
 
-export function Icon({ children, size = 16 }: { children: ReactNode; size?: number }) {
+export function Icon({ children, size = 16, className }: { children: ReactNode; size?: number; className?: string }) {
   return (
-    <svg {...base} width={size} height={size} viewBox="0 0 24 24">
+    <svg {...base} width={size} height={size} viewBox="0 0 24 24" className={className}>
       {children}
     </svg>
   )
@@ -50,6 +50,9 @@ export const IconFile = (s: { size?: number } = {}) => (
 )
 export const IconPanel = (s: { size?: number } = {}) => (
   <Icon {...s}><rect x="3" y="4" width="18" height="16" rx="2.5" /><path d="M15 4v16" /></Icon>
+)
+export const IconChevron = (s: { size?: number; className?: string } = {}) => (
+  <Icon {...s}><path d="m9 6 6 6-6 6" /></Icon>
 )
 export const IconSpark = (s: { size?: number } = {}) => (
   <Icon {...s}><path d="M12 3l1.8 4.8L18 9.6l-4.2 1.8L12 16l-1.8-4.6L6 9.6l4.2-1.8z" /><path d="M18 15l.9 2.4 2.1.9-2.1.9L18 22l-.9-2.8L15 18.3l2.1-.9z" /></Icon>
