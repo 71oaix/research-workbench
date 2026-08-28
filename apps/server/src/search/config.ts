@@ -15,6 +15,7 @@ export interface SearchConfig {
   compensateOnDegrade: boolean
   sourceDegradeCooldownMs: number
   semanticScholarApiKey?: string
+  openAlexApiKey?: string
   openAlexMailto?: string
   crossrefMailto?: string
   unpaywallEmail?: string
@@ -38,6 +39,7 @@ export function loadSearchConfig(env: NodeJS.ProcessEnv = process.env): SearchCo
     compensateOnDegrade: env.SEARCH_COMPENSATE_ON_DEGRADE !== 'false',
     sourceDegradeCooldownMs: positiveInt(env.SEARCH_DEGRADE_COOLDOWN_MS, 300_000),
     semanticScholarApiKey: env.SEMANTIC_SCHOLAR_API_KEY?.trim() || undefined,
+    openAlexApiKey: env.OPENALEX_API_KEY?.trim() || undefined,
     openAlexMailto: env.OPENALEX_MAILTO?.trim() || undefined,
     crossrefMailto: env.CROSSREF_MAILTO?.trim() || undefined,
     unpaywallEmail: env.SEARCH_UNPAYWALL_EMAIL?.trim() || undefined,

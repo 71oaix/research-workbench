@@ -91,7 +91,8 @@ node scripts/verify-m2-2.mjs
 环境变量（key 绝不写入仓库）：
 
 ```bash
-SEMANTIC_SCHOLAR_API_KEY=...   # 可选，提升 Semantic Scholar 限流
+SEMANTIC_SCHOLAR_API_KEY=...   # 可选，提升 Semantic Scholar 限流（申请：https://www.semanticscholar.org/product/api#api-key-form）
+OPENALEX_API_KEY=...           # 可选但强烈建议：OpenAlex 2026-02 起强制 key（免费注册，$1/天免费额度，申请：https://openalex.org/users/me）
 OPENALEX_MAILTO=you@example.com  # 可选，进入 OpenAlex polite pool
 SEARCH_TOP_N=15                # 可选，论文卡片数量，默认 15
 SEARCH_PER_QUERY=25            # 可选，每个查询每源取多少条，默认 25
@@ -101,12 +102,16 @@ SEARCH_DEGRADE_COOLDOWN_MS=300000  # 可选，失效源冷却期（毫秒），�
 
 源状态说明（2026-08 实测）：
 
-- **OpenAlex 已改为计费制**：免费额度近乎为零（预算不足时返回 429 `Insufficient budget`），
-  系统会把这类 429 识别为"非可重试"，快速失败并自动把该源的任务补偿到存活源，
-  不再做无谓重试；当前阶段不推荐付费，靠 Crossref + arXiv + S2 即可覆盖主要学术库；
+- **OpenAlex 已改为计费制（2026-02-24 起）**：需注册免费 key（`OPENALEX_API_KEY`，
+  申请入口 https://openalex.org/users/me ），每个 key 每天约 $1 免费额度
+  （search $0.001/次、list $0.0001/次），对本项目演示绰绰有余；无 key 时启动警告一次，
+  额度不足时返回 429 `Insufficient budget`，系统把这类 429 识别为"非可重试"，
+  快速失败并自动把该源的任务补偿到存活源，不再做无谓重试；
 - **Semantic Scholar 无 key 时降级为 T3**（单次尝试、零重试，失败计为降级而非失败），
   建议申请免费 key（https://www.semanticscholar.org/product/api#api-key-form）后自动升 T1；
-- 配 key / mailto 后速度更稳；稳定失效的源进入冷却期（默认 5 分钟）自动跳过并定时重探。
+- 配 key / mailto 后速度更稳；稳定失效的源进入冷却期（默认 5 分钟）自动跳过并定时重探；
+- IEEE Xplore 也有免费个人 API key（https://developer.ieee.org ），
+  目前未接入 provider，仅作为未来扩展预留。
 
 真实端到端验证（服务已启动且进程带 OPENCODE_GO_API_KEY）：
 
