@@ -2,7 +2,7 @@
 title: 文档索引
 status: active
 created: 2026-08-05
-updated: 2026-08-28
+updated: 2026-08-29
 ---
 
 # 文档索引
@@ -86,4 +86,8 @@ updated: 2026-08-28
 | Plan: 引用 [n] 可溯源交互 | archived | plans/close/2026-08-28-citation-affordance.md | 已实现并测试 |
 | Plan: 工作流列表信息架构 | archived | plans/close/2026-08-28-workflow-list-ia.md | 已实现并测试 |
 | Plan: 壳层布局、空态与可访问性 | archived | plans/close/2026-08-28-shell-layout-states.md | 已实现并测试 |
+| Issue: 三栏可拖拽自适应布局 | archived | issues/close/2026-08-29-layout-v3-resizable.md | 左 260 默认+拖拽持久化+双击重置 |
+| Plan: 三栏可拖拽自适应布局 | archived | plans/close/2026-08-29-layout-v3-resizable.md | 已实现并测试 |
+| Issue: 字阶与层级系统对齐 Claude | archived | issues/close/2026-08-29-typography-scale.md | 全局 +1~2px、衬线标题、字重层级 |
+| Plan: 字阶与层级系统对齐 Claude | archived | plans/close/2026-08-29-typography-scale.md | 已实现并测试 |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |

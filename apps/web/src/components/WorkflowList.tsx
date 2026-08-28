@@ -56,9 +56,9 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
   const wsMeta = WS_STATUS_META[wsStatus] ?? WS_STATUS_META.closed
 
   return (
-    <aside className="flex h-full flex-col overflow-hidden border-r border-line bg-sidebar px-3 pb-3 pt-4">
-      <div className="flex items-center gap-2.5 px-2 pb-4">
-        <div className="grid h-8 w-8 place-items-center rounded-[9px] bg-accent text-white shadow-[inset_0_1px_0_rgba(255,255,255,.18)]">
+    <aside className="flex h-full flex-col overflow-hidden border-r border-line bg-sidebar px-3 pb-3 pt-5">
+      <div className="flex items-center gap-2.5 px-2 pb-5">
+        <div className="grid h-8 w-8 place-items-center rounded-[11px] bg-accent text-white shadow-[inset_0_1px_0_rgba(255,255,255,.18)]">
           <IconBook size={17} />
         </div>
         <div className="leading-none">
@@ -71,7 +71,7 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
 
       <button
         onClick={() => setOpen(true)}
-        className="flex w-full items-center justify-center gap-1.5 rounded-(--radius) bg-accent py-2.5 text-[13px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.15)] transition-transform duration-150 active:scale-[.96]"
+        className="flex w-full items-center justify-center gap-1.5 rounded-(--radius) bg-accent py-2.5 text-[14px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.15)] transition-transform duration-150 active:scale-[.96]"
       >
         <IconPlus size={15} />
         新建调研
@@ -84,7 +84,7 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-1 flex items-center justify-between">
-              <div className="text-[15px] font-bold tracking-[-.01em]">新的调研任务</div>
+              <div className="text-[16px] font-bold tracking-[-.01em]">新的调研任务</div>
               <button
                 aria-label="关闭"
                 onClick={() => setOpen(false)}
@@ -93,7 +93,7 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
                 <IconX size={16} />
               </button>
             </div>
-            <p className="mb-3 text-[12.5px] text-ink2">输入研究问题，研镜会自动规划、检索、筛选、写作并核验引用。</p>
+            <p className="mb-3 text-[13px] text-ink2">输入研究问题，研镜会自动规划、检索、筛选、写作并核验引用。</p>
             <input
               value={goal}
               onChange={(event) => setGoal(event.target.value)}
@@ -101,7 +101,7 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
                 if (event.key === 'Enter' && goal.trim()) void handleCreate()
               }}
               placeholder="例如：研究下多智能体的记忆架构"
-              className="w-full rounded-(--radius) border border-line-strong bg-bg px-3 py-2.5 text-[14px] outline-none placeholder:text-ink3 focus:border-accent-line focus:ring-4 focus:ring-accent-soft"
+              className="w-full rounded-(--radius) border border-line-strong bg-bg px-3 py-2.5 text-[15px] outline-none placeholder:text-ink3 focus:border-accent-line focus:ring-4 focus:ring-accent-soft"
               autoFocus
             />
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
@@ -109,13 +109,13 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
                 <button
                   key={value}
                   onClick={() => setGoal(value)}
-                  className="rounded-full border border-line bg-surface px-3 py-1 text-[12px] text-ink2 transition-colors hover:border-accent-line hover:bg-accent-soft hover:text-accent"
+                  className="rounded-full border border-line bg-surface px-3 py-1 text-[12.5px] text-ink2 transition-colors hover:border-accent-line hover:bg-accent-soft hover:text-accent"
                 >
                   {value}
                 </button>
               ))}
             </div>
-            <label className="mt-3 flex cursor-pointer items-center gap-1.5 text-[12px] text-ink2">
+            <label className="mt-3 flex cursor-pointer items-center gap-1.5 text-[12.5px] text-ink2">
               <input
                 type="checkbox"
                 checked={writing}
@@ -127,7 +127,7 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
             <button
               onClick={() => void handleCreate()}
               disabled={creating || goal.trim().length === 0}
-              className="mt-3.5 flex w-full items-center justify-center gap-1.5 rounded-(--radius) bg-accent py-2.5 text-[13px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.15)] transition-transform duration-150 active:scale-[.96] disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-3.5 flex w-full items-center justify-center gap-1.5 rounded-(--radius) bg-accent py-2.5 text-[14px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.15)] transition-transform duration-150 active:scale-[.96] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <IconSpark size={15} />
               创建并开始
@@ -137,7 +137,7 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
       )}
 
       {workflows.length > 0 && (
-        <div className="mt-3 px-2">
+        <div className="mt-4 px-2">
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -151,34 +151,34 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
             }}
             aria-label="搜索工作流"
             placeholder="搜索工作流…"
-            className="w-full rounded-(--radius) border border-line bg-surface px-2.5 py-1.5 text-[12.5px] outline-none placeholder:text-ink3 focus:border-accent-line focus:ring-4 focus:ring-accent-soft"
+            className="w-full rounded-(--radius) border border-line bg-surface px-2.5 py-1.5 text-[13.5px] outline-none placeholder:text-ink3 focus:border-accent-line focus:ring-4 focus:ring-accent-soft"
           />
         </div>
       )}
 
       {workflows.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1 px-2">
+        <div className="mt-3 flex flex-wrap gap-1 px-2">
           {FILTERS.map((item) => (
             <button
               key={item.key}
               onClick={() => setFilter(item.key)}
               aria-pressed={filter === item.key}
               className={cn(
-                'rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors',
+                'rounded-full px-2 py-0.5 text-[12px] font-medium transition-colors',
                 filter === item.key
                   ? 'bg-accent-soft font-semibold text-accent'
                   : 'text-ink2 hover:bg-white/60'
               )}
             >
               {item.label}
-              <span className="num ml-1 text-[10px] text-ink3">{counts[item.key]}</span>
+              <span className="num ml-1 text-[11px] text-ink3">{counts[item.key]}</span>
             </button>
           ))}
         </div>
       )}
 
-      <div className="mt-4 flex min-h-0 flex-1 flex-col px-2">
-        <div className="mb-2 flex items-center justify-between text-[10.5px] font-bold uppercase tracking-[.11em] text-ink3">
+      <div className="mt-5 flex min-h-0 flex-1 flex-col px-2">
+        <div className="mb-3 flex items-center justify-between text-[11.5px] font-bold uppercase tracking-[.11em] text-ink3">
           最近工作流
         </div>
         <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pb-2">
@@ -190,7 +190,7 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
                 <button
                   onClick={() => void selectWorkflow(workflow.id)}
                   className={cn(
-                    'flex w-full gap-2 rounded-(--radius) px-2.5 py-2 text-left transition-colors',
+                    'flex w-full gap-2 rounded-(--radius) px-2.5 py-2.5 text-left transition-colors',
                     active
                       ? 'bg-white shadow-(--shadow-soft) shadow-[inset_2px_0_0_var(--color-accent)]'
                       : 'hover:bg-white/60'
@@ -203,10 +203,10 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
                     )}
                   />
                   <span className="min-w-0">
-                    <span className="block truncate text-[13px] font-medium leading-[1.4] text-ink">
+                    <span className="block truncate text-[14px] font-medium leading-[1.5] text-ink">
                       {workflow.goal}
                     </span>
-                    <span className="mt-0.5 block text-[11px] text-ink3">
+                    <span className="mt-0.5 block text-[12px] text-ink3">
                       {relativeTime(workflow.createdAt)} · {statusText}
                     </span>
                   </span>
@@ -215,17 +215,17 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
             )
           })}
           {workflows.length > 0 && visible.length === 0 && (
-            <li className="px-2 py-3 text-[12px] text-ink3">无匹配结果，换个关键词试试。</li>
+            <li className="px-2 py-3 text-[12.5px] text-ink3">无匹配结果，换个关键词试试。</li>
           )}
           {workflows.length === 0 && (
             <li className="px-2 py-6 text-center">
-              <div className="mx-auto mb-2 grid size-9 place-items-center rounded-[10px] bg-surface text-ink3 shadow-(--shadow-soft)">
+              <div className="mx-auto mb-2 grid size-9 place-items-center rounded-[12px] bg-surface text-ink3 shadow-(--shadow-soft)">
                 <IconSpark size={16} />
               </div>
-              <p className="text-[12px] text-ink2">还没有调研任务</p>
+              <p className="text-[12.5px] text-ink2">还没有调研任务</p>
               <button
                 onClick={() => setOpen(true)}
-                className="mt-2 text-[12px] font-semibold text-accent hover:underline"
+                className="mt-2 text-[12.5px] font-semibold text-accent hover:underline"
               >
                 新建第一个调研 →
               </button>
@@ -234,7 +234,7 @@ export function WorkflowList({ wsStatus }: { wsStatus: string }) {
         </ul>
       </div>
 
-      <div className="mt-auto flex items-center gap-2 border-t border-line-soft px-2 pt-3 text-[12px] text-ink2">
+      <div className="mt-auto flex items-center gap-2 border-t border-line-soft px-2 pt-3 text-[12.5px] text-ink2">
         <span className={cn('size-2 rounded-full', wsMeta.dot)} />
         本地运行 · {wsMeta.label}
       </div>
