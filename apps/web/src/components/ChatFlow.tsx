@@ -77,7 +77,7 @@ export function ChatFlow({
   onDecide: (workflowId: string, stepId: string, type: 'approve' | 'modify' | 'reject', note?: string) => void
 }) {
   return (
-    <div className="mx-auto max-w-[720px] space-y-3.5">
+    <div className="mx-auto max-w-[780px] space-y-3.5">
       {steps.filter((step) => step.status !== 'pending').map((step) => (
         <StepBubble
           key={step.id}
@@ -162,7 +162,7 @@ function StepBubble({
       <div className="mb-1.5 flex items-center gap-2.5">
         <span
           className={cn(
-            'grid size-7 flex-none place-items-center rounded-[9px] border',
+            'grid size-7 flex-none place-items-center rounded-[11px] border',
             isCurrent && 'border-accent bg-accent text-white ring-4 ring-accent-soft',
             isDone && 'border-ok-line bg-ok-soft text-ok',
             !isCurrent && !isDone && 'border-line-strong bg-surface text-ink3'
@@ -170,13 +170,13 @@ function StepBubble({
         >
           {isDone ? <IconCheck size={14} /> : step.status === 'running' ? <IconSpin className="animate-spin text-accent" /> : <Icon size={14} />}
         </span>
-        <span className="text-[14px] font-semibold tracking-[-.005em]">{ROLE_LABELS[step.role]}</span>
+        <span className="text-[15px] font-semibold tracking-[-.005em]">{ROLE_LABELS[step.role]}</span>
         {step.status === 'running' ? (
           <CyclingLabel role={step.role} />
         ) : (
-          <span className={cn('text-[11px] font-semibold', status.cls)}>{status.label}</span>
+          <span className={cn('text-[12px] font-semibold', status.cls)}>{status.label}</span>
         )}
-        <span className="ml-auto text-[11px] text-ink3">{step.label}</span>
+        <span className="ml-auto text-[12px] text-ink3">{step.label}</span>
       </div>
 
       {group.length > 0 && (
@@ -204,7 +204,7 @@ function StepBubble({
                 onClick={() => setShowDiff((value) => !value)}
                 disabled={activeIndex < 1}
                 className={cn(
-                  'ml-auto flex-none rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                  'ml-auto flex-none rounded-full border px-2.5 py-1 text-[12px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
                   showDiff
                     ? 'border-accent-line bg-accent-soft text-accent'
                     : 'border-line-strong bg-surface text-ink2 hover:bg-surface2'

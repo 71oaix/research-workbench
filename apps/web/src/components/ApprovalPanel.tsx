@@ -46,21 +46,21 @@ export function ApprovalPanel({
   }
 
   return (
-    <section className="mt-7 max-w-[760px] rounded-(--radius-lg) border border-line-soft border-t-2 border-t-warn-line bg-surface p-5 shadow-(--shadow-lift) shadow-[inset_0_1px_0_rgba(255,255,255,.72)]">
+    <section className="mt-7 max-w-[800px] rounded-(--radius-lg) border border-line-soft border-t-2 border-t-warn-line bg-surface p-5 shadow-(--shadow-lift) shadow-[inset_0_1px_0_rgba(255,255,255,.72)]">
       <div className="flex items-center gap-2.5">
-        <span className="grid size-8 flex-none place-items-center rounded-[9px] bg-warn-soft text-warn">
+        <span className="grid size-8 flex-none place-items-center rounded-[11px] bg-warn-soft text-warn">
           <IconAlert size={16} />
         </span>
         <div>
-          <div className="text-[15px] font-bold tracking-[-.01em]">审批：{step.label}</div>
-          <div className="mt-0.5 text-[12px] text-ink2">打回后将从当前步骤重新生成</div>
+          <div className="text-[16px] font-bold tracking-[-.01em]">审批：{step.label}</div>
+          <div className="mt-0.5 text-[13px] text-ink2">打回后将从当前步骤重新生成</div>
         </div>
       </div>
 
       {clarification.length > 0 && (
         <div className="mt-3 rounded-(--radius) border border-warn-line bg-warn-soft px-3.5 py-3">
-          <p className="text-[13px] font-semibold text-warn">该计划需要澄清，请在意见中回答：</p>
-          <ol className="mt-1 list-inside list-decimal space-y-0.5 text-[12.5px] text-ink2">
+          <p className="text-[13.5px] font-semibold text-warn">该计划需要澄清，请在意见中回答：</p>
+          <ol className="mt-1 list-inside list-decimal space-y-0.5 text-[13px] text-ink2">
             {clarification.map((question, index) => (
               <li key={index}>{question}</li>
             ))}
@@ -72,14 +72,14 @@ export function ApprovalPanel({
         value={note}
         onChange={(event) => setNote(event.target.value)}
         placeholder="修改意见 / 备注（打回修改时必须填写）"
-        className="mt-4 min-h-[60px] w-full resize-y rounded-(--radius) border border-line bg-surface px-3 py-2.5 text-[13px] outline-none placeholder:text-ink3 focus:border-accent-line focus:ring-4 focus:ring-accent-soft"
+        className="mt-4 min-h-[60px] w-full resize-y rounded-(--radius) border border-line bg-surface px-3 py-2.5 text-[14px] outline-none placeholder:text-ink3 focus:border-accent-line focus:ring-4 focus:ring-accent-soft"
       />
 
       <div className="mt-3.5 flex flex-wrap items-center gap-2.5">
         {!needsClarification && (
           <button
             onClick={() => onDecide('approve')}
-            className="flex items-center gap-1.5 rounded-(--radius) bg-accent px-4.5 py-2 text-[13px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.15)] transition-transform duration-150 active:scale-[.96]"
+            className="flex items-center gap-1.5 rounded-(--radius) bg-accent px-4.5 py-2 text-[14px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.15)] transition-transform duration-150 active:scale-[.96]"
           >
             <IconCheck size={14} />
             通过
@@ -88,7 +88,7 @@ export function ApprovalPanel({
         <button
           onClick={handleModify}
           disabled={!canModify}
-          className="flex items-center gap-1.5 rounded-(--radius) border border-bad-line bg-bad-soft px-4.5 py-2 text-[13px] font-semibold text-bad transition-transform duration-150 active:scale-[.96] disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-(--radius) border border-bad-line bg-bad-soft px-4.5 py-2 text-[14px] font-semibold text-bad transition-transform duration-150 active:scale-[.96] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <IconRotate size={14} />
           {needsClarification
@@ -101,7 +101,7 @@ export function ApprovalPanel({
         </button>
         <button
           onClick={handleCancel}
-          className="flex items-center gap-1.5 rounded-(--radius) border border-line-strong bg-surface px-4.5 py-2 text-[13px] font-semibold text-ink2 transition-transform duration-150 active:scale-[.96]"
+          className="flex items-center gap-1.5 rounded-(--radius) border border-line-strong bg-surface px-4.5 py-2 text-[14px] font-semibold text-ink2 transition-transform duration-150 active:scale-[.96]"
         >
           <IconXCircle size={14} />
           取消任务
@@ -110,15 +110,15 @@ export function ApprovalPanel({
 
       {decisions.length > 0 && (
         <div className="mt-4 border-t border-line-soft pt-3">
-          <div className="text-[11px] font-bold uppercase tracking-[.11em] text-ink3">决策历史</div>
+          <div className="text-[11.5px] font-bold uppercase tracking-[.11em] text-ink3">决策历史</div>
           <ul className="mt-2 space-y-1.5">
             {decisions.map((decision) => (
-              <li key={decision.id} className="flex items-start gap-2 text-[12.5px]">
-                <span className="mt-0.5 flex-none rounded-full bg-surface2 px-2 py-px text-[11px] font-semibold text-ink2">
+              <li key={decision.id} className="flex items-start gap-2 text-[13px]">
+                <span className="mt-0.5 flex-none rounded-full bg-surface2 px-2 py-px text-[11.5px] font-semibold text-ink2">
                   {DECISION_LABEL[decision.type] ?? decision.type}
                 </span>
                 <span className="min-w-0 flex-1 text-ink2">{decision.note ?? ''}</span>
-                <span className="mt-0.5 flex-none text-[11px] text-ink3">{relativeTime(decision.createdAt)}</span>
+                <span className="mt-0.5 flex-none text-[12px] text-ink3">{relativeTime(decision.createdAt)}</span>
               </li>
             ))}
           </ul>

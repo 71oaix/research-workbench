@@ -18,7 +18,7 @@ export function ArtifactFileTabs({ artifacts, steps }: { artifacts: Artifact[]; 
   const authored = new Set(artifacts.map((artifact) => artifact.name))
   return (
     <div className="min-h-0 flex-1 overflow-y-auto px-3.5 py-4">
-      <div className="mb-2 text-[10.5px] font-bold uppercase tracking-[.11em] text-ink3">产出文件</div>
+      <div className="mb-2 text-[11.5px] font-bold uppercase tracking-[.11em] text-ink3">产出文件</div>
       <div className="space-y-0.5">
         {ORDER.map((item) => {
           if (!authored.has(item.name)) return null
@@ -33,18 +33,18 @@ export function ArtifactFileTabs({ artifacts, steps }: { artifacts: Artifact[]; 
                 const id = step?.id ?? parts[0]?.stepId ?? undefined
                 if (id) document.getElementById(`step-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
               }}
-              className="flex w-full items-center gap-2.5 rounded-[8px] px-2 py-2 text-left text-[13px] text-ink2 transition-colors hover:bg-surface2"
+              className="flex w-full items-center gap-2.5 rounded-[10px] px-2 py-2 text-left text-[14px] text-ink2 transition-colors hover:bg-surface2"
             >
-              <span className="grid size-6 flex-none place-items-center rounded-[7px] bg-surface2 text-ink3">
+              <span className="grid size-6 flex-none place-items-center rounded-[9px] bg-surface2 text-ink3">
                 <RowIcon size={13} />
               </span>
               <span className="min-w-0 flex-1 truncate">{item.label}</span>
-              {versions > 1 && <span className="flex-none text-[11px] text-ink3">v{versions}</span>}
+              {versions > 1 && <span className="flex-none text-[12px] text-ink3">v{versions}</span>}
             </button>
           )
         })}
         {!ORDER.some((item) => authored.has(item.name)) && (
-          <div className="px-2 py-3 text-[12px] text-ink3">产物会随步骤推进生成。</div>
+          <div className="px-2 py-3 text-[12.5px] text-ink3">产物会随步骤推进生成。</div>
         )}
       </div>
     </div>

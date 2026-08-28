@@ -27,7 +27,7 @@ export function StructureDiff({ prev, next }: { prev: string; next: string }) {
     diff.addedRefs.length === 0
   return (
     <div className="space-y-1.5">
-      <div className="text-[13px] font-bold text-ink">结构差异（上一版 → 当前版）</div>
+      <div className="text-[14px] font-bold text-ink">结构差异（上一版 → 当前版）</div>
       {diff.removedHeads.length > 0 && (
         <p className="text-[12.5px] text-ink2">移除章节：{diff.removedHeads.join('；')}</p>
       )}
