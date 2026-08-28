@@ -1,6 +1,6 @@
 /**
  * M4-1 手动验证脚本：模型辅助覆盖判定 v2 真实流程验证。
- * 前置：本地服务已启动，且进程带有 OPENCODE_GO_API_KEY。
+ * 前置：本地服务已启动，且进程带有 DEEPSEEK_API_KEY。
  * 用法：node scripts/verify-m4-1.mjs
  * 输出：新跑工作流的 coverage-matrix.md 行判定，并与最近一个含覆盖矩阵的历史工作流对比。
  */

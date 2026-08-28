@@ -64,8 +64,8 @@ curl http://localhost:3000/workflows/<id>
 环境变量（key 绝不写入仓库）：
 
 ```bash
-OPENCODE_GO_API_KEY=sk-...   # 必填，opencode go 订阅 key
-PI_PROVIDER=opencode-go      # 可选，默认 opencode-go
+DEEPSEEK_API_KEY=sk-...     # 必填，DeepSeek 官方 API key（https://platform.deepseek.com）
+PI_PROVIDER=deepseek        # 可选，默认 deepseek（官方 OpenAI 兼容端点）
 PI_DEFAULT_MODEL=deepseek-v4-flash  # 可选，默认值
 PI_MODEL_PLANNER=...         # 可选，每角色覆盖（仅模型 ID）
 PI_MODEL_RESEARCHER=...
@@ -113,7 +113,7 @@ SEARCH_DEGRADE_COOLDOWN_MS=300000  # 可选，失效源冷却期（毫秒），�
 - IEEE Xplore 也有免费个人 API key（https://developer.ieee.org ），
   目前未接入 provider，仅作为未来扩展预留。
 
-真实端到端验证（服务已启动且进程带 OPENCODE_GO_API_KEY）：
+真实端到端验证（服务已启动且进程带 DEEPSEEK_API_KEY）：
 
 ```bash
 node scripts/verify-m2-3.mjs
@@ -123,7 +123,7 @@ node scripts/verify-m2-3.mjs
 
 ## M2-4 证据引用验证
 
-真实端到端验证（服务已启动且进程带 OPENCODE_GO_API_KEY）：
+真实端到端验证（服务已启动且进程带 DEEPSEEK_API_KEY）：
 
 ```bash
 node scripts/verify-m2-4.mjs
@@ -133,7 +133,7 @@ node scripts/verify-m2-4.mjs
 
 ## M2-5 工作流 UI 启动与验证
 
-普通模式（需要 OPENCODE_GO_API_KEY）：
+普通模式（需要 DEEPSEEK_API_KEY）：
 
 ```bash
 npm.cmd run dev
@@ -331,7 +331,7 @@ npx tsx scripts/eval-m2-15.mjs --out data/eval/report.md
 npx tsx scripts/cost-report.mjs
 ```
 
-真实六步流程验证（服务已启动且进程带 OPENCODE_GO_API_KEY）：
+真实六步流程验证（服务已启动且进程带 DEEPSEEK_API_KEY）：
 
 ```bash
 node scripts/verify-m2-15.mjs

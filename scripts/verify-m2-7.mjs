@@ -1,6 +1,6 @@
 /**
  * M2-7 手动验证脚本：真实调用 deepseek-v4-flash + 分级学术检索 + 打回补偿。
- * 前置：本地服务已启动，且进程带有 OPENCODE_GO_API_KEY。
+ * 前置：本地服务已启动，且进程带有 DEEPSEEK_API_KEY。
  * 用法：node scripts/verify-m2-7.mjs
  */
 

@@ -4,7 +4,7 @@ import { ChatFlow } from './components/ChatFlow'
 import { ColumnDivider } from './components/ColumnDivider'
 import { ProgressRail } from './components/ProgressRail'
 import { WorkflowList } from './components/WorkflowList'
-import { IconPanel, IconPlus, IconSpark } from './components/icons'
+import { IconPanel, IconPlus, IconSpark, IconXCircle } from './components/icons'
 import { useWorkflowStore } from './store'
 import { cn } from './lib/cn'
 import { EXAMPLE_GOALS } from './lib/examples'
@@ -22,6 +22,7 @@ export default function App() {
   const createWorkflow = useWorkflowStore((state) => state.createWorkflow)
   const live = useWorkflowStore((state) => state.live)
   const streamBuffers = useWorkflowStore((state) => state.streamBuffers)
+  const cancelWorkflow = useWorkflowStore((state) => state.cancelWorkflow)
 
   useEffect(() => {
     void refreshList()
@@ -109,6 +110,15 @@ export default function App() {
                     >
                       <IconPlus size={14} />
                       启动工作流
+                    </button>
+                  )}
+                  {detail.workflow.status === 'executing' && (
+                    <button
+                      onClick={() => void cancelWorkflow()}
+                      className="ml-auto flex items-center gap-1.5 rounded-(--radius) border border-bad-line bg-bad-soft px-4 py-1.5 text-[14px] font-semibold text-bad transition-transform duration-150 active:scale-[.96]"
+                    >
+                      <IconXCircle size={14} />
+                      停止
                     </button>
                   )}
                 </div>

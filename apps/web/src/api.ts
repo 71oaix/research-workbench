@@ -52,6 +52,8 @@ export const api = {
     }),
   startWorkflow: (workflowId: string) =>
     request<WorkflowDetail>(`/workflows/${workflowId}/start`, { method: 'POST' }),
+  cancelWorkflow: (workflowId: string) =>
+    request<WorkflowDetail>(`/workflows/${workflowId}/cancel`, { method: 'POST' }),
   getWorkflow: (workflowId: string) => request<WorkflowDetail>(`/workflows/${workflowId}`),
   decide: (
     workflowId: string,

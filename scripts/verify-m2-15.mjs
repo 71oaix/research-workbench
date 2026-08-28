@@ -1,6 +1,6 @@
 /**
  * M2-15 手动验证脚本：宽泛问题澄清 + 六步流程（selector 筛选）+ 相关度分级 + 编号一致。
- * 前置：本地服务已启动，且进程带有 OPENCODE_GO_API_KEY。
+ * 前置：本地服务已启动，且进程带有 DEEPSEEK_API_KEY。
  * 用法：node scripts/verify-m2-15.mjs            # 七步完整模板（含 writer）
  *       node scripts/verify-m2-15.mjs --research # 六步调研模板（无 writer）
  */

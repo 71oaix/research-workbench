@@ -90,6 +90,12 @@ updated: 2026-08-29
 | Plan: 三栏可拖拽自适应布局 | archived | plans/close/2026-08-29-layout-v3-resizable.md | 已实现并测试 |
 | Issue: 字阶与层级系统对齐 Claude | archived | issues/close/2026-08-29-typography-scale.md | 全局 +1~2px、衬线标题、字重层级 |
 | Plan: 字阶与层级系统对齐 Claude | archived | plans/close/2026-08-29-typography-scale.md | 已实现并测试 |
+| Issue: 切换 DeepSeek 官方 API | archived | issues/close/2026-08-29-deepseek-switch.md | 已实现并测试 |
+| Plan: 切换 DeepSeek 官方 API | archived | plans/close/2026-08-29-deepseek-switch.md | 已实现并测试 |
+| Issue: 流式体验打磨 | archived | issues/close/2026-08-29-streaming-polish.md | 已实现并测试 |
+| Plan: 流式体验打磨 | archived | plans/close/2026-08-29-streaming-polish.md | 已实现并测试 |
+| Issue: 工作流取消（停止按钮） | archived | issues/close/2026-08-29-workflow-cancel.md | 已实现并测试 |
+| Plan: 工作流取消（停止按钮） | archived | plans/close/2026-08-29-workflow-cancel.md | 已实现并测试 |
 | Issue: 产物折叠与展开联动 | archived | issues/close/2026-08-29-artifact-collapse.md | 已实现并测试 |
 | Plan: 产物折叠与展开联动 | archived | plans/close/2026-08-29-artifact-collapse.md | 已实现并测试 |
 | Issue: 真流式输出（WS step.stream） | archived | issues/close/2026-08-29-streaming.md | 已实现并测试 |

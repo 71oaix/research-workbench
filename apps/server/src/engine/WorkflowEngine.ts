@@ -27,11 +27,33 @@ export interface WorkflowDetail {
 }
 
 export class WorkflowEngine {
+  /** 运行中工作流的取消标志（cancel() 置位；runPendingSteps 每步检查） */
+  private readonly cancelled = new Set<string>()
+
   constructor(
     private readonly repos: Repositories,
     private readonly runner: StepRunner,
     private readonly bus: WorkflowEventBus
   ) {}
+
+  /** 取消轮询：session.abort 只能中断活跃流，send 间隙由 runner 的检查点拦截 */
+  isCancelled(workflowId: string): boolean {
+    return this.cancelled.has(workflowId)
+  }
+
+  /**
+   * 取消运行中的工作流：置取消标志 → 正在执行的模型调用由外部 abort（半成品丢弃）。
+   * 剩余 pending 步骤标 skipped；仅 executing 状态可取消（paused 用审批"取消任务"）。
+   */
+  async cancel(workflowId: string): Promise<Workflow> {
+    const workflow = this.requireWorkflow(workflowId)
+    if (workflow.status !== 'executing') {
+      throw new EngineError('workflow_not_executing', 409)
+    }
+    this.cancelled.add(workflowId)
+    this.setWorkflowStatus(workflowId, 'cancelled')
+    return this.requireWorkflow(workflowId)
+  }
 
   createWorkflow(input: { goal: string; steps: StepSpec[] }): Workflow {
     const workflow = this.repos.workflows.create(input.goal)
@@ -118,11 +140,13 @@ export class WorkflowEngine {
         }
       }
       this.repos.steps.setPendingFeedback(target.id, note)
+      this.cancelled.delete(workflowId)
       this.setWorkflowStatus(workflowId, 'executing')
       await this.runPendingSteps(workflowId)
       return this.requireWorkflow(workflowId)
     }
 
+    this.cancelled.delete(workflowId)
     this.setWorkflowStatus(workflowId, 'executing')
     await this.runPendingSteps(workflowId)
     return this.requireWorkflow(workflowId)
@@ -132,6 +156,10 @@ export class WorkflowEngine {
     const workflow = this.requireWorkflow(workflowId)
     for (const step of this.stepsSorted(workflowId)) {
       if (step.status !== 'pending') continue
+      if (this.cancelled.has(workflowId)) {
+        this.repos.steps.updateStatus(step.id, 'skipped')
+        continue
+      }
 
       this.setStepStatus(step.id, 'running')
       const inputArtifacts = this.repos.artifacts.listByWorkflow(workflowId)
@@ -144,9 +172,18 @@ export class WorkflowEngine {
           feedback: step.pendingFeedback ?? null,
         })
       } catch (e) {
+        if (this.cancelled.has(workflowId)) {
+          this.skipRemaining(workflowId, step.position)
+          return
+        }
         this.setStepStatus(step.id, 'failed')
         this.setWorkflowStatus(workflowId, 'failed')
         throw e
+      }
+      if (this.cancelled.has(workflowId)) {
+        // abort 后 prompt 以 aborted resolve，可能带回半成品文本——丢弃不落库
+        this.skipRemaining(workflowId, step.position)
+        return
       }
       this.repos.steps.setPendingFeedback(step.id, null)
       const artifact = this.repos.artifacts.create({
@@ -164,7 +201,17 @@ export class WorkflowEngine {
       }
       this.setStepStatus(step.id, 'approved')
     }
+    if (this.cancelled.has(workflowId)) return
     this.setWorkflowStatus(workflowId, 'completed')
+  }
+
+  /** 取消后把指定位置起未完成的步骤标 skipped（含正在执行的当前步） */
+  private skipRemaining(workflowId: string, fromPosition: number): void {
+    for (const step of this.stepsSorted(workflowId)) {
+      if (step.position >= fromPosition && (step.status === 'pending' || step.status === 'running')) {
+        this.repos.steps.updateStatus(step.id, 'skipped')
+      }
+    }
   }
 
   private requireWorkflow(workflowId: string): Workflow {

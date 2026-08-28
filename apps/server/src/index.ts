@@ -51,12 +51,16 @@ export function createAppBundle(
 ): AppBundle {
   const repos = createRepositories(db)
   const bus = createEventBus()
+  // workflowId → 当前模型调用中断句柄（PiStepRunner 注册，cancel API 调用）
+  const cancellableAborts = new Map<string, () => Promise<void>>()
+  let engineRef: WorkflowEngine | null = null
   const runner =
     stepRunner ??
     (process.env.DEMO_MODE === '1'
       ? new MockStepRunner(repos, bus)
-      : createDefaultStepRunner(repos, bus))
+      : createDefaultStepRunner(repos, bus, cancellableAborts, (workflowId) => engineRef?.isCancelled(workflowId) ?? false))
   const engine = new WorkflowEngine(repos, runner, bus)
+  engineRef = engine
   engine.recoverInterrupted()
   const app = new Hono()
 
@@ -105,6 +109,19 @@ export function createAppBundle(
     }
   })
 
+  app.post('/workflows/:id/cancel', async (c) => {
+    const id = c.req.param('id')
+    try {
+      // 先置取消标志（半成品在 runner.run 返回后被拦截丢弃），再中断模型调用
+      const workflow = await engine.cancel(id)
+      const abort = cancellableAborts.get(id)
+      if (abort) await abort().catch(() => {})
+      return c.json(engine.getDetail(workflow.id))
+    } catch (e) {
+      return handleError(c, e)
+    }
+  })
+
   app.get('/workflows/:id', (c) => {
     try {
       return c.json(engine.getDetail(c.req.param('id')))
@@ -139,7 +156,9 @@ export function createAppBundle(
 
 function createDefaultStepRunner(
   repos: ReturnType<typeof createRepositories>,
-  bus: ReturnType<typeof createEventBus>
+  bus: ReturnType<typeof createEventBus>,
+  cancellableAborts: Map<string, () => Promise<void>>,
+  isCancelled: (workflowId: string) => boolean
 ): StepRunner {
   const config = loadPiConfig()
   const provider = new PiRuntimeProvider(config)
@@ -177,7 +196,14 @@ function createDefaultStepRunner(
       const seq = (streamSeq.get(stepId) ?? 0) + 1
       streamSeq.set(stepId, seq)
       bus.emit({ type: 'step.stream', workflowId, stepId, kind, delta, seq })
-    }
+    },
+    (workflowId, abort) => {
+      cancellableAborts.set(workflowId, abort)
+    },
+    (workflowId) => {
+      cancellableAborts.delete(workflowId)
+    },
+    isCancelled
   )
 }
 

@@ -1,6 +1,6 @@
 /**
  * M2-11 打回路径验证：Writer 步骤打回一次，验证 v2 生成与结构 diff 数据。
- * 前置：本地服务已启动，且进程带有 OPENCODE_GO_API_KEY。
+ * 前置：本地服务已启动，且进程带有 DEEPSEEK_API_KEY。
  * 用法：node scripts/verify-m2-11-modify.mjs
  */
 
