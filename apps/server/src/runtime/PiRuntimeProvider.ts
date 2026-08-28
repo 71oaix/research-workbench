@@ -122,6 +122,11 @@ function resolveSessionDir(agentDir: string, cwd: string): string {
   return path.join(agentDir, 'sessions', safePath)
 }
 
+export type StreamKind = 'text' | 'thinking'
+export type StreamDeltaCallback = (kind: StreamKind, delta: string) => void
+
+const STREAM_FLUSH_MS = 80
+
 export class PiRuntimeHandle {
   readonly id: string
   private usage: RuntimeUsage | null = null
@@ -133,7 +138,7 @@ export class PiRuntimeHandle {
     this.id = `pi-${crypto.randomUUID()}`
   }
 
-  async send(prompt: string): Promise<string> {
+  async send(prompt: string, onDelta?: StreamDeltaCallback): Promise<string> {
     const before = this.runtime.session.messages.length
     const timeoutMs = Number(process.env.PI_STEP_TIMEOUT_MS ?? 300_000)
     let timer: ReturnType<typeof setTimeout> | undefined
@@ -143,10 +148,58 @@ export class PiRuntimeHandle {
         timeoutMs
       )
     })
+    // 流式：订阅 message_update 的 text/thinking delta，80ms 批量回调；任何异常静默降级为整块模式
+    let unsubscribe: (() => void) | null = null
+    let flushTimer: ReturnType<typeof setTimeout> | undefined
+    const pending: Record<StreamKind, string> = { text: '', thinking: '' }
+    const flush = () => {
+      flushTimer = undefined
+      if (!onDelta) return
+      for (const kind of ['thinking', 'text'] as StreamKind[]) {
+        const delta = pending[kind]
+        if (!delta) continue
+        pending[kind] = ''
+        try {
+          onDelta(kind, delta)
+        } catch {
+          /* 下游异常不影响模型调用 */
+        }
+      }
+    }
+    const schedule = () => {
+      if (flushTimer === undefined) flushTimer = setTimeout(flush, STREAM_FLUSH_MS)
+    }
+    if (onDelta) {
+      try {
+        unsubscribe = this.runtime.session.subscribe((event) => {
+          if (event.type !== 'message_update') return
+          const streamEvent = event.assistantMessageEvent as {
+            type?: string
+            delta?: unknown
+          }
+          if (streamEvent.type === 'text_delta' && typeof streamEvent.delta === 'string') {
+            pending.text += streamEvent.delta
+            schedule()
+          } else if (streamEvent.type === 'thinking_delta' && typeof streamEvent.delta === 'string') {
+            pending.thinking += streamEvent.delta
+            schedule()
+          }
+        })
+      } catch {
+        unsubscribe = null
+      }
+    }
     try {
       await Promise.race([this.runtime.session.prompt(prompt), timeout])
     } finally {
       if (timer) clearTimeout(timer)
+      if (flushTimer !== undefined) clearTimeout(flushTimer)
+      try {
+        unsubscribe?.()
+      } catch {
+        /* 已退订 */
+      }
+      if (onDelta) flush()
     }
     this.usage = extractUsage(this.runtime.session.messages.slice(before))
     return extractLatestAssistantText(this.runtime.session.messages)

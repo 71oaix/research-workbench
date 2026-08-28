@@ -21,6 +21,7 @@ export default function App() {
   const decide = useWorkflowStore((state) => state.decide)
   const createWorkflow = useWorkflowStore((state) => state.createWorkflow)
   const live = useWorkflowStore((state) => state.live)
+  const streamBuffers = useWorkflowStore((state) => state.streamBuffers)
 
   useEffect(() => {
     void refreshList()
@@ -129,6 +130,7 @@ export default function App() {
                 artifacts={detail.artifacts}
                 decisions={detail.decisions}
                 workflowStatus={detail.workflow.status}
+                streamBuffers={streamBuffers}
                 onDecide={(wf, id, type, note) => void decide(wf, id, type, note)}
               />
             </>

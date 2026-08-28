@@ -90,4 +90,12 @@ updated: 2026-08-29
 | Plan: 三栏可拖拽自适应布局 | archived | plans/close/2026-08-29-layout-v3-resizable.md | 已实现并测试 |
 | Issue: 字阶与层级系统对齐 Claude | archived | issues/close/2026-08-29-typography-scale.md | 全局 +1~2px、衬线标题、字重层级 |
 | Plan: 字阶与层级系统对齐 Claude | archived | plans/close/2026-08-29-typography-scale.md | 已实现并测试 |
+| Issue: 产物折叠与展开联动 | archived | issues/close/2026-08-29-artifact-collapse.md | 已实现并测试 |
+| Plan: 产物折叠与展开联动 | archived | plans/close/2026-08-29-artifact-collapse.md | 已实现并测试 |
+| Issue: 真流式输出（WS step.stream） | archived | issues/close/2026-08-29-streaming.md | 已实现并测试 |
+| Plan: 真流式输出（WS step.stream） | archived | plans/close/2026-08-29-streaming.md | 已实现并测试 |
+| Issue: 思考块展示（探针实锤走分支 A） | archived | issues/close/2026-08-29-thinking-display.md | 已实现并测试 |
+| Plan: 思考块展示（探针实锤走分支 A） | archived | plans/close/2026-08-29-thinking-display.md | 已实现并测试 |
+| Issue: OpenAlex key 注入 + runbook（S2 已有链路） | archived | issues/close/2026-08-29-source-keys.md | 已实现并测试 |
+| Plan: OpenAlex key 注入 + runbook（S2 已有链路） | archived | plans/close/2026-08-29-source-keys.md | 已实现并测试 |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |

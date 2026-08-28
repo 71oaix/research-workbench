@@ -48,6 +48,23 @@ beforeEach(() => {
 })
 
 describe('workflow store', () => {
+  it('buffers step.stream deltas and clears them on artifact arrival', () => {
+    useWorkflowStore.setState({ detail: { workflow, steps: [step], artifacts: [], decisions: [] }, selectedId: 'wf-1' })
+    const apply = useWorkflowStore.getState().applyServerEvent
+    apply({ type: 'step.stream', workflowId: 'wf-1', stepId: 's1', kind: 'thinking', delta: '先想', seq: 1 })
+    apply({ type: 'step.stream', workflowId: 'wf-1', stepId: 's1', kind: 'text', delta: '# 计划', seq: 2 })
+    apply({ type: 'step.stream', workflowId: 'wf-1', stepId: 's1', kind: 'text', delta: '\n正文', seq: 3 })
+    let buffers = useWorkflowStore.getState().streamBuffers
+    expect(buffers.s1).toEqual({ text: '# 计划\n正文', thinking: '先想' })
+    // 其他工作流的流不串台
+    apply({ type: 'step.stream', workflowId: 'wf-other', stepId: 's1', kind: 'text', delta: 'X', seq: 4 })
+    expect(useWorkflowStore.getState().streamBuffers.s1.text).toBe('# 计划\n正文')
+    // artifact 到达清缓冲
+    apply({ type: 'artifact.updated', artifact })
+    buffers = useWorkflowStore.getState().streamBuffers
+    expect(buffers.s1).toBeUndefined()
+  })
+
   it('upserts workflow events into the list', () => {
     useWorkflowStore.getState().applyServerEvent({ type: 'workflow.created', workflow })
     expect(useWorkflowStore.getState().workflows).toHaveLength(1)

@@ -23,7 +23,8 @@ export function buildSourceRegistry(config: SearchConfig): SourceSpec[] {
       source: 'openalex',
       tier: 'T1',
       domains: ['medical', 'cs', 'cross-disciplinary', 'exhaustive'],
-      create: (cfg) => new OpenAlexClient({ mailto: cfg.openAlexMailto, timeoutMs: cfg.timeoutMs }),
+      create: (cfg) =>
+        new OpenAlexClient({ mailto: cfg.openAlexMailto, apiKey: cfg.openAlexApiKey, timeoutMs: cfg.timeoutMs }),
     },
     {
       source: 'arxiv',

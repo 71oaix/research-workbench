@@ -46,7 +46,7 @@ describe('PiStepRunner', () => {
       'planner',
       expect.stringContaining('规划智能体')
     )
-    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('调研 LLM 测试'))
+    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('调研 LLM 测试'), undefined)
     expect(result.artifactName).toBe('01-plan.md')
     expect(result.content).toContain('检索计划')
   })
@@ -96,7 +96,7 @@ describe('PiStepRunner', () => {
       feedback: '补充上下文工程方向',
     })
 
-    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('上一轮修改意见'))
-    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('补充上下文工程方向'))
+    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('上一轮修改意见'), undefined)
+    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('补充上下文工程方向'), undefined)
   })
 })

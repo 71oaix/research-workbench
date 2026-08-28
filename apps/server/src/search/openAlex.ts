@@ -8,6 +8,7 @@ const OPENALEX_SELECT =
 
 export interface OpenAlexOptions {
   mailto?: string
+  apiKey?: string
   baseUrl?: string
   timeoutMs?: number
   maxRetries?: number
@@ -21,6 +22,15 @@ export class OpenAlexClient implements AcademicSearchClient {
 
   constructor(private readonly options: OpenAlexOptions = {}) {
     this.rateLimiter = options.rateLimiter ?? new RateLimiter(100)
+    if (!options.apiKey) {
+      console.warn(
+        '[openalex] 未配置 OPENALEX_API_KEY：OpenAlex 2026-02 起要求 key，无 key 仅限试用额度，可能被限流（申请：https://openalex.org/users/me）'
+      )
+    }
+  }
+
+  private applyAuth(url: URL): void {
+    if (this.options.apiKey) url.searchParams.set('api_key', this.options.apiKey)
   }
 
   async search(query: string, limit: number, filters?: SearchFilters): Promise<SearchPaper[]> {
@@ -34,6 +44,7 @@ export class OpenAlexClient implements AcademicSearchClient {
     if (this.options.mailto) {
       url.searchParams.set('mailto', this.options.mailto)
     }
+    this.applyAuth(url)
 
     const data = await fetchJson(url.toString(), {
       timeoutMs: this.options.timeoutMs ?? 30_000,
@@ -63,6 +74,7 @@ export class OpenAlexClient implements AcademicSearchClient {
     url.searchParams.set('per-page', String(Math.min(Math.max(1, Math.floor(limit)), 100)))
     url.searchParams.set('select', OPENALEX_SELECT)
     if (this.options.mailto) url.searchParams.set('mailto', this.options.mailto)
+    this.applyAuth(url)
     const data = await fetchJson(url.toString(), {
       timeoutMs: this.options.timeoutMs ?? 30_000,
       maxRetries: this.options.maxRetries ?? 3,
@@ -89,6 +101,7 @@ export class OpenAlexClient implements AcademicSearchClient {
     url.searchParams.set('per-page', String(Math.min(unique.length, 50)))
     url.searchParams.set('select', OPENALEX_SELECT)
     if (this.options.mailto) url.searchParams.set('mailto', this.options.mailto)
+    this.applyAuth(url)
     const data = await fetchJson(url.toString(), {
       timeoutMs: this.options.timeoutMs ?? 30_000,
       maxRetries: this.options.maxRetries ?? 3,
@@ -109,6 +122,7 @@ export class OpenAlexClient implements AcademicSearchClient {
     const url = new URL(`${base}/works/${encodeURIComponent(workId)}`)
     url.searchParams.set('select', 'referenced_works')
     if (this.options.mailto) url.searchParams.set('mailto', this.options.mailto)
+    this.applyAuth(url)
     const data = await fetchJson(url.toString(), {
       timeoutMs: this.options.timeoutMs ?? 30_000,
       maxRetries: this.options.maxRetries ?? 3,
