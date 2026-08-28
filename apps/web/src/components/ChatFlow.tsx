@@ -64,6 +64,12 @@ function CyclingLabel({ role }: { role: Step['role'] }) {
   const phrases = PHRASES[role]
   const [i, setI] = useState(0)
   const [faded, setFaded] = useState(false)
+  const [seconds, setSeconds] = useState(0)
+  const startedAt = useRef(Date.now())
+  useEffect(() => {
+    const tick = setInterval(() => setSeconds(Math.floor((Date.now() - startedAt.current) / 1000)), 1000)
+    return () => clearInterval(tick)
+  }, [])
   useEffect(() => {
     if (phrases.length < 2) return
     const timer = setInterval(() => {
@@ -71,13 +77,14 @@ function CyclingLabel({ role }: { role: Step['role'] }) {
       setTimeout(() => {
         setI((index) => (index + 1) % phrases.length)
         setFaded(false)
-      }, 260)
-    }, 3000)
+      }, 400)
+    }, 6000)
     return () => clearInterval(timer)
   }, [phrases.length])
   return (
-    <span className={cn('transition-opacity duration-300 ease-out text-run', faded && 'opacity-0')}>
+    <span className={cn('transition-opacity duration-[400ms] ease-out text-run', faded && 'opacity-0')}>
       {phrases[i]}
+      <span className="num ml-1 text-[11px] font-medium text-ink3">（{seconds}s）</span>
     </span>
   )
 }
@@ -242,7 +249,8 @@ function StepBubble({
         <span className="ml-auto text-[12px] text-ink3">{step.label}</span>
       </div>
 
-      {step.status === 'running' && (streamText || streamThinking) && (
+      {/* 主产物已存在且非打回重跑 → 不再显示流式预览（避免候选池已落库后重复刷屏同类内容） */}
+      {step.status === 'running' && (group.length === 0 || step.pendingFeedback != null) && (streamText || streamThinking) && (
         <StreamPreview text={streamText} thinking={streamThinking} />
       )}
 
@@ -330,9 +338,10 @@ function renderContent(
   return <pre className="whitespace-pre-wrap break-words font-mono text-[12.5px] text-ink">{content}</pre>
 }
 
-/** 流式预览：思考块（浅色斜体，自动滚底）+ 正文流式（尾部光标）。thinking 停止后标签切为"已思考 N 秒"。 */
+/** 流式预览：思考块（浅色斜体，自动滚底）+ 正文流式（尾部光标，自动滚底）。thinking 停止后标签切为"已思考 N 秒"。 */
 function StreamPreview({ text, thinking }: { text?: string; thinking?: string }) {
   const thinkingRef = useRef<HTMLDivElement>(null)
+  const textRef = useRef<HTMLDivElement>(null)
   const [startedAt] = useState(() => Date.now())
   const [, tick] = useState(0)
   const thinkingDone = Boolean(text)
@@ -341,6 +350,11 @@ function StreamPreview({ text, thinking }: { text?: string; thinking?: string })
     const el = thinkingRef.current
     if (el) el.scrollTop = el.scrollHeight
   }, [thinking])
+
+  useEffect(() => {
+    const el = textRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [text])
 
   useEffect(() => {
     if (thinkingDone) return
@@ -366,7 +380,7 @@ function StreamPreview({ text, thinking }: { text?: string; thinking?: string })
           </div>
         )}
         {text && (
-          <div className="md-body streaming">
+          <div ref={textRef} className="md-body max-h-[420px] overflow-y-auto">
             <MarkdownView content={text} />
             <span className="stream-cursor" />
           </div>

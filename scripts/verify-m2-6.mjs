@@ -1,7 +1,7 @@
 /**
  * M2-6 手动验证脚本：四步全部等待审批，先打回计划一次，再逐步放行到完成。
  * 验证多轮迭代：打回后 01-plan.md 出现 v2，且最终流程 completed。
- * 前置：本地服务已启动，且进程带有 OPENCODE_GO_API_KEY。
+ * 前置：本地服务已启动，且进程带有 DEEPSEEK_API_KEY。
  * 用法：node scripts/verify-m2-6.mjs
  */
 

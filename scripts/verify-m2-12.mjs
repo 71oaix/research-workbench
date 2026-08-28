@@ -1,7 +1,7 @@
 /**
  * M2-12 验证脚本：思考强度（xhigh → max）、下载状态、检索并发与评估中位数。
  * 离线检查：验证 pi-ai 0.80.x 对 xhigh 的支持路径与注册的模型配置一致。
- * 在线检查（可选，需本地服务已启动且带 OPENCODE_GO_API_KEY）：
+ * 在线检查（可选，需本地服务已启动且带 DEEPSEEK_API_KEY）：
  *   node scripts/verify-m2-12.mjs --live
  */
 

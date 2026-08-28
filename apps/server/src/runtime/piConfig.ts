@@ -33,7 +33,7 @@ export function resolvePiAgentDir(env: NodeJS.ProcessEnv = process.env): string 
 }
 
 export function loadPiConfig(env: NodeJS.ProcessEnv = process.env): PiConfig {
-  const provider = env.PI_PROVIDER ?? 'opencode-go'
+  const provider = env.PI_PROVIDER ?? 'deepseek'
   const defaultModel = env.PI_DEFAULT_MODEL ?? 'deepseek-v4-flash'
   const roleModel: Partial<Record<Role, string>> = {}
   const roleThinkingLevel: Partial<Record<Role, ThinkingLevel>> = {}
@@ -56,7 +56,7 @@ export function loadPiConfig(env: NodeJS.ProcessEnv = process.env): PiConfig {
     }
   }
   return {
-    apiKey: env.OPENCODE_GO_API_KEY,
+    apiKey: env.DEEPSEEK_API_KEY,
     provider,
     defaultModel,
     roleModel,

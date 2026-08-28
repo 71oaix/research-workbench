@@ -1,6 +1,6 @@
 /**
  * M2-14 手动验证脚本：真实五步流程 + 检索召回（≥40）+ 失败源噪音（≤5）+ 全文编号一致性。
- * 前置：本地服务已启动，且进程带有 OPENCODE_GO_API_KEY。
+ * 前置：本地服务已启动，且进程带有 DEEPSEEK_API_KEY。
  * 用法：node scripts/verify-m2-14.mjs
  */
 

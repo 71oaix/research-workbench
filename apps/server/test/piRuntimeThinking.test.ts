@@ -30,7 +30,7 @@ vi.mock('@earendil-works/pi-coding-agent', () => ({
 
 describe('PiRuntimeProvider thinking level', () => {
   it('passes xhigh thinking level and the max mapping to the pi session', async () => {
-    const provider = new PiRuntimeProvider(loadPiConfig({ OPENCODE_GO_API_KEY: 'sk-test' }))
+    const provider = new PiRuntimeProvider(loadPiConfig({ DEEPSEEK_API_KEY: 'sk-test' }))
     runtimeFactorySpy.mockImplementation(
       (async (factory: (ctx: unknown) => Promise<unknown>) => {
         await factory({ cwd: process.cwd(), sessionManager: {}, sessionStartEvent: {} })
@@ -50,7 +50,7 @@ describe('PiRuntimeProvider thinking level', () => {
 
   it('honors per-role thinking level overrides', async () => {
     const provider = new PiRuntimeProvider(
-      loadPiConfig({ OPENCODE_GO_API_KEY: 'sk-test', PI_THINKING_REVIEWER: 'high' })
+      loadPiConfig({ DEEPSEEK_API_KEY: 'sk-test', PI_THINKING_REVIEWER: 'high' })
     )
     runtimeFactorySpy.mockImplementation(
       (async (factory: (ctx: unknown) => Promise<unknown>) => {

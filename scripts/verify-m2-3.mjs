@@ -1,7 +1,7 @@
 /**
  * M2-3 手动验证脚本：真实调用 deepseek-v4-flash + 真实学术检索（Semantic Scholar / OpenAlex）。
  * 四步全部等待审批，逐步放行。
- * 前置：本地服务已启动，且进程带有 OPENCODE_GO_API_KEY。
+ * 前置：本地服务已启动，且进程带有 DEEPSEEK_API_KEY。
  * 用法：node scripts/verify-m2-3.mjs
  */
 

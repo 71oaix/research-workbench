@@ -1,6 +1,6 @@
 /**
  * M2-9 手动验证脚本：真实检索 + 全文 + 证据写作 + 引用核验（Crossref 字段级交叉）。
- * 前置：本地服务已启动，且进程带有 OPENCODE_GO_API_KEY。
+ * 前置：本地服务已启动，且进程带有 DEEPSEEK_API_KEY。
  * 用法：node scripts/verify-m2-9.mjs
  */
 

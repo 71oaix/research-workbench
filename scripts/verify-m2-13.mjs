@@ -1,6 +1,6 @@
 /**
  * M2-13 手动验证脚本：真实五步流程（含 evaluator）+ 核验通过率 + 模型评估 + 下载覆盖。
- * 前置：本地服务已启动，且进程带有 OPENCODE_GO_API_KEY。
+ * 前置：本地服务已启动，且进程带有 DEEPSEEK_API_KEY。
  * 用法：node scripts/verify-m2-13.mjs
  */
 

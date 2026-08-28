@@ -18,6 +18,7 @@ interface WorkflowState {
   createWorkflow: (goal: string, includeWriter?: boolean) => Promise<void>
   selectWorkflow: (id: string) => Promise<void>
   startWorkflow: () => Promise<void>
+  cancelWorkflow: () => Promise<void>
   decide: (
     workflowId: string,
     stepId: string,
@@ -84,6 +85,18 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     }
   },
 
+  async cancelWorkflow() {
+    const workflowId = get().selectedId
+    if (!workflowId) return
+    try {
+      const detail = await api.cancelWorkflow(workflowId)
+      const workflows = await api.listWorkflows()
+      set({ detail, workflows, error: null, streamBuffers: {} })
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : String(e) })
+    }
+  },
+
   async decide(workflowId, stepId, type, note) {
     if (!workflowId || !stepId) return
     try {
@@ -103,7 +116,10 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       case 'workflow.updated': {
         set({ workflows: upsertWorkflow(state.workflows, event.workflow) })
         if (detail && detail.workflow.id === event.workflow.id) {
-          set({ detail: { ...detail, workflow: event.workflow } })
+          // 非运行态（取消/完成/失败）清空流缓冲，防止残留预览
+          const clearBuffers =
+            event.workflow.status !== 'executing' ? { streamBuffers: {} } : {}
+          set({ detail: { ...detail, workflow: event.workflow }, ...clearBuffers })
         }
         break
       }

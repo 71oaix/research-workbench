@@ -1,5 +1,6 @@
 import type { Artifact, UsageRecord } from '@research-workbench/shared'
 import { findLatestArtifact } from '../artifacts'
+import { EngineError } from '../engine/WorkflowEngine'
 import type { StepRunInput, StepRunResult, StepRunner } from '../engine/StepRunner'
 import type { EvidenceStepService } from '../evidence/EvidenceStepService'
 import type { ResearcherStepService, SelectorStepService } from '../search/types'
@@ -14,8 +15,18 @@ export class PiStepRunner implements StepRunner {
     private readonly researcher?: ResearcherStepService,
     private readonly evidence?: EvidenceStepService,
     private readonly selector?: SelectorStepService,
-    private readonly onStream?: (workflowId: string, stepId: string, kind: StreamKind, delta: string) => void
+    private readonly onStream?: (workflowId: string, stepId: string, kind: StreamKind, delta: string) => void,
+    private readonly onCancellable?: (workflowId: string, abort: () => Promise<void>) => void,
+    private readonly onCancellableEnd?: (workflowId: string) => void,
+    /** 取消轮询：session.abort 只能中断活跃流，send 间隙靠此检查点拦截 */
+    private readonly isCancelled?: (workflowId: string) => boolean
   ) {}
+
+  private ensureNotCancelled(workflowId: string): void {
+    if (this.isCancelled?.(workflowId)) {
+      throw new EngineError('workflow_cancelled', 499)
+    }
+  }
 
   async run({ step, goal, inputArtifacts, feedback }: StepRunInput): Promise<StepRunResult> {
     // summarizer 为确定性归纳整理，不调用模型
@@ -37,6 +48,8 @@ export class PiStepRunner implements StepRunner {
             ? buildReviewSpecPrompt()
           : '')
     const handle = await this.provider.createRuntime(step.role, systemPrompt)
+    this.ensureNotCancelled(step.workflowId)
+    this.onCancellable?.(step.workflowId, () => handle.abort())
     try {
       let prompt = buildStepPrompt({ goal, step, inputArtifacts, feedback })
       let selectorPrepare: Awaited<ReturnType<SelectorStepService['prepare']>> | null = null
@@ -86,6 +99,7 @@ export class PiStepRunner implements StepRunner {
       const streamDelta: StreamDeltaCallback | undefined = this.onStream
         ? (kind, delta) => this.onStream?.(step.workflowId, step.id, kind, delta)
         : undefined
+      this.ensureNotCancelled(step.workflowId)
       const content = await handle.send(prompt, streamDelta)
       this.recordUsage(step, handle.id)
 
@@ -99,9 +113,11 @@ export class PiStepRunner implements StepRunner {
         })
         let nextOutput: string | null = null
         if (nextPrompt) {
+          this.ensureNotCancelled(step.workflowId)
           nextOutput = await handle.send(nextPrompt, streamDelta)
           this.recordUsage(step, handle.id)
         }
+        this.ensureNotCancelled(step.workflowId)
         const { cardsMd } = await this.selector.commit({
           workflowId: step.workflowId,
           stepId: step.id,
@@ -112,6 +128,7 @@ export class PiStepRunner implements StepRunner {
       }
       return { artifactName: ARTIFACT_NAMES[step.role], content }
     } finally {
+      this.onCancellableEnd?.(step.workflowId)
       await handle.close()
     }
   }

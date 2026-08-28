@@ -20,7 +20,7 @@ export interface RuntimeUsage {
   costCny: number
 }
 
-const OPENCODE_BASE_URL = 'https://opencode.ai/zen/go/v1'
+const DEEPSEEK_BASE_URL = 'https://api.deepseek.com'
 const USD_TO_CNY = 7.25
 
 export class PiRuntimeProvider {
@@ -39,7 +39,7 @@ export class PiRuntimeProvider {
 
   async createRuntime(role: Role, systemPrompt: string): Promise<PiRuntimeHandle> {
     if (!this.config.apiKey) {
-      throw new EngineError('OPENCODE_GO_API_KEY 未配置，无法调用模型', 503)
+      throw new EngineError('DEEPSEEK_API_KEY 未配置，无法调用模型', 503)
     }
     const modelId = this.config.roleModel[role] ?? this.config.defaultModel
     const model = this.modelRegistry.find(this.config.provider, modelId)
@@ -96,7 +96,7 @@ export class PiRuntimeProvider {
     ])
     this.modelRegistry.registerProvider(this.config.provider, {
       name: this.config.provider,
-      baseUrl: OPENCODE_BASE_URL,
+      baseUrl: DEEPSEEK_BASE_URL,
       apiKey: this.config.apiKey,
       authHeader: true,
       api: 'openai-completions',
@@ -106,7 +106,8 @@ export class PiRuntimeProvider {
         reasoning: true,
         thinkingLevelMap: { high: 'high', xhigh: 'max' },
         input: ['text'] as ('text' | 'image')[],
-        cost: { input: 0.14, output: 0.28, cacheRead: 0.0028, cacheWrite: 0 },
+        // DeepSeek 官方非峰值单价（USD/1M）：input $0.22 / cacheRead $0.007 / output $0.66
+        cost: { input: 0.22, output: 0.66, cacheRead: 0.007, cacheWrite: 0 },
         contextWindow: 1_000_000,
         maxTokens: 65536,
       })),
@@ -125,7 +126,7 @@ function resolveSessionDir(agentDir: string, cwd: string): string {
 export type StreamKind = 'text' | 'thinking'
 export type StreamDeltaCallback = (kind: StreamKind, delta: string) => void
 
-const STREAM_FLUSH_MS = 80
+const STREAM_FLUSH_MS = 40
 
 export class PiRuntimeHandle {
   readonly id: string
@@ -203,6 +204,15 @@ export class PiRuntimeHandle {
     }
     this.usage = extractUsage(this.runtime.session.messages.slice(before))
     return extractLatestAssistantText(this.runtime.session.messages)
+  }
+
+  /** 中断当前模型调用（pi session.abort：prompt 以 stopReason='aborted' resolve，不 reject） */
+  async abort(): Promise<void> {
+    try {
+      await this.runtime.session.abort()
+    } catch {
+      /* 未在流式中时忽略 */
+    }
   }
 
   takeUsage(): RuntimeUsage | null {

@@ -1,6 +1,6 @@
 /**
  * M2-10 手动验证脚本：真实流程 + concern ledger + evaluation-report。
- * 前置：本地服务已启动，且进程带有 OPENCODE_GO_API_KEY。
+ * 前置：本地服务已启动，且进程带有 DEEPSEEK_API_KEY。
  * 用法：node scripts/verify-m2-10.mjs
  */
 
