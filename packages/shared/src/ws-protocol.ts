@@ -13,6 +13,7 @@ export type ServerEvent =
   | { type: 'workflow.created'; workflow: Workflow }
   | { type: 'workflow.updated'; workflow: Workflow }
   | { type: 'step.updated'; step: Step }
+  | { type: 'step.stream'; workflowId: string; stepId: string; kind: 'text' | 'thinking'; delta: string; seq: number }
   | { type: 'artifact.updated'; artifact: Artifact }
   | { type: 'paper.created'; paper: Paper }
   | { type: 'search.completed'; workflowId: string; stepId: string; stats: SearchStats }

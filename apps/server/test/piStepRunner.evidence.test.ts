@@ -66,8 +66,8 @@ describe('PiStepRunner evidence branches', () => {
 
     const result = await runner.run(input)
 
-    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('证据池（仅以此为事实来源）'))
-    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('### [1] Paper A'))
+    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('证据池（仅以此为事实来源）'), undefined)
+    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('### [1] Paper A'), undefined)
     expect(result.artifactName).toBe('03-draft.md')
   })
 
@@ -98,8 +98,8 @@ describe('PiStepRunner evidence branches', () => {
 
     const result = await runner.run(input)
 
-    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('自动引用检查报告'))
-    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('越界 / 缺失编号：99'))
+    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('自动引用检查报告'), undefined)
+    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('越界 / 缺失编号：99'), undefined)
     expect(repos.artifacts.listByWorkflow(workflow.id).map((a) => a.name)).toContain(
       'citation-lint.md'
     )

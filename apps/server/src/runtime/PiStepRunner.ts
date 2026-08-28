@@ -4,7 +4,7 @@ import type { StepRunInput, StepRunResult, StepRunner } from '../engine/StepRunn
 import type { EvidenceStepService } from '../evidence/EvidenceStepService'
 import type { ResearcherStepService, SelectorStepService } from '../search/types'
 import { buildReviewSpecPrompt, buildSearchSpecPrompt, buildWritingSpecPrompt } from '../specs'
-import { PiRuntimeProvider } from './PiRuntimeProvider'
+import { PiRuntimeProvider, type StreamDeltaCallback, type StreamKind } from './PiRuntimeProvider'
 import { ARTIFACT_NAMES, ROLE_SYSTEM_PROMPTS } from './prompts'
 
 export class PiStepRunner implements StepRunner {
@@ -13,7 +13,8 @@ export class PiStepRunner implements StepRunner {
     private readonly onUsage?: (usage: Omit<UsageRecord, 'id' | 'createdAt'>) => void,
     private readonly researcher?: ResearcherStepService,
     private readonly evidence?: EvidenceStepService,
-    private readonly selector?: SelectorStepService
+    private readonly selector?: SelectorStepService,
+    private readonly onStream?: (workflowId: string, stepId: string, kind: StreamKind, delta: string) => void
   ) {}
 
   async run({ step, goal, inputArtifacts, feedback }: StepRunInput): Promise<StepRunResult> {
@@ -82,7 +83,10 @@ export class PiStepRunner implements StepRunner {
         selectorPrepare = prepared
         prompt = `${prompt}\n\n${prepared.promptExtra}`
       }
-      const content = await handle.send(prompt)
+      const streamDelta: StreamDeltaCallback | undefined = this.onStream
+        ? (kind, delta) => this.onStream?.(step.workflowId, step.id, kind, delta)
+        : undefined
+      const content = await handle.send(prompt, streamDelta)
       this.recordUsage(step, handle.id)
 
       if (step.role === 'selector' && this.selector && selectorPrepare) {
@@ -95,7 +99,7 @@ export class PiStepRunner implements StepRunner {
         })
         let nextOutput: string | null = null
         if (nextPrompt) {
-          nextOutput = await handle.send(nextPrompt)
+          nextOutput = await handle.send(nextPrompt, streamDelta)
           this.recordUsage(step, handle.id)
         }
         const { cardsMd } = await this.selector.commit({

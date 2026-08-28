@@ -144,6 +144,7 @@ function createDefaultStepRunner(
   const config = loadPiConfig()
   const provider = new PiRuntimeProvider(config)
   const searchConfig = loadSearchConfig()
+  const streamSeq = new Map<string, number>()
   const searchService = new AcademicSearchService(buildSourceRegistry(searchConfig), searchConfig)
   const researcher = new ResearcherStepServiceImpl(searchService, repos, bus, searchConfig)
   const selector = new SelectorStepServiceImpl(
@@ -171,7 +172,12 @@ function createDefaultStepRunner(
     },
     researcher,
     evidence,
-    selector
+    selector,
+    (workflowId, stepId, kind, delta) => {
+      const seq = (streamSeq.get(stepId) ?? 0) + 1
+      streamSeq.set(stepId, seq)
+      bus.emit({ type: 'step.stream', workflowId, stepId, kind, delta, seq })
+    }
   )
 }
 

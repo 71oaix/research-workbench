@@ -69,9 +69,10 @@ describe('PiStepRunner researcher branch', () => {
       compensate: false,
     })
     expect(handle.send).toHaveBeenCalledWith(
-      expect.stringContaining('检索候选池（仅以此为事实来源，未筛选）')
+      expect.stringContaining('检索候选池（仅以此为事实来源，未筛选）'),
+      undefined
     )
-    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('### [1] Paper'))
+    expect(handle.send).toHaveBeenCalledWith(expect.stringContaining('### [1] Paper'), undefined)
     expect(result.artifactName).toBe('02-research.md')
   })
 
