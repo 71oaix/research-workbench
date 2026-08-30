@@ -7,6 +7,7 @@ import type {
   Step,
   StepStatus,
   UsageRecord,
+  UsageSummary,
   Workflow,
   WorkflowStatus,
 } from '@research-workbench/shared'
@@ -69,17 +70,8 @@ export interface UsageRepository {
   summaryByWorkflow(workflowId: string): UsageSummary[]
 }
 
-export interface UsageSummary {
-  workflowId: string
-  stepId: string | null
-  role: Role | null
-  calls: number
-  inputTokens: number
-  outputTokens: number
-  cacheReadTokens: number
-  cacheWriteTokens: number
-  costCny: number
-}
+// UsageSummary 已上移 shared，re-export 保持既有导入路径可用
+export type { UsageSummary }
 
 export interface Repositories {
   workflows: WorkflowRepository

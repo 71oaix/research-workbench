@@ -49,7 +49,7 @@ beforeEach(() => {
 
 describe('workflow store', () => {
   it('buffers step.stream deltas and clears them on artifact arrival', () => {
-    useWorkflowStore.setState({ detail: { workflow, steps: [step], artifacts: [], decisions: [] }, selectedId: 'wf-1' })
+    useWorkflowStore.setState({ detail: { workflow, steps: [step], artifacts: [], decisions: [], usageSummary: [] }, selectedId: 'wf-1' })
     const apply = useWorkflowStore.getState().applyServerEvent
     apply({ type: 'step.stream', workflowId: 'wf-1', stepId: 's1', kind: 'thinking', delta: '先想', seq: 1 })
     apply({ type: 'step.stream', workflowId: 'wf-1', stepId: 's1', kind: 'text', delta: '# 计划', seq: 2 })
@@ -78,7 +78,7 @@ describe('workflow store', () => {
   it('updates steps and artifacts of the selected workflow', () => {
     useWorkflowStore.setState({
       selectedId: 'wf-1',
-      detail: { workflow, steps: [], artifacts: [], decisions: [] },
+      detail: { workflow, steps: [], artifacts: [], decisions: [], usageSummary: [] },
     })
     useWorkflowStore.getState().applyServerEvent({ type: 'step.updated', step })
     expect(useWorkflowStore.getState().detail?.steps).toContainEqual(step)
@@ -97,12 +97,12 @@ describe('workflow store', () => {
       }
       return Promise.resolve({
         ok: true,
-        json: async () => ({ workflow, steps: [], artifacts: [], decisions: [] }),
+        json: async () => ({ workflow, steps: [], artifacts: [], decisions: [], usageSummary: [] }),
       })
     })
     useWorkflowStore.setState({
       selectedId: 'wf-1',
-      detail: { workflow, steps: [], artifacts: [], decisions: [] },
+      detail: { workflow, steps: [], artifacts: [], decisions: [], usageSummary: [] },
     })
 
     await useWorkflowStore.getState().decide('wf-1', 's1', 'modify', '补充上下文工程方向')
@@ -113,6 +113,42 @@ describe('workflow store', () => {
       type: 'modify',
       note: '补充上下文工程方向',
     })
+  })
+
+  it('accumulates usage.recorded into the selected workflow only', () => {
+    useWorkflowStore.setState({
+      selectedId: 'wf-1',
+      detail: { workflow, steps: [step], artifacts: [], decisions: [], usageSummary: [] },
+    })
+    const apply = useWorkflowStore.getState().applyServerEvent
+    const usage = {
+      id: 'u1',
+      workflowId: 'wf-1',
+      stepId: 's1',
+      role: 'planner' as const,
+      inputTokens: 100,
+      outputTokens: 50,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+      costCny: 0.02,
+      createdAt: '2026-08-15T00:00:00.000Z',
+    }
+
+    apply({ type: 'usage.recorded', usage })
+    apply({ type: 'usage.recorded', usage: { ...usage, id: 'u2', inputTokens: 30, costCny: 0.01 } })
+    let rows = useWorkflowStore.getState().detail?.usageSummary ?? []
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({ calls: 2, inputTokens: 130, outputTokens: 100, costCny: 0.03 })
+
+    // 其他工作流的用量不串台
+    apply({ type: 'usage.recorded', usage: { ...usage, id: 'u3', workflowId: 'wf-other' } })
+    rows = useWorkflowStore.getState().detail?.usageSummary ?? []
+    expect(rows).toHaveLength(1)
+
+    // 同一 step 新 role 独立成行（gap 回环多轮场景展示层再聚合）
+    apply({ type: 'usage.recorded', usage: { ...usage, id: 'u4', role: null } })
+    rows = useWorkflowStore.getState().detail?.usageSummary ?? []
+    expect(rows).toHaveLength(2)
   })
 
   it('refreshes the workflow list after a websocket reconnect', async () => {

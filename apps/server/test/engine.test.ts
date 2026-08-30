@@ -63,6 +63,27 @@ describe('WorkflowEngine', () => {
     expect(detail.steps.every((s) => s.status === 'approved')).toBe(true)
   })
 
+  it('includes usage summary in the workflow detail', () => {
+    const { engine, repos } = setup()
+    const workflow = engine.createWorkflow({
+      goal: '调研',
+      steps: [{ label: '生成计划', role: 'planner', requiresApproval: true }],
+    })
+    repos.usage.record({
+      workflowId: workflow.id,
+      stepId: null,
+      role: 'planner',
+      inputTokens: 100,
+      outputTokens: 50,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+      costCny: 0.02,
+    })
+    const detail = engine.getDetail(workflow.id)
+    expect(detail.usageSummary).toHaveLength(1)
+    expect(detail.usageSummary[0]).toMatchObject({ role: 'planner', calls: 1, costCny: 0.02 })
+  })
+
   it('rejects and cancels the workflow with a decision record', async () => {
     const { engine } = setup()
     const workflow = engine.createWorkflow({

@@ -60,7 +60,7 @@ const steps: Step[] = [
   } as Step,
 ]
 
-const detail: WorkflowDetail = { workflow, steps, artifacts: [], decisions: [] }
+const detail: WorkflowDetail = { workflow, steps, artifacts: [], decisions: [], usageSummary: [] }
 let currentDetail: WorkflowDetail = detail
 
 beforeEach(() => {
@@ -103,7 +103,8 @@ describe('App workflow UI', () => {
     render(<App />)
     const item = await screen.findByText('调研大模型测试')
     item.click()
-    expect(await screen.findByText('待启动')).toBeTruthy()
+    // 头部状态 pill 与运行总览状态行各渲染一次
+    expect((await screen.findAllByText('待启动')).length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText(/个步骤/)).toBeTruthy()
     expect(screen.getByText('启动工作流')).toBeTruthy()
   })
@@ -135,6 +136,7 @@ describe('App workflow UI', () => {
           createdAt: '2026-08-15T00:00:00.000Z',
         },
       ],
+      usageSummary: [],
     }
     render(<App />)
     const item = await screen.findByText('调研大模型测试')
@@ -162,6 +164,7 @@ describe('App workflow UI', () => {
         },
       ],
       decisions: [],
+      usageSummary: [],
     }
     render(<App />)
     const item = await screen.findByText('调研大模型测试')
@@ -205,6 +208,7 @@ describe('App workflow UI', () => {
         },
       ],
       decisions: [],
+      usageSummary: [],
     }
     render(<App />)
     const item = await screen.findByText('调研大模型测试')
