@@ -20,6 +20,9 @@ updated: 2026-08-29
 | 竞赛叙事与答辩预设 | active | architecture/01-competition-story.md | 作品故事 / 演示脚本 / 答辩 Q&A |
 | issues 目录规范 | active | issues/readme.md | SDD 任务索引与 frontmatter 规范 |
 | plans 目录规范 | active | plans/readme.md | SDD 方案索引与内容要求 |
+| Issue: M4-1 每步质量门 + 自动迭代回环 | active | issues/open/2026-08-27-m4-1-step-quality-gates.md | 待实现：每步自检+自动回环（自 PR #21 迁移） |
+| Issue: M4-2 缺口驱动二次检索 + 覆盖矩阵 | active | issues/open/2026-08-27-m4-2-gap-driven-retrieval.md | 待实现：覆盖判定+gap 补检索（自 PR #21 迁移） |
+| Issue: M4-3 缺口→相关论文路由 | active | issues/open/2026-08-27-m4-3-gap-to-related-routing.md | 待实现：无专论引相邻工作（自 PR #21 迁移） |
 | Issue: SDD 工作流 | archived | issues/close/2026-08-06-sdd-workflow.md | 已归档：流程建立 + 首个循环跑通 |
 | Issue: M1 项目骨架初始化 | archived | issues/close/2026-08-14-m1-project-skeleton.md | 已归档：骨架可运行 |
 | Plan: M1 项目骨架初始化 | archived | plans/close/2026-08-14-m1-project-skeleton.md | 已归档：实现完成 |
