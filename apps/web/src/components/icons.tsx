@@ -18,7 +18,7 @@ export function Icon({ children, size = 16, className }: { children: ReactNode; 
   )
 }
 
-export const IconBook = (s: { size?: number } = {}) => (
+export const IconBook = (s: { size?: number; className?: string } = {}) => (
   <Icon {...s}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></Icon>
 )
 export const IconPlus = (s: { size?: number } = {}) => (
@@ -33,19 +33,19 @@ export const IconPlan = (s: { size?: number } = {}) => (
 export const IconSearch = (s: { size?: number } = {}) => (
   <Icon {...s}><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></Icon>
 )
-export const IconFilter = (s: { size?: number } = {}) => (
+export const IconFilter = (s: { size?: number; className?: string } = {}) => (
   <Icon {...s}><path d="M22 3 9.8 15.2M22 3 15 22l-5.2-6.8M22 3 2 10l6.8 5.2" /></Icon>
 )
 export const IconPen = (s: { size?: number } = {}) => (
   <Icon {...s}><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></Icon>
 )
-export const IconScale = (s: { size?: number } = {}) => (
+export const IconScale = (s: { size?: number; className?: string } = {}) => (
   <Icon {...s}><path d="M12 3v18M5 7l-2 6a3 3 0 0 0 6 0L7 7zM17 7l-2 6a3 3 0 0 0 6 0l-2-6zM3 21h18" /></Icon>
 )
 export const IconShield = (s: { size?: number } = {}) => (
   <Icon {...s}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" /></Icon>
 )
-export const IconFile = (s: { size?: number } = {}) => (
+export const IconFile = (s: { size?: number; className?: string } = {}) => (
   <Icon {...s}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></Icon>
 )
 export const IconPanel = (s: { size?: number } = {}) => (

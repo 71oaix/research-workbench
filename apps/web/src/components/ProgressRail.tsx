@@ -1,5 +1,6 @@
 import type { Step } from '@research-workbench/shared'
 import { cn } from '../lib/cn'
+import { fmtDuration } from '../lib/format'
 import { expandStep } from './ChatFlow'
 import { IconCheck, IconFilter, IconPen, IconPlan, IconScale, IconSearch, IconShield } from './icons'
 
@@ -28,6 +29,10 @@ export function ProgressRail({ steps, workflowStatus }: { steps: Step[]; workflo
           const s = status(step, workflowStatus)
           const current = s.label === '进行中' || s.label === '待审批'
           const done = s.label === '已通过'
+          // 已通过的行右侧改显该步耗时；其余状态词
+          const tail = done
+            ? fmtDuration(new Date(step.updatedAt).getTime() - new Date(step.createdAt).getTime())
+            : s.label
           return (
             <button
               key={step.id}
@@ -51,7 +56,20 @@ export function ProgressRail({ steps, workflowStatus }: { steps: Step[]; workflo
                 {done ? <IconCheck size={13} /> : <Icon size={13} />}
               </span>
               <span className="min-w-0 flex-1 truncate">{step.label}</span>
-              <span className={cn('flex-none text-[12px]', s.cls)}>{s.label}</span>
+              <span className={cn('flex-none text-[12px]', s.cls)}>
+                {current && (
+                  <span
+                    aria-hidden
+                    className="mr-1 inline-block size-1.5 animate-pulse rounded-full bg-accent align-middle"
+                  />
+                )}
+                <span
+                  className={cn(done && 'num text-ink3')}
+                  title={done ? '自流程启动至该步完成的耗时（含上游等待审批）' : undefined}
+                >
+                  {tail}
+                </span>
+              </span>
             </button>
           )
         })}
