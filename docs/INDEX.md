@@ -17,7 +17,7 @@ updated: 2026-08-29
 | 本地运行手册 | active | guide/runbook.md | 安装 / 启动 / 验证 / 常见问题 |
 | MVP 基线决策记录 | active | decisions/2026-08-05-mvp-baseline.md | 2026-08-05 讨论确认的决策 |
 | 讨论记录 | active | decisions/2026-08-05-discussion-log.md | 08-04 → 08-05 各轮讨论节点与结论 |
-| 竞赛叙事与答辩预设 | active | architecture/01-competition-story.md | 作品故事 / 演示脚本 / 答辩 Q&A |
+| 竞赛叙事与答辩预设 | active | architecture/01-competition-story.md | 四可叙事 + 分镜级视频脚本（8/31 改版） |
 | issues 目录规范 | active | issues/readme.md | SDD 任务索引与 frontmatter 规范 |
 | plans 目录规范 | active | plans/readme.md | SDD 方案索引与内容要求 |
 | Issue: M4-1 每步质量门 + 自动迭代回环 | active | issues/open/2026-08-27-m4-1-step-quality-gates.md | 待实现：每步自检+自动回环（自 PR #21 迁移） |
@@ -37,8 +37,8 @@ updated: 2026-08-29
 | 评审：可交付性（截止 9/1 前） | active | research/2026-08-20-deliverable-readiness-audit.md | 差距清单 + 迭代轮数 + 时间线 + 赛题对照 |
 | 调研：华为赛题深度吸收方案 | active | research/2026-08-20-huawei-topic-absorption.md | 查询理解/迭代检索/排序/评测路线 + 参考系统对照 |
 | 评测：效果基线（检索/成本/真实运行） | active | research/2026-08-21-effect-baseline.md | recall 对比 + 成本表 + 真实运行指标 |
-| 竞赛材料：项目文档初稿（附件 2 模板） | active | specification/2026-08-21-competition-project-document.md | 概况/规划/实施方案/参考资料 |
-| 竞赛材料：作品简介草稿（300 字） | active | specification/2026-08-21-competition-intro.md | 296 字，待定稿转 PDF |
+| 竞赛材料：项目文档初稿（附件 2 模板） | active | specification/2026-08-21-competition-project-document.md | 0.4 定稿：七角色勘误/测试数/总览卡 |
+| 竞赛材料：作品简介草稿（300 字） | active | specification/2026-08-21-competition-intro.md | 295 字定稿，待转 PDF |
 | Plan: M4-1 覆盖质量门+迭代回环 | active | plans/open/2026-08-27-m4-1-step-quality-gates.md | 已实现并测试 |
 | Plan: M4-2 缺口驱动二次检索+覆盖矩阵 | archived | plans/close/2026-08-27-m4-2-gap-driven-retrieval.md | 已实现并测试 |
 | Plan: M4-3 缺口→相关论文路由 | archived | plans/close/2026-08-27-m4-3-gap-to-related-routing.md | 已实现并测试 |
