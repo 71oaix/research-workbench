@@ -1,11 +1,11 @@
 ---
 title: M4-2 检索/筛选质量门 + 缺口驱动二次检索 + 覆盖矩阵
-status: active
+status: archived
 created: 2026-08-27
-updated: 2026-08-27
+updated: 2026-08-31
 kind: feature
 priority: high
-triage: needs-plan
+triage: actionable
 areas: [server, web]
 ---
 

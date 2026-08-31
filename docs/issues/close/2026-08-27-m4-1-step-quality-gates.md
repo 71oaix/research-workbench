@@ -1,11 +1,11 @@
 ---
 title: M4-1 每步质量门 + 自动迭代回环（检索/筛选/写作各步自检，不合格自动重做）
-status: active
+status: archived
 created: 2026-08-27
-updated: 2026-08-27
+updated: 2026-08-31
 kind: feature
 priority: high
-triage: needs-plan
+triage: actionable
 areas: [server, web]
 ---
 
