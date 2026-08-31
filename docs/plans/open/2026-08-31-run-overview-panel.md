@@ -95,6 +95,27 @@ areas: [server, web]
 - 单测（web）：`RunOverview.test.tsx`——节点数/状态派生、成本按 role 聚合求和、论文数=卡片数、明细折叠；`store.test` 追加 usage.recorded 累加与跨工作流过滤用例。
 - 手动：`npm run dev`（预览 `http://localhost:5173`）→ ① DEMO_MODE=1 跑通全流程看总览卡数字增长与演示成本；② 真实模式跑一轮，抽查金额与 `usage_records` 表 SUM 一致；③ 刷新页面数字不丢；④ 右栏拖窄至 200px 目测状态机不溢出。
 
+## v2 修订：消除与执行进度的重叠 + 仪表盘美化（2026-08-31，用户确认）
+
+### 问题
+v1 实测后用户指出两点：① 总览卡的状态机节点行与 ProgressRail 步骤列表信息重复（7 节点 vs 7 行同一状态）；② 成本/资产展示太朴素（纯小字文本，无图形）。
+
+### 用户确认的方案
+1. **重叠消除 = 升级步骤列表为状态机**：删除总览卡的节点行；ProgressRail 升级——已完成行右侧改显**该步耗时**（替代"已通过"文案），当前步骤节点加脉冲动画；保留点击跳转。一种信息一种视图。
+2. **成本仪表盘 = 大数字 + 角色条形排行**：金额升为 22px 衬线大字；按角色成本渲染水平条形（按金额降序、相对最大值定宽、金额 0 的角色不占行、右端标金额），**替代**"按角色明细"折叠交互（图常显，无需展开）；下方一行小字显示调用次数与 tokens。
+3. 总览卡顶部保留"当前步骤 + 累计耗时"行；资产行加图标（Book/File/Scale/Filter）。
+
+### 实现步骤（v2）
+1. `lib/format.ts`：抽出 `fmtDuration`（RunOverview/ProgressRail 共用；<1s 显示 `<1秒`）。
+2. `RunOverview.tsx`：删节点行与折叠明细；新增条形排行（`bg-surface2` 轨道 + `bg-accent` 填充）；大数字排版；资产加图标。
+3. `ProgressRail.tsx`：已通过行显示 `fmtDuration(updatedAt-createdAt)`；current 节点加 `animate-pulse`。
+4. 测试：RunOverview.test 断言改为条形排行（行数=非零金额角色数、含金额文本）；App.test 无状态文案依赖（已核实）。
+
+### 验收标准（v2 追加）
+- [ ] 右栏不再有两处步骤状态视图；已完成步骤可见各自耗时
+- [ ] 成本条形排行常显、按金额降序、无折叠按钮
+- [ ] typecheck / test 全绿
+
 ## 文档更新清单
 
 - `docs/guide/runbook.md`：运行总览卡说明（成本口径、DEMO 模拟成本）

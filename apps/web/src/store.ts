@@ -172,7 +172,45 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       case 'paper.created':
         set({ live: { ...state.live, papers: state.live.papers + 1 } })
         break
-      case 'usage.recorded':
+      case 'usage.recorded': {
+        // 只累计当前选中工作流；行级 upsert（同角色多轮迭代会是多行，展示层按 role 再聚合）
+        if (
+          !detail ||
+          !event.usage.workflowId ||
+          event.usage.workflowId !== detail.workflow.id
+        )
+          break
+        const rows = [...detail.usageSummary]
+        const index = rows.findIndex(
+          (row) => row.stepId === event.usage.stepId && row.role === event.usage.role
+        )
+        if (index >= 0) {
+          const row = rows[index]
+          rows[index] = {
+            ...row,
+            calls: row.calls + 1,
+            inputTokens: row.inputTokens + event.usage.inputTokens,
+            outputTokens: row.outputTokens + event.usage.outputTokens,
+            cacheReadTokens: row.cacheReadTokens + event.usage.cacheReadTokens,
+            cacheWriteTokens: row.cacheWriteTokens + event.usage.cacheWriteTokens,
+            costCny: row.costCny + event.usage.costCny,
+          }
+        } else {
+          rows.push({
+            workflowId: event.usage.workflowId,
+            stepId: event.usage.stepId,
+            role: event.usage.role,
+            calls: 1,
+            inputTokens: event.usage.inputTokens,
+            outputTokens: event.usage.outputTokens,
+            cacheReadTokens: event.usage.cacheReadTokens,
+            cacheWriteTokens: event.usage.cacheWriteTokens,
+            costCny: event.usage.costCny,
+          })
+        }
+        set({ detail: { ...detail, usageSummary: rows } })
+        break
+      }
       case 'hello':
       case 'error':
         break

@@ -1,10 +1,11 @@
-import type { Artifact, Decision, Step, Workflow } from '@research-workbench/shared'
+import type { Artifact, Decision, Step, UsageSummary, Workflow } from '@research-workbench/shared'
 
 export interface WorkflowDetail {
   workflow: Workflow
   steps: Step[]
   artifacts: Artifact[]
   decisions: Decision[]
+  usageSummary: UsageSummary[]
 }
 
 interface StepSpecInput {

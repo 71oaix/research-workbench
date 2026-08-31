@@ -4,6 +4,7 @@ import type {
   ServerEvent,
   Step,
   StepSpec,
+  UsageSummary,
   Workflow,
 } from '@research-workbench/shared'
 import type { Repositories } from '@research-workbench/data'
@@ -24,6 +25,7 @@ export interface WorkflowDetail {
   steps: Step[]
   artifacts: Artifact[]
   decisions: Decision[]
+  usageSummary: UsageSummary[]
 }
 
 export class WorkflowEngine {
@@ -77,6 +79,7 @@ export class WorkflowEngine {
       steps: this.stepsSorted(workflowId),
       artifacts: this.repos.artifacts.listByWorkflow(workflowId),
       decisions: this.repos.decisions.listByWorkflow(workflowId),
+      usageSummary: this.repos.usage.summaryByWorkflow(workflowId),
     }
   }
 

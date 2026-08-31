@@ -3,6 +3,7 @@ import { ArtifactFileTabs } from './components/ArtifactFileTabs'
 import { ChatFlow } from './components/ChatFlow'
 import { ColumnDivider } from './components/ColumnDivider'
 import { ProgressRail } from './components/ProgressRail'
+import { RunOverview } from './components/RunOverview'
 import { WorkflowList } from './components/WorkflowList'
 import { IconPanel, IconPlus, IconSpark, IconXCircle } from './components/icons'
 import { useWorkflowStore } from './store'
@@ -164,10 +165,17 @@ export default function App() {
           )}
           <aside
             className={cn(
-              'fixed inset-y-0 right-0 z-40 flex w-[276px] max-w-[85vw] flex-col border-l border-line bg-surface shadow-(--shadow-lift) transition-transform duration-200 lg:static lg:z-auto lg:w-auto lg:translate-x-0 lg:shadow-none',
+              'fixed inset-y-0 right-0 z-40 flex w-[276px] max-w-[85vw] flex-col overflow-y-auto border-l border-line bg-surface shadow-(--shadow-lift) transition-transform duration-200 lg:static lg:z-auto lg:w-auto lg:translate-x-0 lg:shadow-none',
               railOpen ? 'translate-x-0' : 'translate-x-full'
             )}
           >
+            <RunOverview
+              workflow={detail.workflow}
+              steps={detail.steps}
+              artifacts={detail.artifacts}
+              decisions={detail.decisions}
+              usageSummary={detail.usageSummary}
+            />
             <ProgressRail steps={detail.steps} workflowStatus={detail.workflow.status} />
             <ArtifactFileTabs artifacts={detail.artifacts} steps={detail.steps} />
           </aside>

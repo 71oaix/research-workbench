@@ -3,6 +3,17 @@ import type { WorkflowEventBus } from '../engine/eventBus'
 import type { StepRunInput, StepRunResult, StepRunner } from '../engine/StepRunner'
 import { ARTIFACT_NAMES } from './prompts'
 
+// 演示模式的模拟用量：成本面板（运行总览）在 DEMO 下有数据可展示
+const MOCK_USAGE: Record<string, { input: number; output: number; cost: number }> = {
+  planner: { input: 1800, output: 900, cost: 0.021 },
+  researcher: { input: 2400, output: 1200, cost: 0.028 },
+  selector: { input: 8200, output: 2600, cost: 0.084 },
+  writer: { input: 12400, output: 5200, cost: 0.153 },
+  evaluator: { input: 6400, output: 1500, cost: 0.062 },
+  reviewer: { input: 4200, output: 1100, cost: 0.041 },
+  summarizer: { input: 3100, output: 800, cost: 0.03 },
+}
+
 export class MockStepRunner implements StepRunner {
   constructor(
     private readonly repos: Repositories,
@@ -11,6 +22,20 @@ export class MockStepRunner implements StepRunner {
 
   async run({ step, goal, feedback }: StepRunInput): Promise<StepRunResult> {
     await sleep(350)
+    const usage = MOCK_USAGE[step.role]
+    if (usage) {
+      const record = this.repos.usage.record({
+        workflowId: step.workflowId,
+        stepId: step.id,
+        role: step.role,
+        inputTokens: usage.input,
+        outputTokens: usage.output,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
+        costCny: usage.cost,
+      })
+      this.bus.emit({ type: 'usage.recorded', usage: record })
+    }
     const artifactName = ARTIFACT_NAMES[step.role]
     switch (step.role) {
       case 'planner':
