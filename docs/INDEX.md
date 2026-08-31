@@ -107,4 +107,6 @@ updated: 2026-08-31
 | Plan: 思考块展示（探针实锤走分支 A） | archived | plans/close/2026-08-29-thinking-display.md | 已实现并测试 |
 | Issue: OpenAlex key 注入 + runbook（S2 已有链路） | archived | issues/close/2026-08-29-source-keys.md | 已实现并测试 |
 | Plan: OpenAlex key 注入 + runbook（S2 已有链路） | archived | plans/close/2026-08-29-source-keys.md | 已实现并测试 |
+| Issue: 右栏运行总览面板（状态机 + 成本 + 资产） | active | issues/open/2026-08-31-run-overview-panel.md | 待确认 plan：集成总览卡（提交前最终优化） |
+| Plan: 右栏运行总览面板 | active | plans/open/2026-08-31-run-overview-panel.md | 已编写，待人确认后实现 |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |
