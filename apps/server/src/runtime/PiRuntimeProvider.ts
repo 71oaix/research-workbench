@@ -96,7 +96,7 @@ export class PiRuntimeProvider {
     ])
     this.modelRegistry.registerProvider(this.config.provider, {
       name: this.config.provider,
-      baseUrl: DEEPSEEK_BASE_URL,
+      baseUrl: this.config.baseUrl || DEEPSEEK_BASE_URL,
       apiKey: this.config.apiKey,
       authHeader: true,
       api: 'openai-completions',

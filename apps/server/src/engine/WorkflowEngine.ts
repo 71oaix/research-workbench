@@ -20,6 +20,9 @@ export class EngineError extends Error {
   }
 }
 
+/** 单产物字符上限（正常产物千级；防模型输出失控/复读提示词的兜底拦截） */
+const MAX_ARTIFACT_CHARS = 300_000
+
 export interface WorkflowDetail {
   workflow: Workflow
   steps: Step[]
@@ -189,6 +192,15 @@ export class WorkflowEngine {
         // abort 后 prompt 以 aborted resolve，可能带回半成品文本——丢弃不落库
         this.skipRemaining(workflowId, step.position)
         return
+      }
+      // 输出失控防护：正常产物为千级字符，超长（如复读提示词）视为模型异常，拦截不落库
+      if (result.content.length > MAX_ARTIFACT_CHARS) {
+        this.setStepStatus(step.id, 'failed')
+        this.setWorkflowStatus(workflowId, 'failed')
+        throw new EngineError(
+          `步骤「${step.label}」产物异常过大（${result.content.length} 字符），疑似模型输出失控，已拦截不落库`,
+          502
+        )
       }
       this.repos.steps.setPendingFeedback(step.id, null)
       const artifact = this.repos.artifacts.create({
