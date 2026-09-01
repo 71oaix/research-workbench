@@ -111,8 +111,14 @@ updated: 2026-09-01
 | Plan: 右栏运行总览面板 | active | plans/open/2026-08-31-run-overview-panel.md | 已实现并测试（待合并） |
 | Issue: 证据门槛 + 评估迭代闭环 + 文档补位 | active | issues/open/2026-09-01-quality-loop-and-evidence-bar.md | C 组（文档补位）已实现：白名单 + Firecrawl 网页搜索兜底；A/B 组待确认 plan |
 | Plan: 证据门槛 + 评估迭代闭环 + 文档补位 | active | plans/open/2026-09-01-quality-loop-and-evidence-bar.md | A/B/C 三组范围，C 组已实现，A/B 待人确认后实现 |
-| Issue: Firecrawl 网页搜索兜底（通用 web 搜索工具） | active | issues/open/2026-09-01-firecrawl-web-search.md | 白名单未命中行真实 web 搜索兜底，已实现并测试（待合并） |
-| Plan: Firecrawl 网页搜索兜底 | active | plans/open/2026-09-01-firecrawl-web-search.md | 已实现并测试，真实 key 端到端通过（待合并） |
+| Issue: Firecrawl 网页搜索兜底（通用 web 搜索工具） | archived | issues/close/2026-09-01-firecrawl-web-search.md | 已实现并合并（PR #37），白名单优先 + 真实 web 搜索兜底 |
+| Plan: Firecrawl 网页搜索兜底 | archived | plans/close/2026-09-01-firecrawl-web-search.md | 已实现并测试，真实 key 端到端通过，已合并 |
+| Issue: 竞赛演示视频录制（怎么录/录几遍/写脚本） | archived | issues/close/2026-09-01-demo-video-recording.md | 视频已交付提交（131MB 合规），材料齐备，已归档 |
+| Plan: 竞赛演示视频录制 | archived | plans/close/2026-09-01-demo-video-recording.md | OBS+剪映完成，真实主录+剪映最简剪辑，已执行归档 |
+| 调研：竞赛演示视频录制方法论 | active | research/2026-09-01-demo-video-production-methodology.md | 怎么录/录几遍/写脚本 + 本机环境实测 |
+| 调研：AI/Agent 产品演示视频行业实践 | active | research/2026-09-01-demo-video-industry-practices.md | 行业惯例/等待处理/竞赛作品集套路 + AI 制作工具链 |
 | 调研：Agent 网页/文档内容获取行业实践 | active | research/2026-09-01-web-content-acquisition-survey.md | llms.txt/正文提取/预算化三层结论，C 组定案依据 |
+| 调研：演示视频脚本/讲稿写作方法论 | active | research/2026-09-01-demo-video-scriptwriting-methodology.md | 分镜表格模板/旁白语速/5分钟结构/真实运行/败笔自查，13 项实测来源 |
+| 调研：演示视频录屏技术最佳实践 | active | research/2026-09-01-demo-video-screencast-best-practices.md | Windows 工具/录制参数/音画素材/剪辑/遍数/坑，OBS+剪映定案依据 |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |
 | Issue: 接入百炼 DashScope 兼容端点（千问 key + deepseek-v4-flash-0731） | archived | issues/close/2026-09-01-dashscope-relay.md | 空回复双根因修复；2026-09-02 已回迁官方 API（兼容修复保留，双端点通用） |

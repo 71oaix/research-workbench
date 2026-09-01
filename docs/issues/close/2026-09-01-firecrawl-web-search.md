@@ -1,13 +1,13 @@
 ---
 title: Firecrawl 网页搜索兜底（替代硬编码白名单的通用 web 搜索工具）
-status: active
+status: archived
 created: 2026-09-01
 updated: 2026-09-01
 kind: feature
 priority: urgent
 triage: actionable
 areas: [server]
-resolution_plan: "docs/plans/open/2026-09-01-firecrawl-web-search.md"
+resolution_plan: "docs/plans/close/2026-09-01-firecrawl-web-search.md"
 ---
 
 # Firecrawl 网页搜索兜底（通用 web 搜索工具）
