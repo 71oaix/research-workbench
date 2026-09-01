@@ -26,7 +26,11 @@ describe('PiStepRunner', () => {
   it('builds prompt with goal/artifacts and returns role artifact name', async () => {
     const handle = {
       id: 'h1',
-      send: vi.fn().mockResolvedValue('# 检索计划\n...'),
+      send: vi
+        .fn()
+        .mockResolvedValue(
+          '# 检索计划\n\n1. 子问题一：LLM 测试的方法论与工具链现状\n2. 子问题二：评测指标与基准数据集选择\n3. 综合对比后输出调研综述初稿'
+        ),
       close: vi.fn().mockResolvedValue(undefined),
     }
     const provider = {
@@ -54,7 +58,11 @@ describe('PiStepRunner', () => {
   it('records usage when available', async () => {
     const handle = {
       id: 'h1',
-      send: vi.fn().mockResolvedValue('ok'),
+      send: vi
+        .fn()
+        .mockResolvedValue(
+          '# 调研计划草稿\n\n本计划列出全部子问题与检索关键词，覆盖范围与调研目标保持一致，并给出各阶段的执行顺序与产物说明。'
+        ),
       close: vi.fn().mockResolvedValue(undefined),
     }
     const provider = {
@@ -80,7 +88,11 @@ describe('PiStepRunner', () => {
   it('injects the previous round feedback into the prompt', async () => {
     const handle = {
       id: 'h1',
-      send: vi.fn().mockResolvedValue('ok'),
+      send: vi
+        .fn()
+        .mockResolvedValue(
+          '# 修订后检索计划\n\n按上一轮意见补充上下文工程方向的检索关键词与子问题分解，并更新证据筛选口径与输出大纲。'
+        ),
       close: vi.fn().mockResolvedValue(undefined),
     }
     const provider = {

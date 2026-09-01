@@ -35,7 +35,7 @@ updated: 2026-08-17
 | packages/shared | 核心类型 + WS 协议 | ✅ |
 | packages/data | SQLite schema + 仓储接口/实现 | ✅ |
 | WorkflowEngine（apps/server/src/engine） | 状态机 + artifact 交接 + 审批点 + 事件广播 | ✅（M2-1） |
-| PiRuntimeProvider（apps/server/src/runtime） | pi SDK 0.80.3 + opencode-go/deepseek-v4-flash，角色提示词注入，usage 落库 | ✅（M2-2） |
+| PiRuntimeProvider（apps/server/src/runtime） | pi SDK 0.80.3 + deepseek-v4-flash（官方或百炼兼容端点，`DEEPSEEK_BASE_URL` 可配），角色提示词注入，usage 落库 | ✅（M2-2） |
 | apps/server | Hono 入口、/health、工作流 REST、WS 占位 | ✅ |
 | apps/web | 三栏占位页 + 健康检查 | ✅ |
 | scripts/dev.js | 一键并行启动 | ✅ |
@@ -53,8 +53,10 @@ updated: 2026-08-17
 
 ## 模型运行时（M2-2）
 
-- Provider：`opencode-go`，base URL `https://opencode.ai/zen/go/v1`，Bearer key（`OPENCODE_GO_API_KEY`）
-- 默认模型：`deepseek-v4-flash`（已实测）；`PI_MODEL_<ROLE>` 可覆盖
+- Provider：`deepseek`，默认 base URL `https://api.deepseek.com`，Bearer key（`DEEPSEEK_API_KEY`）；
+  `DEEPSEEK_BASE_URL` 可指向任意 OpenAI 兼容端点（如阿里云百炼
+  `https://dashscope.aliyuncs.com/compatible-mode/v1`，模型名 `deepseek-v4-flash-0731`）
+- 默认模型：`deepseek-v4-flash`（已实测）；`PI_DEFAULT_MODEL` / `PI_MODEL_<ROLE>` 可覆盖
 - 思考强度：默认全部角色 `xhigh`（映射 DeepSeek `reasoning_effort=max`）；模型注册声明
   `thinkingLevelMap: { high: 'high', xhigh: 'max' }`，`PI_THINKING_LEVEL` / `PI_THINKING_<ROLE>` 可覆盖
 - 角色 system prompt 通过 `resourceLoaderOptions.systemPromptOverride` 注入（0.80.3 的正确入口）

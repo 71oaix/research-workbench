@@ -32,7 +32,12 @@ export class PiRuntimeProvider {
     mkdirSync(this.config.agentDir, { recursive: true })
     this.authStorage = AuthStorage.create()
     this.modelRegistry = ModelRegistry.create(this.authStorage)
-    if (config.apiKey) {
+    const apiKey = this.config.apiKey
+    if (apiKey) {
+      // 运行时覆盖凭据：pi 的 AuthStorage 会优先读 auth.json 里存的旧 key（如旧的
+      // DeepSeek 官方 key），导致换 key 后仍发旧 key 被端点 401 拒（静默失败成空回复）。
+      // setRuntimeApiKey 优先级最高且不落盘，确保始终使用 DEEPSEEK_API_KEY 配置值。
+      this.authStorage.setRuntimeApiKey(this.config.provider, apiKey)
       this.registerModels()
     }
   }
@@ -110,6 +115,13 @@ export class PiRuntimeProvider {
         cost: { input: 0.22, output: 0.66, cacheRead: 0.007, cacheWrite: 0 },
         contextWindow: 1_000_000,
         maxTokens: 65536,
+        compat: {
+          // 关键兼容开关：provider 名为 deepseek 时 pi 默认把 system 角色转成 developer
+          // 发送（supportsDeveloperRole=true），OpenAI 兼容中转（如百炼 DashScope）不认识
+          // developer 角色会直接 400，模型调用失败被 pi 吞成空回复（stopReason=error）。
+          // 强制关闭后 system 消息原样发送，官方端点与兼容端点行为一致。
+          supportsDeveloperRole: false,
+        },
       })),
     })
   }
@@ -203,7 +215,9 @@ export class PiRuntimeHandle {
       if (onDelta) flush()
     }
     this.usage = extractUsage(this.runtime.session.messages.slice(before))
-    return extractLatestAssistantText(this.runtime.session.messages)
+    // 只取本次 prompt 之后的 assistant 文本；此前未过滤 role，模型空输出时会把
+    // user 消息（prompt 骨架）当作模型回复落库（假完成），属真实事故来源
+    return extractLatestAssistantText(this.runtime.session.messages.slice(before))
   }
 
   /** 中断当前模型调用（pi session.abort：prompt 以 stopReason='aborted' resolve，不 reject） */
@@ -232,7 +246,9 @@ export class PiRuntimeHandle {
 
 function extractLatestAssistantText(messages: unknown[]): string {
   for (let i = messages.length - 1; i >= 0; i--) {
-    const message = messages[i] as { content?: unknown }
+    const message = messages[i] as { role?: string; content?: unknown }
+    // 只认 assistant 消息（有 role 字段时）；防止把 user/tool 消息当模型回复
+    if (message.role && message.role !== 'assistant') continue
     const content = message.content
     if (Array.isArray(content)) {
       const text = (content as { type?: string; text?: string }[])
