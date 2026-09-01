@@ -2,7 +2,7 @@
 title: 本地运行手册（runbook）
 status: active
 created: 2026-08-14
-updated: 2026-08-31
+updated: 2026-09-01
 ---
 
 # 本地运行手册
@@ -406,6 +406,34 @@ npx tsx scripts/cost-report.mjs
 - 覆盖判定用双语关键词搭桥（中文子问题 vs 英文论文）；对同主题综述判定偏粗（多子问题被同批论文覆盖），精细区分需语义/向量检索（延后）；
 - **v2 模型复核（2026-08-28）**：规则判为"部分/缺失"的子问题会批量送模型精判（selector 角色会话、无工具、仅输出 JSON，90s 超时），模型结论优先且过滤越界论文编号；judge 不可用/超时/解析失败时**静默回退规则结果**；判定升级后重算缺口清单再进 gap 回环。环境变量 `PI_JUDGE_TIMEOUT_MS` 可调超时；
 - 澄清流程：规划出现"澄清请求"时，审批卡**无"通过"按钮**，用"提交回答并重新规划"（写答案）→ Planner 重跑生成完整计划。
+
+## Firecrawl 网页搜索兜底配置（2026-09-01）
+
+selector 证据补位采用"官方文档白名单优先 + Firecrawl 真实网页搜索兜底"：
+白名单（AutoGen / LangGraph / LangChain / CrewAI / Mem0 / Letta / MemGPT / MetaGPT
+8 个域）为确定性免费优先种子，对**白名单未命中**且学术文献覆盖稀疏的子问题，
+用 Firecrawl `search` 做真实 web 搜索，命中任意权威网页（官方文档 / 博客 / 教程 /
+仓库 README）作为 writer 参考素材，以"补充参考（官方文档 / 网页）"段附在证据卡，
+**不进引用编号与核验序列**。
+
+环境变量（key 绝不写入仓库）：
+
+```bash
+FIRECRAWL_API_KEY=fc-...   # 可选，Firecrawl v2 API key（https://firecrawl.dev，免费层约 1000 credits/月）
+                           # 缺失时静默降级为纯白名单，不阻塞主流程
+```
+
+行为与预算纪律（免费层额度有限，代码按此约束）：
+
+- 每个白名单未覆盖且非 covered 的子问题**至多 1 次 search**（limit 4，取前 3 篇），
+  查询 = 中文子问题 + plan 双语关键词（前 6 个英文词）拼接，提升英文权威网页命中率；
+- description ≥ 600 字符直接用，过短才对 top-1 做 **1 次 scrape**（转 Markdown）；
+  每篇摘要截断 ≤ 2000 字符；search ~1 credit、scrape ~1-5 credits；
+- 去重与优先：按子问题、按 URL 去重，**白名单优先**于第三方网页；
+- 失败语义：无 key / 网络 / 超时静默跳过，不影响主流程与已有白名单结果。
+
+> 注意：`npm run dev` 通过 Node 22 `--env-file` 加载 `.env.local`，**只在进程启动时读取一次**；
+> 修改 `.env.local` 后需重启 dev server（`Ctrl+C` 后重新 `npm run dev`）才会生效。
 
 ## 运行总览卡说明（2026-08-31）
 

@@ -41,7 +41,8 @@ describe('officialDocs', () => {
       ],
     ])
     const md = renderOfficialDocsSection(docs)
-    expect(md).toContain('官方文档参考')
+    expect(md).toContain('补充参考')
+    expect(md).toContain('官方文档 / 网页')
     expect(md).toContain('不进引用编号与核验序列')
     expect(md).toContain('来源：Mem0 官方文档')
     expect(md).toContain('https://docs.mem0.ai/memory')

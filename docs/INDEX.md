@@ -2,7 +2,7 @@
 title: 文档索引
 status: active
 created: 2026-08-05
-updated: 2026-08-31
+updated: 2026-09-01
 ---
 
 # 文档索引
@@ -109,8 +109,10 @@ updated: 2026-08-31
 | Plan: OpenAlex key 注入 + runbook（S2 已有链路） | archived | plans/close/2026-08-29-source-keys.md | 已实现并测试 |
 | Issue: 右栏运行总览面板（状态机 + 成本 + 资产） | active | issues/open/2026-08-31-run-overview-panel.md | 已实现并测试（待合并） |
 | Plan: 右栏运行总览面板 | active | plans/open/2026-08-31-run-overview-panel.md | 已实现并测试（待合并） |
-| Issue: 证据门槛 + 评估迭代闭环 + 文档补位 | active | issues/open/2026-09-01-quality-loop-and-evidence-bar.md | 热身暴露四缺陷，待确认 plan |
-| Plan: 证据门槛 + 评估迭代闭环 + 文档补位 | active | plans/open/2026-09-01-quality-loop-and-evidence-bar.md | A/B/C 三组范围，待人确认后实现 |
+| Issue: 证据门槛 + 评估迭代闭环 + 文档补位 | active | issues/open/2026-09-01-quality-loop-and-evidence-bar.md | C 组（文档补位）已实现：白名单 + Firecrawl 网页搜索兜底；A/B 组待确认 plan |
+| Plan: 证据门槛 + 评估迭代闭环 + 文档补位 | active | plans/open/2026-09-01-quality-loop-and-evidence-bar.md | A/B/C 三组范围，C 组已实现，A/B 待人确认后实现 |
+| Issue: Firecrawl 网页搜索兜底（通用 web 搜索工具） | active | issues/open/2026-09-01-firecrawl-web-search.md | 白名单未命中行真实 web 搜索兜底，已实现并测试（待合并） |
+| Plan: Firecrawl 网页搜索兜底 | active | plans/open/2026-09-01-firecrawl-web-search.md | 已实现并测试，真实 key 端到端通过（待合并） |
 | 调研：Agent 网页/文档内容获取行业实践 | active | research/2026-09-01-web-content-acquisition-survey.md | llms.txt/正文提取/预算化三层结论，C 组定案依据 |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |
 | Issue: 接入百炼 DashScope 兼容端点（千问 key + deepseek-v4-flash-0731） | archived | issues/close/2026-09-01-dashscope-relay.md | 空回复双根因修复；2026-09-02 已回迁官方 API（兼容修复保留，双端点通用） |

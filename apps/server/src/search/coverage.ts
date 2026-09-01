@@ -152,7 +152,7 @@ function render(rows: CoverageRow[]): string {
           : '—'
     const docNote =
       row.docRefs && row.docRefs.length > 0 && row.coverage !== 'covered'
-        ? `${suggestion === '—' ? '' : '；'}已附官方文档 ${row.docRefs.length} 篇（见证据卡"官方文档参考"）`
+        ? `${suggestion === '—' ? '' : '；'}已附补充参考 ${row.docRefs.length} 篇（见证据卡"补充参考"）`
         : ''
     lines.push(`| ${row.id}. ${row.question}${sourceTag} | ${row.coverage} | ${row.papers.length ? row.papers.join('、') : '（无）'} | ${suggestion}${docNote} |`)
   }

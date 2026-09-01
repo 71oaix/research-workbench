@@ -17,7 +17,7 @@ import {
   refineCoverage,
   type CoverageJudge,
 } from './coverageJudge'
-import { fetchOfficialDocs, renderOfficialDocsSection, renderTitlesOnlySection } from './officialDocs'
+import { fetchOfficialDocs, fetchWebDocs, mergeDocRefs, renderOfficialDocsSection, renderTitlesOnlySection } from './officialDocs'
 import type {
   KeywordGroup,
   MergedPaper,
@@ -223,11 +223,21 @@ export class SelectorStepServiceImpl implements SelectorStepService {
       }
     }
 
-    // C：官方文档补位——对仍未覆盖的框架实践类子问题抓白名单官方文档（writer 参考素材，不进引用编号）
+    // C：文档补位——白名单官方文档优先（确定性、免费），Firecrawl 真实 web 搜索兜底未命中白名单的子问题
+    //（writer 参考素材，不进引用编号）；无 FIRECRAWL_API_KEY 时自动只走白名单路径。
     const officialDocs = await fetchOfficialDocs(coverage.rows, {
       timeoutMs: this.config.timeoutMs,
     })
-    coverage = annotateDocRefs(coverage, officialDocs)
+    const webFallbackRows = coverage.rows.filter(
+      (row) => row.coverage !== 'covered' && !officialDocs.has(row.id)
+    )
+    const webDocs = await fetchWebDocs(webFallbackRows, {
+      timeoutMs: this.config.timeoutMs,
+      apiKey: this.config.firecrawlApiKey,
+      planContent,
+    })
+    const allDocs = mergeDocRefs(officialDocs, webDocs)
+    coverage = annotateDocRefs(coverage, allDocs)
 
     const groups = [
       ...state.groups,
@@ -236,7 +246,7 @@ export class SelectorStepServiceImpl implements SelectorStepService {
     const extraOverview = buildSelectorOverview(evidencePapers, state, selectedFromCandidates.length)
     const cardsMd =
       buildResearchCards(evidencePapers, state.stats, groups, extraOverview) +
-      renderOfficialDocsSection(officialDocs) +
+      renderOfficialDocsSection(allDocs) +
       renderTitlesOnlySection(titlesOnly)
 
     this.persist('research-cards.md', cardsMd, input)
