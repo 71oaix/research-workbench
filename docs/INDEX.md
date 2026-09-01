@@ -113,7 +113,8 @@ updated: 2026-09-01
 | Plan: 证据门槛 + 评估迭代闭环 + 文档补位 | active | plans/open/2026-09-01-quality-loop-and-evidence-bar.md | A/B/C 三组范围，C 组已实现，A/B 待人确认后实现 |
 | Issue: Firecrawl 网页搜索兜底（通用 web 搜索工具） | active | issues/open/2026-09-01-firecrawl-web-search.md | 白名单未命中行真实 web 搜索兜底，已实现并测试（待合并） |
 | Plan: Firecrawl 网页搜索兜底 | active | plans/open/2026-09-01-firecrawl-web-search.md | 已实现并测试，真实 key 端到端通过（待合并） |
-| Issue: 竞赛演示视频录制（怎么录/录几遍/写脚本） | active | issues/open/2026-09-01-demo-video-recording.md | 交付 ≤5min/≤200M mp4，0+1+1 遍策略，待确认 plan |
+| Issue: 竞赛演示视频录制（怎么录/录几遍/写脚本） | active | issues/open/2026-09-01-demo-video-recording.md | 交付 ≤5min/≤200M mp4，0+1+1 遍策略，plan 已出（录制中） |
+| Plan: 竞赛演示视频录制 | active | plans/open/2026-09-01-demo-video-recording.md | OBS+剪映已装，真实主录+剪映最简剪辑，执行中 |
 | 调研：竞赛演示视频录制方法论 | active | research/2026-09-01-demo-video-production-methodology.md | 怎么录/录几遍/写脚本 + 本机环境实测 |
 | 调研：AI/Agent 产品演示视频行业实践 | active | research/2026-09-01-demo-video-industry-practices.md | 行业惯例/等待处理/竞赛作品集套路 + AI 制作工具链 |
 | 调研：Agent 网页/文档内容获取行业实践 | active | research/2026-09-01-web-content-acquisition-survey.md | llms.txt/正文提取/预算化三层结论，C 组定案依据 |
