@@ -183,6 +183,35 @@ describe('repositories', () => {
     expect(repos.usage.summaryByWorkflow('wf-missing')).toEqual([])
   })
 
+  it('does not bump artifact version when content is unchanged', () => {
+    const db = createDb()
+    const repos = createRepositories(db)
+    const workflow = repos.workflows.create('调研')
+    const first = repos.artifacts.create({
+      workflowId: workflow.id,
+      stepId: null,
+      name: 'research-cards.md',
+      content: '同内容',
+    })
+    const second = repos.artifacts.create({
+      workflowId: workflow.id,
+      stepId: null,
+      name: 'research-cards.md',
+      content: '同内容',
+    })
+    // 重跑结果未变：不升版本、复用既有记录
+    expect(second.id).toBe(first.id)
+    expect(second.version).toBe(1)
+    const third = repos.artifacts.create({
+      workflowId: workflow.id,
+      stepId: null,
+      name: 'research-cards.md',
+      content: '实质变化',
+    })
+    expect(third.version).toBe(2)
+    expect(repos.artifacts.listByWorkflow(workflow.id)).toHaveLength(2)
+  })
+
   it('updates step status atomically only when the expected status matches', () => {
     const db = createDb()
     const repos = createRepositories(db)

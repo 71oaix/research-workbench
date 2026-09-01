@@ -64,15 +64,34 @@ curl http://localhost:3000/workflows/<id>
 环境变量（key 绝不写入仓库）：
 
 ```bash
-DEEPSEEK_API_KEY=sk-...     # 必填，DeepSeek 官方 API key（https://platform.deepseek.com）
-PI_PROVIDER=deepseek        # 可选，默认 deepseek（官方 OpenAI 兼容端点）
-PI_DEFAULT_MODEL=deepseek-v4-flash  # 可选，默认值
+DEEPSEEK_API_KEY=sk-...     # 必填，模型 API key：DeepSeek 官方（https://platform.deepseek.com）
+                            #   或阿里云百炼 DashScope 工作空间 key（sk-ws- 开头，
+                            #   https://bailian.console.aliyun.com）
+DEEPSEEK_BASE_URL=          # 可选，OpenAI 兼容端点根地址：
+                            #   默认官方 https://api.deepseek.com
+                            #   百炼兼容端点：https://dashscope.aliyuncs.com/compatible-mode/v1
+PI_DEFAULT_MODEL=deepseek-v4-flash-0731  # 可选，默认 deepseek-v4-flash；
+                            #   百炼上架的 DeepSeek v4 Flash 模型名为 deepseek-v4-flash-0731
+PI_THINKING_LEVEL=xhigh     # 可选，默认 xhigh（→ reasoning_effort=max）；
+                            #   百炼兼容端点 off / xhigh 均实测可用
+PI_PROVIDER=deepseek        # 可选，默认 deepseek
 PI_MODEL_PLANNER=...         # 可选，每角色覆盖（仅模型 ID）
 PI_MODEL_RESEARCHER=...
 PI_MODEL_WRITER=...
 PI_MODEL_REVIEWER=...
 PI_WORKBENCH_AGENT_DIR=...   # 可选，pi 会话隔离目录（默认 <项目根>/.pi/agent）
 ```
+
+兼容性说明（2026-09-01 百炼实测定稿，代码已内置处理）：
+
+- **system 角色**：pi 对 provider 名为 `deepseek` 的端点默认把 system 消息转成
+  `developer` 角色发送，百炼兼容端点不认（400，pi 静默吞成空回复）；
+  已注册 `compat.supportsDeveloperRole: false` 强制原样发送 system。
+- **旧凭据覆盖**：pi 的 AuthStorage 优先读 `~/.pi/agent/auth.json` 中存留的旧 key
+  （换 key 后仍发旧 key 会被 401 静默失败）；`PiRuntimeProvider` 启动时以
+  `setRuntimeApiKey` 运行时覆盖，始终使用 `DEEPSEEK_API_KEY` 配置值，无需手工清理。
+- 百炼兼容端点实测接受：`thinking:{type:'disabled'}`、`reasoning_effort:'max'`、
+  `max_completion_tokens`、`stream_options.include_usage`、`store:false`。
 
 真实调用验证（服务已启动且进程带 key）：
 
@@ -138,6 +157,10 @@ node scripts/verify-m2-4.mjs
 ```bash
 npm.cmd run dev
 ```
+
+> `npm run dev` 会自动加载项目根 `.env.local`（Node 22 `--env-file`，不覆盖已
+> 存在的环境变量）；把 key / base URL / 模型名写进 `.env.local` 即可，参考
+> `.env.example`。也可手动 export 同名变量（优先级更高）。
 
 访问 http://localhost:5173。
 

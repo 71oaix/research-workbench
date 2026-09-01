@@ -283,6 +283,15 @@ export function createRepositories(db: Db): Repositories {
         name: string
         content: string
       }): Artifact {
+        // 内容与最新版相同则不升版本：重跑（如打回 planner 后下游重做）结果未变时避免空转版本
+        const latest = db
+          .prepare(
+            'SELECT * FROM artifacts WHERE workflow_id = ? AND name = ? ORDER BY version DESC LIMIT 1'
+          )
+          .get(input.workflowId, input.name) as Record<string, unknown> | undefined
+        if (latest && String(latest.content) === input.content) {
+          return mapArtifact(latest)
+        }
         const id = randomUUID()
         const ts = now()
         const version = this.nextVersion(input.workflowId, input.name)

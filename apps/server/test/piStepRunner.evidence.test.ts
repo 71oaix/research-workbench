@@ -51,7 +51,11 @@ function makeProvider(handle: {
 describe('PiStepRunner evidence branches', () => {
   it('injects evidence cards into the writer prompt', async () => {
     const handle = {
-      send: vi.fn().mockResolvedValue('# 综述初稿'),
+      send: vi
+        .fn()
+        .mockResolvedValue(
+          '# 综述初稿\n\n本文围绕研究问题展开，覆盖研究背景、方法对比、评测指标与局限展望四大部分，全部引用证据池内编号，未引入外部事实。'
+        ),
       close: vi.fn().mockResolvedValue(undefined),
     }
     const repos = createRepositories(createDb())
@@ -73,7 +77,11 @@ describe('PiStepRunner evidence branches', () => {
 
   it('creates citation-lint.md and injects it into the reviewer prompt', async () => {
     const handle = {
-      send: vi.fn().mockResolvedValue('# 审查意见'),
+      send: vi
+        .fn()
+        .mockResolvedValue(
+          '# 审查意见\n\n总体结论：可合并发布。引用编号 99 越界需修正，其余编号与证据池匹配无误，并建议补充一处行文措辞的说明。'
+        ),
       close: vi.fn().mockResolvedValue(undefined),
     }
     const repos = createRepositories(createDb())

@@ -102,6 +102,14 @@ export class PiStepRunner implements StepRunner {
       this.ensureNotCancelled(step.workflowId)
       const content = await handle.send(prompt, streamDelta)
       this.recordUsage(step, handle.id)
+      // 空输出防护：正常产物千级字符起步；空/过短说明 provider 兼容性异常（如 thinking 参数不被支持），
+      // 落库会产生"prompt 骨架当产物"的假完成，直接拦截为步骤失败
+      if (content.trim().length < 50) {
+        throw new EngineError(
+          `步骤「${step.label}」模型输出为空或过短（${content.trim().length} 字符），疑似 provider 兼容性问题，已拦截不落库`,
+          502
+        )
+      }
 
       if (step.role === 'selector' && this.selector && selectorPrepare) {
         const { nextPrompt, state } = await this.selector.stage({
