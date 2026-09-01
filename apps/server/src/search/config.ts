@@ -19,6 +19,7 @@ export interface SearchConfig {
   openAlexMailto?: string
   crossrefMailto?: string
   unpaywallEmail?: string
+  firecrawlApiKey?: string
 }
 
 export function loadSearchConfig(env: NodeJS.ProcessEnv = process.env): SearchConfig {
@@ -43,6 +44,7 @@ export function loadSearchConfig(env: NodeJS.ProcessEnv = process.env): SearchCo
     openAlexMailto: env.OPENALEX_MAILTO?.trim() || undefined,
     crossrefMailto: env.CROSSREF_MAILTO?.trim() || undefined,
     unpaywallEmail: env.SEARCH_UNPAYWALL_EMAIL?.trim() || undefined,
+    firecrawlApiKey: env.FIRECRAWL_API_KEY?.trim() || undefined,
   }
 }
 

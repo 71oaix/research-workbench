@@ -1,5 +1,7 @@
 import { tokenize } from '../evidence/evaluation'
 import type { CoverageRow } from './coverage'
+import { extractBilingualKeywords } from './coverage'
+import { FirecrawlClient } from './firecrawl'
 
 export interface DocRef {
   title: string
@@ -66,13 +68,96 @@ export async function fetchOfficialDocs(
   return result
 }
 
+/**
+ * Firecrawl 兜底：对学术文献覆盖稀疏、且白名单未命中的子问题做真实 web 搜索。
+ * 搜索命中任意权威网页（官方文档/博客/教程/仓库 README），作为 writer 参考素材。
+ *
+ * 与白名单的定位差异：白名单是确定性、免费的优先种子（llms.txt/.md 直接抓取）；
+ * Firecrawl 是"代码判断覆盖不足时触发的真搜索工具"，负责白名单覆盖不到的子问题。
+ * 预算：每行至多 1 次 search；description 足够长直接用，过短才对 top-1 scrape。
+ * 失败静默跳过（无 key/网络/超时），不影响主流程。
+ */
+export async function fetchWebDocs(
+  rows: CoverageRow[],
+  opts: {
+    timeoutMs: number
+    apiKey?: string
+    planContent?: string
+  }
+): Promise<Map<number, DocRef[]>> {
+  const result = new Map<number, DocRef[]>()
+  if (!opts.apiKey || !opts.apiKey.trim()) return result
+  const client = new FirecrawlClient({ apiKey: opts.apiKey, timeoutMs: opts.timeoutMs })
+  // 双语搭桥：中文子问题 + 计划中的英文关键词，提升英文权威网页命中率
+  const enHints = opts.planContent
+    ? extractBilingualKeywords(opts.planContent)
+        .map((pair) => pair.en)
+        .filter((en) => en.trim())
+        .slice(0, 6)
+        .join(' ')
+    : ''
+  for (const row of rows) {
+    if (row.coverage === 'covered') continue
+    try {
+      const query = [row.question, enHints].filter(Boolean).join(' ')
+      const hits = await client.search(query, { limit: MAX_DOCS_PER_ROW + 1 })
+      const refs: DocRef[] = []
+      for (const hit of hits.slice(0, MAX_DOCS_PER_ROW)) {
+        let excerpt = hit.description?.trim() ?? ''
+        if (excerpt.length < 600) {
+          const scraped = await client.scrape(hit.url)
+          excerpt = scraped ?? excerpt
+        }
+        if (!excerpt) continue
+        refs.push({
+          title: hit.title || hit.url,
+          url: hit.url,
+          site: hostLabel(hit.url),
+          excerpt: excerpt.slice(0, MAX_EXCERPT_CHARS),
+        })
+      }
+      if (refs.length > 0) result.set(row.id, refs)
+    } catch {
+      // 静默：搜索兜底是增强，不阻塞主流程
+    }
+  }
+  return result
+}
+
+/** 合并白名单与 Firecrawl 两组参考（按行、按 url 去重，白名单优先）。 */
+export function mergeDocRefs(
+  ...maps: (Map<number, DocRef[]> | undefined)[]
+): Map<number, DocRef[]> {
+  const merged = new Map<number, DocRef[]>()
+  for (const map of maps) {
+    if (!map) continue
+    for (const [rowId, refs] of map) {
+      const existing = merged.get(rowId) ?? []
+      const seen = new Set(existing.map((ref) => ref.url))
+      const fresh = refs.filter((ref) => !seen.has(ref.url))
+      merged.set(rowId, [...existing, ...fresh])
+    }
+  }
+  return merged
+}
+
+/** 从 URL 取站点标签（无泛域名硬编码：任何命中网页都按 host 标注来源）。 */
+function hostLabel(url: string): string {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '')
+    return `${host}（网页）`
+  } catch {
+    return 'web（网页）'
+  }
+}
+
 /** 证据卡附加段：逐篇标注来源（标题/站点/URL/访问日期），说明不进引用编号序列。 */
 export function renderOfficialDocsSection(docs: Map<number, DocRef[]>): string {
   if (docs.size === 0) return ''
-  const lines = ['', '## 官方文档参考（不进引用编号与核验序列）', '', '> 以下内容来自框架官方文档（一手来源），用于补充学术文献覆盖稀疏的工程实践类子问题；写作中引用时请标注"（依据 XX 官方文档）"。', '']
+  const lines = ['', '## 补充参考（官方文档 / 网页，不进引用编号与核验序列）', '', '> 以下内容来自框架官方文档（一手来源）与 web 搜索结果（Firecrawl 兜底），用于补充学术文献覆盖稀疏的工程实践类子问题；写作中引用时请标注"（依据 XX 官方文档 / 网页）"。', '']
   const today = new Date().toISOString().slice(0, 10)
   for (const [rowId, refs] of docs) {
-    lines.push(`### 子问题 ${rowId} 的官方文档参考`, '')
+    lines.push(`### 子问题 ${rowId} 的补充参考`, '')
     for (const ref of refs) {
       lines.push(`#### ${ref.title}`, '', `- 来源：${ref.site}（${today} 访问）`, `- 链接：${ref.url}`, '', ref.excerpt, '')
     }
