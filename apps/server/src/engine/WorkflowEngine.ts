@@ -157,11 +157,13 @@ export class WorkflowEngine {
 
   private async runPendingSteps(workflowId: string): Promise<void> {
     const workflow = this.requireWorkflow(workflowId)
-    for (const step of this.stepsSorted(workflowId)) {
-      if (step.status !== 'pending') continue
+    // 迭代式扫描而非一次性快照：评估低分回环会把 writer 及后续步骤重置为 pending，需重新扫描
+    for (;;) {
+      const step = this.stepsSorted(workflowId).find((s) => s.status === 'pending')
+      if (!step) break
       if (this.cancelled.has(workflowId)) {
-        this.repos.steps.updateStatus(step.id, 'skipped')
-        continue
+        this.skipRemaining(workflowId, step.position)
+        return
       }
 
       this.setStepStatus(step.id, 'running')
@@ -203,9 +205,70 @@ export class WorkflowEngine {
         return
       }
       this.setStepStatus(step.id, 'approved')
+      // 评估迭代回环：低分自动重写一轮（上限 1 次，见 maybeRewriteOnLowScore）
+      if (step.role === 'evaluator' && this.maybeRewriteOnLowScore(workflowId)) {
+        continue
+      }
     }
     if (this.cancelled.has(workflowId)) return
     this.setWorkflowStatus(workflowId, 'completed')
+  }
+
+  /** 评估迭代回环状态：每个工作流最多自动重写 1 轮 */
+  private readonly evalRewriteUsed = new Set<string>()
+
+  /**
+   * 评估低分时带批评要点自动打回 writer 重写一轮（复用人工打回的 feedback 通道）。
+   * 二评达标记"已收敛"；仍低则记"未收敛"并正常完成——如实标注，不静默。
+   */
+  private maybeRewriteOnLowScore(workflowId: string): boolean {
+    const scores = this.repos.artifacts
+      .listByWorkflow(workflowId)
+      .filter((a) => a.name === 'evaluation-scores.md')
+      .at(-1)
+    const parsed = scores ? parseEvaluationScores(scores.content) : null
+    if (this.evalRewriteUsed.has(workflowId)) {
+      if (parsed) {
+        this.persistLoopNote(
+          workflowId,
+          parsed.overall >= 3.5 && parsed.completeness >= 3
+            ? `评估回环（上限 1 轮）已执行：二评综合 ${parsed.overall}/5、完整性 ${parsed.completeness}/5 —— 已收敛 ✓`
+            : `评估回环（上限 1 轮）已执行：二评综合 ${parsed.overall}/5、完整性 ${parsed.completeness}/5 —— 仍未收敛，如实标注（证据池已为当前检索下的最优可得结果）`
+        )
+      }
+      return false
+    }
+    if (!parsed) return false
+    if (parsed.overall >= 3.5 && parsed.completeness >= 3) return false
+    const feedback = buildRewriteFeedback(scores!.content, parsed)
+    const steps = this.stepsSorted(workflowId)
+    const writer = steps.find((s) => s.role === 'writer')
+    if (!writer) return false
+    // 与人工打回 modify 相同的状态迁移：writer 及其后全部重置为 pending，writer 注入反馈
+    for (const candidate of steps) {
+      if (candidate.position >= writer.position) {
+        this.setStepStatus(candidate.id, 'pending')
+        this.repos.steps.setPendingFeedback(candidate.id, null)
+      }
+    }
+    const withFeedback = this.repos.steps.setPendingFeedback(writer.id, feedback)
+    if (withFeedback) this.emit({ type: 'step.updated', step: withFeedback })
+    this.evalRewriteUsed.add(workflowId)
+    this.persistLoopNote(
+      workflowId,
+      `评估回环触发（第 1 轮/上限 1 轮）：规则口径综合 ${parsed.overall}/5、完整性 ${parsed.completeness}/5 低于阈值（3.5/3）——已自动打回写作，反馈要点见步骤卡；二评结果将在本文件更新。`
+    )
+    return true
+  }
+
+  private persistLoopNote(workflowId: string, content: string): void {
+    const artifact = this.repos.artifacts.create({
+      workflowId,
+      stepId: null,
+      name: 'evaluation-loop.md',
+      content,
+    })
+    this.bus.emit({ type: 'artifact.updated', artifact })
   }
 
   /** 取消后把指定位置起未完成的步骤标 skipped（含正在执行的当前步） */
@@ -257,4 +320,43 @@ export class WorkflowEngine {
   private emit(event: ServerEvent): void {
     this.bus.emit(event)
   }
+}
+
+/** 解析 evaluation-scores.md 规则口径表（| 维度 | 评分 | 说明 | 行）；无综合或完整性行时返回 null */
+function parseEvaluationScores(md: string): { overall: number; completeness: number } | null {
+  let overall: number | null = null
+  let completeness: number | null = null
+  for (const line of md.split('\n')) {
+    if (!line.startsWith('|')) continue
+    const cells = line.split('|').map((c) => c.trim())
+    if (cells.length < 4) continue
+    const num = Number.parseFloat(cells[2])
+    if (Number.isNaN(num)) continue
+    if (cells[1] === '综合') overall = num
+    if (cells[1] === '完整性') completeness = num
+  }
+  if (overall === null || completeness === null) return null
+  return { overall, completeness }
+}
+
+/** 从评分表提取低分维度作为重写反馈（要点化 ≤400 字，避免稀释 writer 注意力） */
+function buildRewriteFeedback(
+  md: string,
+  parsed: { overall: number; completeness: number }
+): string {
+  const weakRows = md
+    .split('\n')
+    .filter((line) => line.startsWith('|'))
+    .map((line) => line.split('|').map((c) => c.trim()))
+    .filter((cells) => {
+      const num = Number.parseFloat(cells[2] ?? '')
+      return cells.length >= 4 && !Number.isNaN(num) && num < 3.5 && cells[1] !== '综合'
+    })
+    .map((cells) => `${cells[1]} ${cells[2]}：${cells[3]}`)
+  const lines = [
+    `上一稿评估未达标（规则口径综合 ${parsed.overall}/5、完整性 ${parsed.completeness}/5）。请针对性重写综述：`,
+    ...weakRows.slice(0, 4),
+    '要求：优先补足缺失章节的证据支撑；证据池中无对应证据的部分如实说明局限，不得空泛声称。',
+  ]
+  return lines.join('\n').slice(0, 400)
 }

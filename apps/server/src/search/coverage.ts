@@ -10,6 +10,8 @@ export interface CoverageRow {
   related: { id: number; reason: string; strength: string }[]
   /** 判定依据：规则（默认）或模型复核升级。 */
   source?: 'rule' | 'model'
+  /** 官方文档补位参考（来源见证据卡"官方文档参考"段；不进引用编号序列）。 */
+  docRefs?: { title: string; url: string; site: string }[]
 }
 
 export interface CoverageResult {
@@ -65,6 +67,18 @@ export function buildCoverageMatrix(planContent: string, papers: MergedPaper[]):
 /** 将判定行渲染为矩阵 Markdown（导出供模型复核后重建）。 */
 export function renderCoverageRows(rows: CoverageRow[]): string {
   return render(rows)
+}
+
+/** 官方文档补位后：把 docRefs 附加到对应行并重建矩阵 Markdown。 */
+export function annotateDocRefs(
+  result: CoverageResult,
+  docs: Map<number, { title: string; url: string; site: string }[]>
+): CoverageResult {
+  const rows = result.rows.map((row) => {
+    const refs = docs.get(row.id)
+    return refs && refs.length > 0 ? { ...row, docRefs: refs } : row
+  })
+  return { ...result, rows, md: renderCoverageRows(rows) }
 }
 
 export function extractBilingualKeywords(planMd: string): { zh: string; en: string }[] {
@@ -135,8 +149,12 @@ function render(rows: CoverageRow[]): string {
         ? `缺口：${row.gapQuery}${strong.length > 0 ? '；相关推荐：无直接专论，以下最接近——' + strong.join('；') : ''}`
         : row.coverage === 'partial'
           ? `部分：${row.papers || '无'}；建议补强：${row.gapQuery}${strong.length > 0 ? '；相关：' + strong.join('；') : ''}`
-          : row.papers.join('、')
-    lines.push(`| ${row.id}. ${row.question}${sourceTag} | ${row.coverage} | ${row.papers.length ? row.papers.join('、') : '（无）'} | ${suggestion} |`)
+          : '—'
+    const docNote =
+      row.docRefs && row.docRefs.length > 0 && row.coverage !== 'covered'
+        ? `${suggestion === '—' ? '' : '；'}已附官方文档 ${row.docRefs.length} 篇（见证据卡"官方文档参考"）`
+        : ''
+    lines.push(`| ${row.id}. ${row.question}${sourceTag} | ${row.coverage} | ${row.papers.length ? row.papers.join('、') : '（无）'} | ${suggestion}${docNote} |`)
   }
   return lines.join('\n')
 }
