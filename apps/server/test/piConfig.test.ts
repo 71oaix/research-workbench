@@ -53,4 +53,12 @@ describe('loadPiConfig', () => {
       loadPiConfig({ PI_MODEL_PLANNER: 'opencode-go/deepseek-v4-flash' })
     ).toThrow(PiConfigError)
   })
+
+  it('normalizes DEEPSEEK_BASE_URL and falls back to official endpoint', () => {
+    expect(loadPiConfig({}).baseUrl).toBe('https://api.deepseek.com')
+    expect(loadPiConfig({ DEEPSEEK_BASE_URL: 'https://tokenrhythm.studio/v1/' }).baseUrl).toBe(
+      'https://tokenrhythm.studio/v1'
+    )
+    expect(loadPiConfig({ DEEPSEEK_BASE_URL: '   ' }).baseUrl).toBe('https://api.deepseek.com')
+  })
 })

@@ -17,6 +17,8 @@ const THINKING_LEVELS: readonly ThinkingLevel[] = [
 export interface PiConfig {
   apiKey: string | undefined
   provider: string
+  /** OpenAI 兼容端点根地址；默认 DeepSeek 官方，可经 DEEPSEEK_BASE_URL 指向兼容中转 */
+  baseUrl: string
   defaultModel: string
   roleModel: Partial<Record<Role, string>>
   thinkingLevel: ThinkingLevel
@@ -58,12 +60,22 @@ export function loadPiConfig(env: NodeJS.ProcessEnv = process.env): PiConfig {
   return {
     apiKey: env.DEEPSEEK_API_KEY,
     provider,
+    baseUrl: normalizeBaseUrl(env.DEEPSEEK_BASE_URL),
     defaultModel,
     roleModel,
     thinkingLevel: parseThinkingLevel(env.PI_THINKING_LEVEL, 'PI_THINKING_LEVEL'),
     roleThinkingLevel,
     agentDir: resolvePiAgentDir(env),
   }
+}
+
+export const DEFAULT_DEEPSEEK_BASE_URL = 'https://api.deepseek.com'
+
+/** baseUrl 规范化：去尾斜杠；空/未设置回退官方端点 */
+export function normalizeBaseUrl(value: string | undefined): string {
+  const trimmed = value?.trim()
+  if (!trimmed) return DEFAULT_DEEPSEEK_BASE_URL
+  return trimmed.replace(/\/+$/, '')
 }
 
 function parseThinkingLevel(value: string | undefined, name: string): ThinkingLevel {

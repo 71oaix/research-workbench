@@ -2,7 +2,7 @@
 title: 文档索引
 status: active
 created: 2026-08-05
-updated: 2026-08-29
+updated: 2026-08-31
 ---
 
 # 文档索引
@@ -20,9 +20,9 @@ updated: 2026-08-29
 | 竞赛叙事与答辩预设 | active | architecture/01-competition-story.md | 四可叙事 + 分镜级视频脚本（8/31 改版） |
 | issues 目录规范 | active | issues/readme.md | SDD 任务索引与 frontmatter 规范 |
 | plans 目录规范 | active | plans/readme.md | SDD 方案索引与内容要求 |
-| Issue: M4-1 每步质量门 + 自动迭代回环 | active | issues/open/2026-08-27-m4-1-step-quality-gates.md | 待实现：每步自检+自动回环（自 PR #21 迁移） |
-| Issue: M4-2 缺口驱动二次检索 + 覆盖矩阵 | active | issues/open/2026-08-27-m4-2-gap-driven-retrieval.md | 待实现：覆盖判定+gap 补检索（自 PR #21 迁移） |
-| Issue: M4-3 缺口→相关论文路由 | active | issues/open/2026-08-27-m4-3-gap-to-related-routing.md | 待实现：无专论引相邻工作（自 PR #21 迁移） |
+| Issue: M4-1 每步质量门 + 自动迭代回环 | archived | issues/close/2026-08-27-m4-1-step-quality-gates.md | 已归档：覆盖质量门+自动迭代回环实现完成 |
+| Issue: M4-2 缺口驱动二次检索 + 覆盖矩阵 | archived | issues/close/2026-08-27-m4-2-gap-driven-retrieval.md | 已归档：缺口补检索+覆盖矩阵实现完成 |
+| Issue: M4-3 缺口→相关论文路由 | archived | issues/close/2026-08-27-m4-3-gap-to-related-routing.md | 已归档：无专论相关论文路由实现完成 |
 | Issue: SDD 工作流 | archived | issues/close/2026-08-06-sdd-workflow.md | 已归档：流程建立 + 首个循环跑通 |
 | Issue: M1 项目骨架初始化 | archived | issues/close/2026-08-14-m1-project-skeleton.md | 已归档：骨架可运行 |
 | Plan: M1 项目骨架初始化 | archived | plans/close/2026-08-14-m1-project-skeleton.md | 已归档：实现完成 |
@@ -39,7 +39,7 @@ updated: 2026-08-29
 | 评测：效果基线（检索/成本/真实运行） | active | research/2026-08-21-effect-baseline.md | recall 对比 + 成本表 + 真实运行指标 |
 | 竞赛材料：项目文档初稿（附件 2 模板） | active | specification/2026-08-21-competition-project-document.md | 0.4 定稿：七角色勘误/测试数/总览卡 |
 | 竞赛材料：作品简介草稿（300 字） | active | specification/2026-08-21-competition-intro.md | 295 字定稿，待转 PDF |
-| Plan: M4-1 覆盖质量门+迭代回环 | active | plans/open/2026-08-27-m4-1-step-quality-gates.md | 已实现并测试 |
+| Plan: M4-1 覆盖质量门+迭代回环 | archived | plans/close/2026-08-27-m4-1-step-quality-gates.md | 已实现并测试（含 v2 模型复核） |
 | Plan: M4-2 缺口驱动二次检索+覆盖矩阵 | archived | plans/close/2026-08-27-m4-2-gap-driven-retrieval.md | 已实现并测试 |
 | Plan: M4-3 缺口→相关论文路由 | archived | plans/close/2026-08-27-m4-3-gap-to-related-routing.md | 已实现并测试 |
 | Issue: 布局重构 v2（对话流+进度跳转+版本tab+文件tab） | archived | issues/close/2026-08-26-layout-v2-chat-flow.md | 中间对话流 + 右侧控制区，自绘 SVG（需 plan） |
@@ -107,4 +107,10 @@ updated: 2026-08-29
 | Plan: 思考块展示（探针实锤走分支 A） | archived | plans/close/2026-08-29-thinking-display.md | 已实现并测试 |
 | Issue: OpenAlex key 注入 + runbook（S2 已有链路） | archived | issues/close/2026-08-29-source-keys.md | 已实现并测试 |
 | Plan: OpenAlex key 注入 + runbook（S2 已有链路） | archived | plans/close/2026-08-29-source-keys.md | 已实现并测试 |
+| Issue: 右栏运行总览面板（状态机 + 成本 + 资产） | active | issues/open/2026-08-31-run-overview-panel.md | 已实现并测试（待合并） |
+| Plan: 右栏运行总览面板 | active | plans/open/2026-08-31-run-overview-panel.md | 已实现并测试（待合并） |
+| Issue: 证据门槛 + 评估迭代闭环 + 文档补位 | active | issues/open/2026-09-01-quality-loop-and-evidence-bar.md | 热身暴露四缺陷，待确认 plan |
+| Plan: 证据门槛 + 评估迭代闭环 + 文档补位 | active | plans/open/2026-09-01-quality-loop-and-evidence-bar.md | A/B/C 三组范围，待人确认后实现 |
+| 调研：Agent 网页/文档内容获取行业实践 | active | research/2026-09-01-web-content-acquisition-survey.md | llms.txt/正文提取/预算化三层结论，C 组定案依据 |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |
+| Issue: 接入百炼 DashScope 兼容端点（千问 key + deepseek-v4-flash-0731） | archived | issues/close/2026-09-01-dashscope-relay.md | 空回复双根因修复；2026-09-02 已回迁官方 API（兼容修复保留，双端点通用） |

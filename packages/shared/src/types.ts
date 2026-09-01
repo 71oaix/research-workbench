@@ -123,3 +123,16 @@ export interface UsageRecord {
   costCny: number
   createdAt: string
 }
+
+/** 按 (workflow, step, role) 分组的用量聚合；展示层通常再按 role 二次聚合 */
+export interface UsageSummary {
+  workflowId: string
+  stepId: string | null
+  role: Role | null
+  calls: number
+  inputTokens: number
+  outputTokens: number
+  cacheReadTokens: number
+  cacheWriteTokens: number
+  costCny: number
+}

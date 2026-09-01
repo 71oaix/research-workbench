@@ -1,9 +1,9 @@
 ---
 title: M4-1 覆盖驱动质量门 + 自动迭代回环（plan）
-status: active
+status: archived
 created: 2026-08-27
-updated: 2026-08-28
-issue: "docs/issues/open/2026-08-27-m4-1-step-quality-gates.md"
+updated: 2026-08-31
+issue: "docs/issues/close/2026-08-27-m4-1-step-quality-gates.md"
 areas: [server]
 ---
 

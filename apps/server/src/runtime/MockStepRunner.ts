@@ -3,6 +3,17 @@ import type { WorkflowEventBus } from '../engine/eventBus'
 import type { StepRunInput, StepRunResult, StepRunner } from '../engine/StepRunner'
 import { ARTIFACT_NAMES } from './prompts'
 
+// 演示模式的模拟用量：成本面板（运行总览）在 DEMO 下有数据可展示
+const MOCK_USAGE: Record<string, { input: number; output: number; cost: number }> = {
+  planner: { input: 1800, output: 900, cost: 0.021 },
+  researcher: { input: 2400, output: 1200, cost: 0.028 },
+  selector: { input: 8200, output: 2600, cost: 0.084 },
+  writer: { input: 12400, output: 5200, cost: 0.153 },
+  evaluator: { input: 6400, output: 1500, cost: 0.062 },
+  reviewer: { input: 4200, output: 1100, cost: 0.041 },
+  summarizer: { input: 3100, output: 800, cost: 0.03 },
+}
+
 export class MockStepRunner implements StepRunner {
   constructor(
     private readonly repos: Repositories,
@@ -11,6 +22,20 @@ export class MockStepRunner implements StepRunner {
 
   async run({ step, goal, feedback }: StepRunInput): Promise<StepRunResult> {
     await sleep(350)
+    const usage = MOCK_USAGE[step.role]
+    if (usage) {
+      const record = this.repos.usage.record({
+        workflowId: step.workflowId,
+        stepId: step.id,
+        role: step.role,
+        inputTokens: usage.input,
+        outputTokens: usage.output,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
+        costCny: usage.cost,
+      })
+      this.bus.emit({ type: 'usage.recorded', usage: record })
+    }
     const artifactName = ARTIFACT_NAMES[step.role]
     switch (step.role) {
       case 'planner':
@@ -20,7 +45,7 @@ export class MockStepRunner implements StepRunner {
         return { artifactName, content: mockResearch() }
       }
       case 'selector': {
-        this.persist(step.workflowId, step.id, 'research-cards.md', mockCards())
+        this.persist(step.workflowId, step.id, 'research-cards.md', mockCards() + mockOfficialDocsSection())
         this.persist(step.workflowId, step.id, 'selector-report.md', mockSelectorReport())
         return { artifactName, content: mockCards() }
       }
@@ -28,6 +53,16 @@ export class MockStepRunner implements StepRunner {
         return { artifactName, content: mockDraft(feedback ?? null) }
       case 'evaluator': {
         this.persist(step.workflowId, step.id, 'evaluation-report.md', mockEvaluation())
+        // 演示评估回环：第一轮低分（触发引擎自动重写 writer），二评高分（收敛）
+        const pass = this.repos.artifacts
+          .listByWorkflow(step.workflowId)
+          .filter((a) => a.name === 'evaluation-scores.md').length
+        this.persist(
+          step.workflowId,
+          step.id,
+          'evaluation-scores.md',
+          pass > 0 ? mockScoresSecondPass() : mockScoresFirstPass()
+        )
         return { artifactName, content: mockEvaluation() }
       }
       case 'reviewer': {
@@ -281,4 +316,58 @@ function mockSummary(): string {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/** 演示：第一轮评估低分（触发引擎评估回环，自动重写 writer） */
+function mockScoresFirstPass(): string {
+  return [
+    '## 六维完整评分（规则口径，0-5）',
+    '',
+    '| 维度 | 评分 | 说明 |',
+    '|------|------|------|',
+    '| 主题匹配 | 3.2 | 部分章节依赖泛化证据 |',
+    '| 相关度 | 3.0 | 若干卡片仅标题层面相关 |',
+    '| 大纲覆盖 | 3.1 | 3.5/4.5 章节证据不足 |',
+    '| 引用可信 | 4 | 编号均在卡片范围内 |',
+    '| 来源失败 | 4 | 1 个来源降级 |',
+    '| 完整性 | 2 | 「框架实践对比」章节无证据落地 |',
+    '| 综合 | 2.9 | 六维平均（0-5） |',
+  ].join('\n')
+}
+
+/** 演示：二评高分（回环收敛） */
+function mockScoresSecondPass(): string {
+  return [
+    '## 六维完整评分（规则口径，0-5）',
+    '',
+    '| 维度 | 评分 | 说明 |',
+    '|------|------|------|',
+    '| 主题匹配 | 4 | 章节与主题对应良好 |',
+    '| 相关度 | 3.8 | 高相关为主 |',
+    '| 大纲覆盖 | 3.9 | 各章节均有证据锚点 |',
+    '| 引用可信 | 4 | 编号均在卡片范围内 |',
+    '| 来源失败 | 4 | 1 个来源降级 |',
+    '| 完整性 | 4 | 缺失章节已补充支撑 |',
+    '| 综合 | 3.8 | 六维平均（0-5） |',
+  ].join('\n')
+}
+
+/** 演示：官方文档参考附加段（真实运行由 officialDocs.ts 抓取生成，格式一致） */
+function mockOfficialDocsSection(): string {
+  return [
+    '',
+    '## 官方文档参考（不进引用编号与核验序列）',
+    '',
+    '> 以下内容来自框架官方文档（一手来源），用于补充学术文献覆盖稀疏的工程实践类子问题；写作中引用时请标注“（依据 XX 官方文档）”。',
+    '',
+    '### 子问题 3 的官方文档参考',
+    '',
+    '#### Memory（演示）',
+    '',
+    '- 来源：Mem0 官方文档（' + new Date().toISOString().slice(0, 10) + ' 访问）',
+    '- 链接：https://docs.mem0.ai/',
+    '',
+    '这是官方文档正文摘录的演示文本：Mem0 提供分层记忆管理 API，支持用户级与会话级记忆的抽取、更新与检索（演示截断至 2000 字符以内）。',
+    '',
+  ].join('\n')
 }

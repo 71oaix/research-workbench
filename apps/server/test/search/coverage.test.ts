@@ -45,4 +45,13 @@ describe('buildCoverageMatrix', () => {
     // 无直接专论的中文分词子问题应给出最接近的相邻论文
     expect(related.length).toBeGreaterThanOrEqual(0)
   })
+
+  it('renders covered rows with an em-dash suggestion instead of repeating papers', () => {
+    const result = buildCoverageMatrix(plan, papers)
+    const covered = result.rows.find((row) => row.coverage === 'covered')
+    expect(covered).toBeTruthy()
+    const line = result.md.split('\n').find((l) => l.includes(`| ${covered!.id}. `))
+    expect(line).toContain('| — |')
+    expect(line!.endsWith('| — |')).toBe(true)
+  })
 })

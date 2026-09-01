@@ -40,7 +40,11 @@ describe('PiStepRunner researcher branch', () => {
   it('runs the researcher step service and feeds candidates into the model prompt', async () => {
     const handle = {
       id: 'h1',
-      send: vi.fn().mockResolvedValue('# 检索结果'),
+      send: vi
+        .fn()
+        .mockResolvedValue(
+          '# 检索结果\n\n## 候选\n- [1] Paper A 建立评测基础\n- [2] Paper B 提出改进方法，两者可互补'
+        ),
       close: vi.fn().mockResolvedValue(undefined),
     }
     const provider = {
@@ -98,7 +102,11 @@ describe('PiStepRunner researcher branch', () => {
   it('passes compensate=true when previous feedback is present', async () => {
     const handle = {
       id: 'h1',
-      send: vi.fn().mockResolvedValue('ok'),
+      send: vi
+        .fn()
+        .mockResolvedValue(
+          '# 补检检索结果\n\n按上一轮反馈扩大检索范围，补充三篇相关文献并给出完整证据编号与摘要，这些文献覆盖了此前遗漏的关键方法。'
+        ),
       close: vi.fn().mockResolvedValue(undefined),
     }
     const provider = {

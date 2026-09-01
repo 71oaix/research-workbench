@@ -7,6 +7,7 @@ import type {
   Step,
   StepStatus,
   UsageRecord,
+  UsageSummary,
   Workflow,
   WorkflowStatus,
 } from '@research-workbench/shared'
@@ -69,17 +70,8 @@ export interface UsageRepository {
   summaryByWorkflow(workflowId: string): UsageSummary[]
 }
 
-export interface UsageSummary {
-  workflowId: string
-  stepId: string | null
-  role: Role | null
-  calls: number
-  inputTokens: number
-  outputTokens: number
-  cacheReadTokens: number
-  cacheWriteTokens: number
-  costCny: number
-}
+// UsageSummary 已上移 shared，re-export 保持既有导入路径可用
+export type { UsageSummary }
 
 export interface Repositories {
   workflows: WorkflowRepository
@@ -291,6 +283,15 @@ export function createRepositories(db: Db): Repositories {
         name: string
         content: string
       }): Artifact {
+        // 内容与最新版相同则不升版本：重跑（如打回 planner 后下游重做）结果未变时避免空转版本
+        const latest = db
+          .prepare(
+            'SELECT * FROM artifacts WHERE workflow_id = ? AND name = ? ORDER BY version DESC LIMIT 1'
+          )
+          .get(input.workflowId, input.name) as Record<string, unknown> | undefined
+        if (latest && String(latest.content) === input.content) {
+          return mapArtifact(latest)
+        }
         const id = randomUUID()
         const ts = now()
         const version = this.nextVersion(input.workflowId, input.name)

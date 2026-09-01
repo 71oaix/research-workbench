@@ -10,13 +10,14 @@ import type { SearchConfig } from './config'
 import { mergeAndRank } from './merge'
 import { OpenAlexClient } from './openAlex'
 import { buildRerankMd, parseRerankReport, type RerankEntry } from './rerank'
-import { buildCoverageMatrix, extractBilingualKeywords, renderCoverageRows } from './coverage'
+import { buildCoverageMatrix, extractBilingualKeywords, renderCoverageRows, annotateDocRefs } from './coverage'
 import {
   buildJudgePrompt,
   parseJudgeOutput,
   refineCoverage,
   type CoverageJudge,
 } from './coverageJudge'
+import { fetchOfficialDocs, renderOfficialDocsSection, renderTitlesOnlySection } from './officialDocs'
 import type {
   KeywordGroup,
   MergedPaper,
@@ -178,12 +179,23 @@ export class SelectorStepServiceImpl implements SelectorStepService {
       input.nextOutput ? parseRerankReport(input.nextOutput) : []
     )
 
-    // 覆盖驱动质量门 + 迭代回环：缺失/部分子问题自动 gap 二次检索补足（≤2 轮，失败静默）
+    // 全文下载（含 1 次补偿重试）+ 证据可得性门槛：摘要与全文均不可得的卡不入证据池（仅题录）——
+    // 相关度定级与引用核验都依赖摘要/全文，空证据只会产生 "Not assessable" 噪音
+    await this.downloadAndPersist(finalPapers, input)
+    const evidencePapers = finalPapers.filter(hasEvidence)
+    const titlesOnly = finalPapers
+      .filter((paper) => !evidencePapers.includes(paper))
+      .map((paper) => ({
+        title: paper.title,
+        reason: paper.downloadStatus === 'ok' ? '无摘要' : '无摘要且全文未获取',
+      }))
+
+    // 覆盖驱动质量门 + 迭代回环（统一基于"可用证据"口径）：缺失/部分子问题自动 gap 二次检索补足（≤2 轮，失败静默）
     // v2：规则判定后，非 covered 行批量交模型复核精判；judge 失败静默保留规则结果
     const planContent = this.latestPlanContent(input.workflowId)
-    let coverage = buildCoverageMatrix(planContent, finalPapers)
-    coverage = await this.refineWithJudge(planContent, finalPapers, coverage)
-    let poolPapers = [...finalPapers]
+    let coverage = buildCoverageMatrix(planContent, evidencePapers)
+    coverage = await this.refineWithJudge(planContent, evidencePapers, coverage)
+    let poolPapers = [...evidencePapers]
     let retries = 0
     while (coverage.uncoveredQueries.length > 0 && retries < 2) {
       try {
@@ -194,11 +206,15 @@ export class SelectorStepServiceImpl implements SelectorStepService {
         const known = new Set(poolPapers.map((paper) => fullTextKey(paper)))
         const fresh = gapOutput.papers.filter((paper) => !known.has(fullTextKey(paper)))
         if (fresh.length === 0) break
-        fresh.forEach((paper) => {
+        // 补检论文同样下载并过可得性门槛，保证回环判定口径一致
+        await this.downloadAndPersist(fresh, input)
+        const freshEvidence = fresh.filter(hasEvidence)
+        if (freshEvidence.length === 0) break
+        freshEvidence.forEach((paper) => {
           paper.relevanceLevel = paper.relevanceLevel ?? 'partial'
           paper.selectionReason = '缺口补检索自动纳入'
         })
-        poolPapers = [...poolPapers, ...fresh]
+        poolPapers = [...poolPapers, ...freshEvidence]
         coverage = buildCoverageMatrix(planContent, poolPapers)
         coverage = await this.refineWithJudge(planContent, poolPapers, coverage)
         retries++
@@ -207,20 +223,31 @@ export class SelectorStepServiceImpl implements SelectorStepService {
       }
     }
 
-    // 全文下载（只对入选论文）+ 落库
-    await this.downloadAndPersist(poolPapers, input)
+    // C：官方文档补位——对仍未覆盖的框架实践类子问题抓白名单官方文档（writer 参考素材，不进引用编号）
+    const officialDocs = await fetchOfficialDocs(coverage.rows, {
+      timeoutMs: this.config.timeoutMs,
+    })
+    coverage = annotateDocRefs(coverage, officialDocs)
 
     const groups = [
       ...state.groups,
       ...state.gapQueries.map((query, index) => ({ label: `gap-${index + 1}`, query })),
     ]
-    const extraOverview = buildSelectorOverview(poolPapers, state, selectedFromCandidates.length)
-    const cardsMd = buildResearchCards(poolPapers, state.stats, groups, extraOverview)
+    const extraOverview = buildSelectorOverview(evidencePapers, state, selectedFromCandidates.length)
+    const cardsMd =
+      buildResearchCards(evidencePapers, state.stats, groups, extraOverview) +
+      renderOfficialDocsSection(officialDocs) +
+      renderTitlesOnlySection(titlesOnly)
 
     this.persist('research-cards.md', cardsMd, input)
-    const fullTextMd = buildFullTextMd(poolPapers)
+    const fullTextMd = buildFullTextMd(evidencePapers)
     if (fullTextMd) this.persist('paper-fulltext.md', fullTextMd, input)
-    this.persist('selector-report.md', buildSelectorReport(poolPapers, state, newSelections), input)
+    this.persist(
+      'selector-report.md',
+      buildSelectorReport(evidencePapers, state, newSelections) +
+        renderTitlesOnlySection(titlesOnly),
+      input
+    )
     this.persist('rerank-report.md', buildRerankMd(rerank), input)
     this.persist('coverage-matrix.md', coverage.md, input)
 
@@ -320,15 +347,23 @@ export class SelectorStepServiceImpl implements SelectorStepService {
         paper.downloadError = '下载时间预算耗尽'
         return
       }
-      const acquired = await acquireFullText(paper, {
+      let final = await acquireFullText(paper, {
         dir: path.join(process.cwd(), 'data', 'pdfs'),
         maxChars: this.config.fullTextMaxChars,
         unpaywallEmail: this.config.unpaywallEmail,
       })
-      paper.fullText = acquired.result?.text ?? null
-      paper.downloadStatus = acquired.result ? 'ok' : acquired.reason
+      // 补偿重试 1 次（瞬时网络失败常见；时间预算内），仍失败则如实标注
+      if (!final.result && Date.now() <= deadline) {
+        final = await acquireFullText(paper, {
+          dir: path.join(process.cwd(), 'data', 'pdfs'),
+          maxChars: this.config.fullTextMaxChars,
+          unpaywallEmail: this.config.unpaywallEmail,
+        })
+      }
+      paper.fullText = final.result?.text ?? null
+      paper.downloadStatus = final.result ? 'ok' : final.reason
       paper.downloadError =
-        acquired.reason === 'failed' ? '全部候选下载失败或提取文本不足（含 Unpaywall 兜底）' : null
+        final.reason === 'failed' ? '全部候选下载失败或提取文本不足（含 Unpaywall 兜底与 1 次补偿重试）' : null
     })
     for (const paper of papers) {
       this.repos.papers.upsert(paper)
@@ -348,6 +383,14 @@ export class SelectorStepServiceImpl implements SelectorStepService {
     })
     this.bus.emit({ type: 'artifact.updated', artifact })
   }
+}
+
+/** 证据可得性：摘要或全文至少其一可得，才具备相关度定级与引用核验的基础 */
+function hasEvidence(paper: MergedPaper): boolean {
+  return (
+    (paper.abstract ?? '').trim() !== '' ||
+    (paper.downloadStatus === 'ok' && (paper.fullText ?? '').trim() !== '')
+  )
 }
 
 function parseCandidateBundle(content: string): CandidateBundle {

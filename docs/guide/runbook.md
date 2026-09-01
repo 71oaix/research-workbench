@@ -2,7 +2,7 @@
 title: 本地运行手册（runbook）
 status: active
 created: 2026-08-14
-updated: 2026-08-17
+updated: 2026-08-31
 ---
 
 # 本地运行手册
@@ -64,15 +64,36 @@ curl http://localhost:3000/workflows/<id>
 环境变量（key 绝不写入仓库）：
 
 ```bash
-DEEPSEEK_API_KEY=sk-...     # 必填，DeepSeek 官方 API key（https://platform.deepseek.com）
-PI_PROVIDER=deepseek        # 可选，默认 deepseek（官方 OpenAI 兼容端点）
-PI_DEFAULT_MODEL=deepseek-v4-flash  # 可选，默认值
+DEEPSEEK_API_KEY=sk-...     # 必填，模型 API key：DeepSeek 官方（https://platform.deepseek.com）
+                            #   或阿里云百炼 DashScope 工作空间 key（sk-ws- 开头，
+                            #   https://bailian.console.aliyun.com）
+DEEPSEEK_BASE_URL=          # 可选，OpenAI 兼容端点根地址：
+                            #   默认官方 https://api.deepseek.com（推荐）
+                            #   百炼兼容端点：https://dashscope.aliyuncs.com/compatible-mode/v1
+PI_DEFAULT_MODEL=deepseek-v4-flash  # 可选，默认 deepseek-v4-flash；
+                            #   百炼上架的 DeepSeek v4 Flash 模型名为 deepseek-v4-flash-0731
+PI_THINKING_LEVEL=xhigh     # 可选，默认 xhigh（→ reasoning_effort=max）；
+                            #   官方与百炼端点 off / xhigh 均实测可用
+PI_PROVIDER=deepseek        # 可选，默认 deepseek
 PI_MODEL_PLANNER=...         # 可选，每角色覆盖（仅模型 ID）
 PI_MODEL_RESEARCHER=...
 PI_MODEL_WRITER=...
 PI_MODEL_REVIEWER=...
 PI_WORKBENCH_AGENT_DIR=...   # 可选，pi 会话隔离目录（默认 <项目根>/.pi/agent）
 ```
+
+兼容性说明（2026-09-02 官方端点回迁后实测定稿，代码已内置处理，两个端点通用）：
+
+- **system 角色**：pi 对 provider 名为 `deepseek` 的端点默认把 system 消息转成
+  `developer` 角色发送，官方/百炼兼容端点不认（400，pi 静默吞成空回复）；
+  已注册 `compat.supportsDeveloperRole: false` 强制原样发送 system。
+- **旧凭据覆盖**：pi 的 AuthStorage 优先读 `~/.pi/agent/auth.json` 中存留的旧 key
+  （换 key 后仍发旧 key 会被 401 静默失败）；`PiRuntimeProvider` 启动时以
+  `setRuntimeApiKey` 运行时覆盖，始终使用 `DEEPSEEK_API_KEY` 配置值，无需手工清理。
+- 官方端点实测：`deepseek-v4-flash` / `deepseek-v4-pro` / `deepseek-v4-flash-vision-exp`
+  可用；`thinking:{type:'disabled'}`、`reasoning_effort`、`max_completion_tokens`、
+  `stream_options.include_usage` 均接受（2026-09-02 探针验证）。
+- 百炼兼容端点实测（2026-09-01）：同样接受上述参数，模型名为 `deepseek-v4-flash-0731`。
 
 真实调用验证（服务已启动且进程带 key）：
 
@@ -138,6 +159,10 @@ node scripts/verify-m2-4.mjs
 ```bash
 npm.cmd run dev
 ```
+
+> `npm run dev` 会自动加载项目根 `.env.local`（Node 22 `--env-file`，不覆盖已
+> 存在的环境变量）；把 key / base URL / 模型名写进 `.env.local` 即可，参考
+> `.env.example`。也可手动 export 同名变量（优先级更高）。
 
 访问 http://localhost:5173。
 
@@ -381,6 +406,16 @@ npx tsx scripts/cost-report.mjs
 - 覆盖判定用双语关键词搭桥（中文子问题 vs 英文论文）；对同主题综述判定偏粗（多子问题被同批论文覆盖），精细区分需语义/向量检索（延后）；
 - **v2 模型复核（2026-08-28）**：规则判为"部分/缺失"的子问题会批量送模型精判（selector 角色会话、无工具、仅输出 JSON，90s 超时），模型结论优先且过滤越界论文编号；judge 不可用/超时/解析失败时**静默回退规则结果**；判定升级后重算缺口清单再进 gap 回环。环境变量 `PI_JUDGE_TIMEOUT_MS` 可调超时；
 - 澄清流程：规划出现"澄清请求"时，审批卡**无"通过"按钮**，用"提交回答并重新规划"（写答案）→ Planner 重跑生成完整计划。
+
+## 运行总览卡说明（2026-08-31）
+
+右侧栏顶部新增"运行总览"卡，自上而下三块：
+
+- **状态机**：7 角色横向节点（绿实心=已通过、青色脉冲=进行中、黄=待审批、红=失败/已打回、空心=排队），点击节点跳转到对话流对应步骤卡；下方文字行显示当前步骤与累计耗时（运行中每秒走表，终态停在工作流 updatedAt）；
+- **成本**：累计金额（¥）· 模型调用次数 · 输入/输出 tokens，来自 `usage_records` 表按 (step, role) 聚合，前端再按角色二次聚合；"按角色明细"可展开看各角色花费——**成本透明**口径与 `scripts/cost-report.mjs` 一致；运行中随 WS `usage.recorded` 事件实时增长，刷新/切换工作流数字不丢（detail 快照携带）；
+- **资产**：论文数取最新 `research-cards.md` 的证据卡片数（工作流维度），产物/决策计数来自 detail；覆盖矩阵有无以 `coverage-matrix.md` 产物为准。
+
+注意：`DEMO_MODE=1` 时 MockStepRunner 会发**模拟**用量（每角色一条固定值），成本面板有数据可演示，并非真实计费。
 
 ## 常见问题
 
