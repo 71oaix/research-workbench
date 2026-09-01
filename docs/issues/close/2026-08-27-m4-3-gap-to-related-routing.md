@@ -1,11 +1,11 @@
 ---
 title: M4-3 缺口→相关论文路由（无专论时引导到最相关相邻工作）
-status: active
+status: archived
 created: 2026-08-27
-updated: 2026-08-27
+updated: 2026-08-31
 kind: feature
 priority: medium
-triage: needs-plan
+triage: actionable
 areas: [server, web]
 ---
 
