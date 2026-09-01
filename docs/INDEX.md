@@ -120,5 +120,6 @@ updated: 2026-09-01
 | 调研：Agent 网页/文档内容获取行业实践 | active | research/2026-09-01-web-content-acquisition-survey.md | llms.txt/正文提取/预算化三层结论，C 组定案依据 |
 | 调研：演示视频脚本/讲稿写作方法论 | active | research/2026-09-01-demo-video-scriptwriting-methodology.md | 分镜表格模板/旁白语速/5分钟结构/真实运行/败笔自查，13 项实测来源 |
 | 调研：演示视频录屏技术最佳实践 | active | research/2026-09-01-demo-video-screencast-best-practices.md | Windows 工具/录制参数/音画素材/剪辑/遍数/坑，OBS+剪映定案依据 |
+| 调研：可选辅佐材料写作（官方定义/可研与尽调结构/评委加分） | active | research/2026-09-01-auxiliary-materials-writing-survey.md | 第八届官方原文 + 两类报告结构惯例 + 研镜材料清单 P0/P1/P2 |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |
 | Issue: 接入百炼 DashScope 兼容端点（千问 key + deepseek-v4-flash-0731） | archived | issues/close/2026-09-01-dashscope-relay.md | 空回复双根因修复；2026-09-02 已回迁官方 API（兼容修复保留，双端点通用） |
