@@ -5,7 +5,7 @@ created: 2026-09-01
 updated: 2026-09-01
 kind: test
 priority: urgent
-triage: needs-plan
+triage: actionable
 areas: [docs, web, infra]
 resolution_plan: "docs/plans/open/2026-09-01-demo-video-recording.md"
 ---
@@ -24,8 +24,7 @@ resolution_plan: "docs/plans/open/2026-09-01-demo-video-recording.md"
 - 演示问题固定："研究下多智能体的记忆架构"，目标 4:50；
 - 已有两份分镜脚本：`01-competition-story.md`（S1-S10 分镜级 4:50）、
   `2026-08-28-demo-video-script.md`（七幕 4:30）；
-- **本机实测未装任何录屏/剪辑软件**，需先装：OBS Studio（录屏）+ 剪映专业版（剪辑），
-  winget 均可装（已实测可搜到 OBSProject.OBSStudio 32.2.1、ByteDance.JianyingPro 11.3.0）；
+- **OBS Studio + 剪映专业版已装好**（winget 2026-09-01 22:55 完成，OBS 32.2.1 + 剪映 11.3.0）；
 - dev server 运行中，key 已加载（昨日重启过），录制可直接开跑；
 - 4 路行业调研已完成（竞赛规范/录屏技术/脚本写作/AI demo 制作），结论见
   `docs/research/2026-09-01-demo-video-production-methodology.md` 及其 companion 报告。
