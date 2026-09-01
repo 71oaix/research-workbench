@@ -109,4 +109,7 @@ updated: 2026-08-29
 | Plan: OpenAlex key 注入 + runbook（S2 已有链路） | archived | plans/close/2026-08-29-source-keys.md | 已实现并测试 |
 | Issue: 右栏运行总览面板（状态机 + 成本 + 资产） | active | issues/open/2026-08-31-run-overview-panel.md | 已实现并测试（待合并） |
 | Plan: 右栏运行总览面板 | active | plans/open/2026-08-31-run-overview-panel.md | 已实现并测试（待合并） |
+| Issue: 证据门槛 + 评估迭代闭环 + 文档补位 | active | issues/open/2026-09-01-quality-loop-and-evidence-bar.md | 热身暴露四缺陷，待确认 plan |
+| Plan: 证据门槛 + 评估迭代闭环 + 文档补位 | active | plans/open/2026-09-01-quality-loop-and-evidence-bar.md | A/B/C 三组范围，待人确认后实现 |
+| 调研：Agent 网页/文档内容获取行业实践 | active | research/2026-09-01-web-content-acquisition-survey.md | llms.txt/正文提取/预算化三层结论，C 组定案依据 |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |
