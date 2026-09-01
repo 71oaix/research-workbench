@@ -113,4 +113,4 @@ updated: 2026-08-31
 | Plan: 证据门槛 + 评估迭代闭环 + 文档补位 | active | plans/open/2026-09-01-quality-loop-and-evidence-bar.md | A/B/C 三组范围，待人确认后实现 |
 | 调研：Agent 网页/文档内容获取行业实践 | active | research/2026-09-01-web-content-acquisition-survey.md | llms.txt/正文提取/预算化三层结论，C 组定案依据 |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |
-| Issue: 接入百炼 DashScope 兼容端点（千问 key + deepseek-v4-flash-0731） | archived | issues/close/2026-09-01-dashscope-relay.md | 空回复双根因修复 + 真实工作流验证 |
+| Issue: 接入百炼 DashScope 兼容端点（千问 key + deepseek-v4-flash-0731） | archived | issues/close/2026-09-01-dashscope-relay.md | 空回复双根因修复；2026-09-02 已回迁官方 API（兼容修复保留，双端点通用） |
