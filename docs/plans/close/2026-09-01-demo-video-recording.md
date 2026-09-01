@@ -1,9 +1,9 @@
 ---
 title: 竞赛演示视频录制（怎么录 / 录几遍 / 怎么写脚本）（plan）
-status: active
+status: archived
 created: 2026-09-01
 updated: 2026-09-01
-issue: "docs/issues/open/2026-09-01-demo-video-recording.md"
+issue: "docs/issues/close/2026-09-01-demo-video-recording.md"
 areas: [docs, web, infra]
 ---
 

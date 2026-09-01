@@ -1,9 +1,9 @@
 ---
 title: Firecrawl 网页搜索兜底（plan）
-status: active
+status: archived
 created: 2026-09-01
 updated: 2026-09-01
-issue: "docs/issues/open/2026-09-01-firecrawl-web-search.md"
+issue: "docs/issues/close/2026-09-01-firecrawl-web-search.md"
 areas: [server]
 ---
 

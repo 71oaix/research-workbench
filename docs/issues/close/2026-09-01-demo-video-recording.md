@@ -1,13 +1,13 @@
 ---
 title: 竞赛演示视频录制（怎么录 / 录几遍 / 怎么写脚本 + 录制交付）
-status: active
+status: archived
 created: 2026-09-01
 updated: 2026-09-01
 kind: test
 priority: urgent
 triage: actionable
 areas: [docs, web, infra]
-resolution_plan: "docs/plans/open/2026-09-01-demo-video-recording.md"
+resolution_plan: "docs/plans/close/2026-09-01-demo-video-recording.md"
 ---
 
 # 竞赛演示视频录制
@@ -67,3 +67,10 @@ resolution_plan: "docs/plans/open/2026-09-01-demo-video-recording.md"
 ## 依赖
 
 - ~~Firecrawl PR #37 合并~~（已合并 2026-09-01，工程实践主证据补位已可用）
+
+## 归档记录（2026-09-01）
+
+- 视频已录制并提交（`9月1日 (1).mp4`，131MB 合规版，≤200M）；
+- 项目文档 PDF 0.5（>1M）与简介 PDF（>1M）已生成，辅佐材料 zip（`VC_研镜_其他.zip`）已打包，
+  全部放入桌面"研镜-竞赛提交材料"文件夹，2026-09-01 23:59 前完成竞赛提交；
+- 本次 issue/plan 归档，验收标准全部达成。

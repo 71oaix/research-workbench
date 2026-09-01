@@ -438,7 +438,7 @@ FIRECRAWL_API_KEY=fc-...   # 可选，Firecrawl v2 API key（https://firecrawl.d
 ## 演示视频录制（2026-09-01）
 
 竞赛演示视频（≤5 分钟、≤200M mp4）录制与剪辑说明，完整流程见
-`docs/plans/open/2026-09-01-demo-video-recording.md` 与 4 篇调研
+`docs/plans/close/2026-09-01-demo-video-recording.md` 与 4 篇调研
 （`docs/research/2026-09-01-demo-video-*`）：
 
 - **工具**（winget 已装）：OBS Studio 录屏（1080p/30fps/H.264 NVENC，录 MKV 后 Remux 成 MP4）

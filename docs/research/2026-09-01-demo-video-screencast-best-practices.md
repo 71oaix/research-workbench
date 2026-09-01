@@ -11,7 +11,7 @@ tags: [调研, 演示视频, 录屏, Windows, 竞赛材料]
 > 配套 `docs/research/2026-09-01-demo-video-production-methodology.md`（怎么录/录几遍/写脚本）与
 > `docs/research/2026-09-01-demo-video-industry-practices.md`（行业实践），本报告聚焦**录屏技术层**
 > （Windows 工具选型、录制参数、音画素材、剪辑、遍数策略、常见坑），为
-> `docs/issues/open/2026-09-01-demo-video-recording.md` 的 plan 提供依据。
+> `docs/issues/close/2026-09-01-demo-video-recording.md` 的 plan 提供依据。
 > 信息获取方式：内置 web_search 工具当天故障，改用直接抓取官方页面（OBS/微软/谷歌/Bandicam/
 > TechSmith/Blackmagic 等）+ 搜索引擎结果页核验，来源 URL 见第七节。
 
