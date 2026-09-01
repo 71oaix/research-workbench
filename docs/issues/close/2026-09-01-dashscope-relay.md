@@ -2,7 +2,7 @@
 title: 接入百炼 DashScope 兼容端点（千问 key + deepseek-v4-flash-0731）
 status: archived
 created: 2026-09-01
-updated: 2026-09-01
+updated: 2026-09-02
 kind: infra
 priority: high
 triage: actionable
@@ -54,3 +54,18 @@ DEEPSEEK_BASE_URL 指向百炼兼容端点；同 key 携带旧凭据的问题、
   $0.007，USD/1M）：百炼侧单价未查到公开精确值，成本展示为估算；后续可校准。
 - `PI_THINKING_LEVEL=off`（.env.local）可正常关闭思考展示；默认 xhigh 亦可
   （百炼接受 `reasoning_effort: max`）。
+
+## 2026-09-02 官方 API 回迁（本文档转为历史记录）
+用户决定不再使用百炼，回迁 DeepSeek 官方 API（key 换为官方 `sk-` 格式）：
+
+- `.env.local` 回迁：`DEEPSEEK_BASE_URL=https://api.deepseek.com`、
+  `PI_DEFAULT_MODEL=deepseek-v4-flash`；key 为官方 `sk-` 格式。
+- 代码侧两处兼容修复（`compat.supportsDeveloperRole: false` 与
+  `setRuntimeApiKey` 运行时覆盖）**与端点无关**，对官方同样生效且必要：
+  官方端点同样要求 system 原样发送，同样存在 `~/.pi/agent/auth.json` 旧 key
+  覆盖配置值的问题，故全部保留。
+- 官方端点实测（2026-09-02 探针）：`deepseek-v4-flash` 正常流式返回
+  （HTTP 200，usage 落库正常）；官方可用模型含
+  `deepseek-v4-flash` / `deepseek-v4-pro` / `deepseek-v4-flash-vision-exp`。
+- 端点参数行为与兼容性说明以 runbook「M2-2 模型配置与验证」为准（已改为官方为主、
+  百炼为可选）。
