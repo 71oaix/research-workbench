@@ -2,8 +2,8 @@
 title: M4-2 缺口驱动二次检索 + 覆盖矩阵（plan）
 status: archived
 created: 2026-08-27
-updated: 2026-08-27
-issue: "docs/issues/open/2026-08-27-m4-2-gap-driven-retrieval.md"
+updated: 2026-08-31
+issue: "docs/issues/close/2026-08-27-m4-2-gap-driven-retrieval.md"
 areas: [server, web]
 ---
 

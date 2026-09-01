@@ -2,8 +2,8 @@
 title: M4-3 缺口→相关论文路由（plan）
 status: archived
 created: 2026-08-27
-updated: 2026-08-27
-issue: "docs/issues/open/2026-08-27-m4-3-gap-to-related-routing.md"
+updated: 2026-08-31
+issue: "docs/issues/close/2026-08-27-m4-3-gap-to-related-routing.md"
 areas: [server, web]
 ---
 
