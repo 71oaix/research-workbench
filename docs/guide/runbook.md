@@ -2,7 +2,7 @@
 title: 本地运行手册（runbook）
 status: active
 created: 2026-08-14
-updated: 2026-09-01
+updated: 2026-09-03
 ---
 
 # 本地运行手册
@@ -19,7 +19,7 @@ npm.cmd install
 ```
 
 > 若 better-sqlite3 安装失败，先确认 Node 版本为 22；仍失败则回退方案见
-> [M1 plan](../plans/open/2026-08-14-m1-project-skeleton.md) 的风险表。
+> [M1 plan](../plans/close/2026-08-14-m1-project-skeleton.md) 的风险表。
 
 ## 启动开发环境
 
@@ -34,10 +34,21 @@ npm.cmd run dev
 ## 验证
 
 ```bash
-npm.cmd run typecheck
-npm.cmd run build
-npm.cmd run test
+npm.cmd run verify
 ```
+
+`npm.cmd run verify` 是离线工程质量门，依次执行：
+
+1. `typecheck`：检查各 workspace 的 TypeScript 类型；
+2. `build`：执行当前各 workspace 的构建命令。当前 server 的 build 仍是 `tsc --noEmit`，不代表生产服务打包；
+3. `test`：运行各 workspace 的 Vitest 测试，全文 PDF 测试使用系统临时目录，退出后清理；
+4. `docs`：检查 frontmatter、INDEX、孤儿/幽灵文档和失效相对链接。
+
+该入口不读取 API key，也不访问模型、Firecrawl 或学术源，不应写入 `data/app.db`、`data/pdfs-test`、`data/eval` 或业务 artifact。CI 与本地调用同一命令。
+
+### 离线工程验证 vs 联网真实验证
+
+离线工程验证回答“代码、测试、文档是否仍可重复交付”，适合本地和 CI，每次提交都应该执行 `npm.cmd run verify`。联网真实验证回答“模型和学术源在当前额度、网络和 key 下的实际效果”，使用 `scripts/verify-*.mjs`、`scripts/eval-m2-15.mjs` 等手动脚本，可能消耗费用或受第三方服务波动影响，不作为 CI 必需条件。
 
 ## M2-1 工作流接口示例
 

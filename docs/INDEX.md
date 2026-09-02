@@ -10,7 +10,7 @@ updated: 2026-09-01
 | 文档 | 状态 | 路径 | 说明 |
 |------|------|------|------|
 | 项目定义 | active | architecture/00-project-definition.md | 目标 / 约束 / 功能 / 技术栈 |
-| 系统架构（M1） | active | architecture/02-system-architecture.md | 组件 / 接口 / 端口 |
+| 系统架构（当前实现） | active | architecture/02-system-architecture.md | 组件 / 接口 / 端口 |
 | 数据模型（M1） | active | architecture/03-data-model.md | 表结构与设计要点 |
 | 开发流程规范 | active | guide/01-development-workflow.md | issue / PR / commit 规范 |
 | 文档分类体系 | active | guide/02-document-taxonomy.md | 五层文档 + 任务类，最小文档集规划 |
@@ -39,6 +39,7 @@ updated: 2026-09-01
 | 评测：效果基线（检索/成本/真实运行） | active | research/2026-08-21-effect-baseline.md | recall 对比 + 成本表 + 真实运行指标 |
 | 竞赛材料：项目文档初稿（附件 2 模板） | active | specification/2026-08-21-competition-project-document.md | 0.4 定稿：七角色勘误/测试数/总览卡 |
 | 竞赛材料：作品简介草稿（300 字） | active | specification/2026-08-21-competition-intro.md | 295 字定稿，待转 PDF |
+| 竞赛导出物说明 | active | specification/export/README.md | 当前正式 PDF/DOCX 路径与历史快照边界 |
 | Plan: M4-1 覆盖质量门+迭代回环 | archived | plans/close/2026-08-27-m4-1-step-quality-gates.md | 已实现并测试（含 v2 模型复核） |
 | Plan: M4-2 缺口驱动二次检索+覆盖矩阵 | archived | plans/close/2026-08-27-m4-2-gap-driven-retrieval.md | 已实现并测试 |
 | Plan: M4-3 缺口→相关论文路由 | archived | plans/close/2026-08-27-m4-3-gap-to-related-routing.md | 已实现并测试 |
@@ -103,14 +104,16 @@ updated: 2026-09-01
 | Plan: 产物折叠与展开联动 | archived | plans/close/2026-08-29-artifact-collapse.md | 已实现并测试 |
 | Issue: 真流式输出（WS step.stream） | archived | issues/close/2026-08-29-streaming.md | 已实现并测试 |
 | Plan: 真流式输出（WS step.stream） | archived | plans/close/2026-08-29-streaming.md | 已实现并测试 |
-| Issue: 思考块展示（探针实锤走分支 A） | archived | issues/close/2026-08-29-thinking-display.md | 已实现并测试 |
-| Plan: 思考块展示（探针实锤走分支 A） | archived | plans/close/2026-08-29-thinking-display.md | 已实现并测试 |
-| Issue: OpenAlex key 注入 + runbook（S2 已有链路） | archived | issues/close/2026-08-29-source-keys.md | 已实现并测试 |
-| Plan: OpenAlex key 注入 + runbook（S2 已有链路） | archived | plans/close/2026-08-29-source-keys.md | 已实现并测试 |
-| Issue: 右栏运行总览面板（状态机 + 成本 + 资产） | active | issues/open/2026-08-31-run-overview-panel.md | 已实现并测试（待合并） |
-| Plan: 右栏运行总览面板 | active | plans/open/2026-08-31-run-overview-panel.md | 已实现并测试（待合并） |
-| Issue: 证据门槛 + 评估迭代闭环 + 文档补位 | active | issues/open/2026-09-01-quality-loop-and-evidence-bar.md | C 组（文档补位）已实现：白名单 + Firecrawl 网页搜索兜底；A/B 组待确认 plan |
-| Plan: 证据门槛 + 评估迭代闭环 + 文档补位 | active | plans/open/2026-09-01-quality-loop-and-evidence-bar.md | A/B/C 三组范围，C 组已实现，A/B 待人确认后实现 |
+| Issue: 思考过程展示（thinking 块验证先行） | archived | issues/close/2026-08-29-thinking-display.md | 已实现并测试 |
+| Plan: 思考过程展示（plan） | archived | plans/close/2026-08-29-thinking-display.md | 已实现并测试 |
+| Issue: 检索源免费 key 三连（OpenAlex / Semantic Scholar / IEEE） | archived | issues/close/2026-08-29-source-keys.md | 已实现并测试 |
+| Plan: 检索源免费 key 三连（plan） | archived | plans/close/2026-08-29-source-keys.md | 已实现并测试 |
+| Issue: 右栏运行总览面板（状态机 + 成本 + 资产） | archived | issues/close/2026-08-31-run-overview-panel.md | 已实现并合并（PR #33） |
+| Plan: 右栏运行总览面板 | archived | plans/close/2026-08-31-run-overview-panel.md | 已实现并合并（PR #33） |
+| Issue: 证据门槛 + 评估迭代闭环 + 文档补位 | archived | issues/close/2026-09-01-quality-loop-and-evidence-bar.md | 已实现并合并（PR #35） |
+| Plan: 证据门槛 + 评估迭代闭环 + 文档补位 | archived | plans/close/2026-09-01-quality-loop-and-evidence-bar.md | 已实现并合并（PR #35） |
+| Issue: 工程化收尾：质量门、文档一致性与可复验交付 | active | issues/open/2026-09-02-engineering-closeout.md | 质量门、文档检查、CI 与可复验交付收尾 |
+| Plan: 工程化收尾：质量门、文档一致性与可复验交付 | active | plans/open/2026-09-02-engineering-closeout.md | 与工程化收尾 issue 配套的实现方案 |
 | Issue: Firecrawl 网页搜索兜底（通用 web 搜索工具） | archived | issues/close/2026-09-01-firecrawl-web-search.md | 已实现并合并（PR #37），白名单优先 + 真实 web 搜索兜底 |
 | Plan: Firecrawl 网页搜索兜底 | archived | plans/close/2026-09-01-firecrawl-web-search.md | 已实现并测试，真实 key 端到端通过，已合并 |
 | Issue: 竞赛演示视频录制（怎么录/录几遍/写脚本） | archived | issues/close/2026-09-01-demo-video-recording.md | 视频已交付提交（131MB 合规），材料齐备，已归档 |
@@ -120,5 +123,7 @@ updated: 2026-09-01
 | 调研：Agent 网页/文档内容获取行业实践 | active | research/2026-09-01-web-content-acquisition-survey.md | llms.txt/正文提取/预算化三层结论，C 组定案依据 |
 | 调研：演示视频脚本/讲稿写作方法论 | active | research/2026-09-01-demo-video-scriptwriting-methodology.md | 分镜表格模板/旁白语速/5分钟结构/真实运行/败笔自查，13 项实测来源 |
 | 调研：演示视频录屏技术最佳实践 | active | research/2026-09-01-demo-video-screencast-best-practices.md | Windows 工具/录制参数/音画素材/剪辑/遍数/坑，OBS+剪映定案依据 |
+| 调研：可选辅佐材料写作（官方定义/可研与尽调结构/评委加分） | active | research/2026-09-01-auxiliary-materials-writing-survey.md | 第八届官方原文 + 两类报告结构惯例 + 研镜材料清单 P0/P1/P2 |
+| 竞赛材料：演示视频脚本（七幕 4:30） | active | specification/2026-08-28-demo-video-script.md | 竞赛演示分镜、旁白、字幕与转场 |
 | Issue: M2-8 科研 Skill 流程内化（已拆分） | archived | issues/close/2026-08-15-m2-8-skill-internalization.md | 已拆分为 M2-7/M2-8/M2-9/M2-10 |
 | Issue: 接入百炼 DashScope 兼容端点（千问 key + deepseek-v4-flash-0731） | archived | issues/close/2026-09-01-dashscope-relay.md | 空回复双根因修复；2026-09-02 已回迁官方 API（兼容修复保留，双端点通用） |

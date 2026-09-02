@@ -13,7 +13,7 @@ areas: [server, data, shared]
 
 给 Researcher 步骤接入真实学术检索：从 Planner 的 `01-plan.md` 提取检索关键词，用代码并行查询 Semantic Scholar 与 OpenAlex，去重合并后生成论文卡片，落库 `papers`，最后让模型把卡片精简成 `02-research.md`，为 M2-4 Writer 提供可引用的证据来源。
 
-方案依据为 [学术检索最佳实践调研](../research/2026-08-14-academic-search-best-practices.md)，核心结论：检索核心用确定性管道是行业主流，agent 只做扩展与精排。
+方案依据为 [学术检索最佳实践调研](../../research/2026-08-14-academic-search-best-practices.md)，核心结论：检索核心用确定性管道是行业主流，agent 只做扩展与精排。
 
 ## 关键决策
 

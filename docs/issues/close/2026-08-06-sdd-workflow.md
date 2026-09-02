@@ -23,7 +23,7 @@ research-workbench（研镜）已完成设计阶段（技术栈定稿、MVP 基�
    - `docs/issues/`（open/close + readme + frontmatter 规范）
    - `docs/plans/`（open/close + readme + frontmatter 规范）
    - 与现有 doc-contract（frontmatter 必填 `title/status/created/updated`、INDEX.md 同步）保持一致
-2. **建立五层文档体系**（见 [文档分类体系](docs/guide/02-document-taxonomy.md)）：
+2. **建立五层文档体系**（见 [文档分类体系](../../guide/02-document-taxonomy.md)）：
    - 产品/开发/设计/测试/运维五层 + 任务类，映射到本项目实际目录
    - 起步只建最小文档集：开发架构、数据关系、运维 runbook，其余随任务自然生长
 3. **定义开发循环**：提出 issue → 编写 plan → plan 独立 review → 人确认 plan → 实现 → 实现独立 review → 测试 → 人确认合并 → 归档
@@ -36,7 +36,7 @@ research-workbench（研镜）已完成设计阶段（技术栈定稿、MVP 基�
 ### 做（本 issue 覆盖）
 
 - SDD 目录结构与规范文档（已创建 readme 与规范）
-- 五层文档体系规划与最小文档集（已创建 [文档分类体系](docs/guide/02-document-taxonomy.md)）
+- 五层文档体系规划与最小文档集（已创建 [文档分类体系](../../guide/02-document-taxonomy.md)）
 - 首个开发任务的 plan 编写 + review + 实现 + 验证全流程
 - 本项目 AGENTS.md 的补充：把"每个任务走 issue→plan→review→实现→review→测试→归档"写入项目规则（如尚无对应章节）
 
@@ -52,7 +52,7 @@ research-workbench（研镜）已完成设计阶段（技术栈定稿、MVP 基�
 博客作者是纯本地项目（无 GitHub issue、无远程仓库）；**本项目走 GitHub 协作流程**：
 
 - 本地 SDD 文档（docs/issues、docs/plans 等）**全部纳入 git 仓库并推送 GitHub**，与代码同一仓库管理
-- GitHub issue/PR 用于协作与合并流程（已有 [开发流程规范](docs/guide/01-development-workflow.md)），本地 SDD 文档用于任务规格与 Agent 上下文
+- GitHub issue/PR 用于协作与合并流程（已有 [开发流程规范](../../guide/01-development-workflow.md)），本地 SDD 文档用于任务规格与 Agent 上下文
 - 两者并行：GitHub issue 记录任务入口（含验收标准），SDD 文档承载详细规格与方案
 - 目的：熟悉真实团队协作流程（PR、review、分支保护），服务实习准备
 
@@ -70,4 +70,4 @@ research-workbench（研镜）已完成设计阶段（技术栈定稿、MVP 基�
 ## 参考
 
 - [Harness Engineering 实践分享](https://blog.xlab.app/p/c3ac2cfd/) — 方法论来源
-- [开发流程规范](docs/guide/01-development-workflow.md) — 本项目已有 issue/PR/commit 规范（SDD 与之并行：GitHub issue 管协作，本地 SDD 文档管任务规格）
+- [开发流程规范](../../guide/01-development-workflow.md) — 本项目已有 issue/PR/commit 规范（SDD 与之并行：GitHub issue 管协作，本地 SDD 文档管任务规格）

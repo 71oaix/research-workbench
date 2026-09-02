@@ -1,4 +1,7 @@
-import { describe, expect, it, vi } from 'vitest'
+import { mkdtempSync, rmSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { afterAll, describe, expect, it, vi } from 'vitest'
 import { acquireFullText, fullTextKey, resolvePdfUrls } from '../../src/evidence/fullText'
 import type { MergedPaper } from '../../src/search/types'
 
@@ -31,6 +34,11 @@ function okResponse(body: string): Response {
 }
 
 const longText = async () => 'mocked paper text '.repeat(200)
+const testDir = mkdtempSync(path.join(os.tmpdir(), 'research-workbench-fulltext-'))
+
+afterAll(() => {
+  rmSync(testDir, { recursive: true, force: true })
+})
 
 describe('fullText', () => {
   it('resolves pdf urls from arxiv id, s2 open access, and openalex best_oa_location', () => {
@@ -66,14 +74,14 @@ describe('fullText', () => {
   })
 
   it('returns no_oa when there are no candidates', async () => {
-    const result = await acquireFullText(paper({}), { dir: 'data/pdfs-test', maxChars: 1000 })
+    const result = await acquireFullText(paper({}), { dir: testDir, maxChars: 1000 })
     expect(result).toEqual({ result: null, reason: 'no_oa' })
   })
 
   it('fails with failed when the downloaded file is not a PDF', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(okResponse('not a pdf')))
     const result = await acquireFullText(paper({ arxivId: '1706.03762' }), {
-      dir: 'data/pdfs-test',
+      dir: testDir,
       maxChars: 1000,
     })
     expect(result).toEqual({ result: null, reason: 'failed' })
@@ -82,7 +90,7 @@ describe('fullText', () => {
   it('fails with failed when the fetch errors', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')))
     const result = await acquireFullText(paper({ arxivId: '1706.03762' }), {
-      dir: 'data/pdfs-test',
+      dir: testDir,
       maxChars: 1000,
     })
     expect(result).toEqual({ result: null, reason: 'failed' })
@@ -91,7 +99,7 @@ describe('fullText', () => {
   it('fails with failed when extraction yields fewer than 500 chars', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(okResponse('%PDF-1.4\nfake')))
     const result = await acquireFullText(paper({ arxivId: '1706.03762' }), {
-      dir: 'data/pdfs-test',
+      dir: testDir,
       maxChars: 1000,
       extractText: async () => 'short',
     })
@@ -109,7 +117,7 @@ describe('fullText', () => {
         arxivId: '1706.03762',
         raw: JSON.stringify({ openAccessPdf: { url: 'https://x/paper.pdf' } }),
       }),
-      { dir: 'data/pdfs-test', maxChars: 1000, extractText: longText }
+      { dir: testDir, maxChars: 1000, extractText: longText }
     )
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(result?.reason).toBe('ok')
@@ -121,7 +129,7 @@ describe('fullText', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse('%PDF-1.4\nvalid header'))
     vi.stubGlobal('fetch', fetchMock)
     const result = await acquireFullText(paper({ arxivId: '1706.03762' }), {
-      dir: 'data/pdfs-test',
+      dir: testDir,
       maxChars: 1000,
       extractText: longText,
     })

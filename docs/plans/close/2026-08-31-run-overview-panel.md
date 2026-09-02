@@ -1,8 +1,8 @@
 ---
 title: 右栏运行总览面板（状态机 + 成本 + 资产）（plan）
-status: active
+status: archived
 created: 2026-08-31
-updated: 2026-08-31
+updated: 2026-09-03
 issue: "docs/issues/open/2026-08-31-run-overview-panel.md"
 areas: [server, web]
 ---

@@ -1,8 +1,8 @@
 ---
 title: 证据可得性门槛 + 评估迭代闭环 + 官方文档补位
-status: active
+status: archived
 created: 2026-09-01
-updated: 2026-09-01
+updated: 2026-09-03
 kind: feature
 priority: urgent
 triage: needs-plan
@@ -42,7 +42,7 @@ areas: [server, web]
 
 **C 组（官方文档补位，已实现：白名单抓取 + Firecrawl 网页搜索兜底）**
 - 白名单域文档抓取（llms.txt/.md 优先，HTML 去噪兜底）已实现；
-- 2026-09-01 新增 Firecrawl 真实网页搜索兜底（见 [Firecrawl 网页搜索兜底](2026-09-01-firecrawl-web-search.md)）：
+- 2026-09-01 新增 Firecrawl 真实网页搜索兜底（见 [Firecrawl 网页搜索兜底](../close/2026-09-01-firecrawl-web-search.md)）：
   对白名单未命中、学术文献覆盖稀疏的子问题做真实 web 搜索，命中任意权威网页作为 writer 参考素材；
   证据卡新增"补充参考（官方文档 / 网页）"段，不进引用编号与核验序列。
 
