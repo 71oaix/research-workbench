@@ -48,4 +48,4 @@ areas: [ci, docs, tooling, release]
 - [x] 文档：119 份 Markdown，frontmatter、INDEX、孤儿、幽灵、失效链接和异常行均为 0。
 - [x] 临时 fixture 能拦截失效链接与 INDEX `@@` 异常行，测试文件未进入仓库。
 - [x] 远端事实：PR #33 与 PR #35 已合并，PR #39 仍为 OPEN；INDEX 已按事实更新。
-- [ ] GitHub Actions 远端 CI：待本分支推送并创建 PR 后由平台执行。
+- [x] GitHub Actions 远端 CI：PR #40 的 build 检查通过（GitHub Actions run 33660423309）。

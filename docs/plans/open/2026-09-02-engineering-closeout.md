@@ -96,4 +96,4 @@ areas: [ci, docs, tooling, release]
 - [x] `node scripts/verify-docs.mjs`：119 份 Markdown，所有计数项为 0。
 - [x] 临时 fixture 验证了 frontmatter/INDEX 链接扫描器的失败路径，fixture 已清理。
 - [x] 远端 PR #33、PR #35 合并事实已核对，PR #39 保持 OPEN，未将本地分支误写为已合并。
-- [ ] 远端 GitHub Actions：需推送本分支后由平台运行，不能用本地等价命令替代平台证据。
+- [x] 远端 GitHub Actions：PR #40 的 build 检查通过（GitHub Actions run 33660423309）；本地等价命令不替代平台证据。
