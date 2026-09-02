@@ -1,8 +1,8 @@
 ---
 title: 证据可得性门槛 + 评估迭代闭环 + 官方文档补位（plan）
-status: active
+status: archived
 created: 2026-09-01
-updated: 2026-09-01
+updated: 2026-09-03
 issue: "docs/issues/open/2026-09-01-quality-loop-and-evidence-bar.md"
 areas: [server, web]
 ---

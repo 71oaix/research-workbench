@@ -1,24 +1,24 @@
 ---
-title: 系统架构（M1）
+title: 系统架构（当前实现）
 status: active
 created: 2026-08-14
-updated: 2026-08-17
+updated: 2026-09-03
 ---
 
-# 系统架构（M1）
+# 系统架构（当前实现）
 
 ## 总览
 
 ```text
 ┌─────────────────────────────────────────────────┐
 │ apps/web（Vite + React）                         │
-│ 三栏占位工作台 + 健康检查                         │
+│ 三栏工作台 + 工作流状态、产物与审批                 │
 └───────────────┬─────────────────────────────────┘
                 │ HTTP /api/*（Vite 代理到 3000）
                 │ WebSocket /ws
 ┌───────────────▼─────────────────────────────────┐
 │ apps/server（Hono + @hono/node-server）          │
-│ /health · /ws 占位 · AgentRuntimeProvider 抽象   │
+│ /health · /ws 事件通道 · AgentRuntimeProvider 抽象 │
 └───────────────┬─────────────────────────────────┘
                 │
 ┌───────────────▼─────────────────────────────────┐
@@ -36,10 +36,10 @@ updated: 2026-08-17
 | packages/data | SQLite schema + 仓储接口/实现 | ✅ |
 | WorkflowEngine（apps/server/src/engine） | 状态机 + artifact 交接 + 审批点 + 事件广播 | ✅（M2-1） |
 | PiRuntimeProvider（apps/server/src/runtime） | pi SDK 0.80.3 + deepseek-v4-flash（官方或百炼兼容端点，`DEEPSEEK_BASE_URL` 可配），角色提示词注入，usage 落库 | ✅（M2-2） |
-| apps/server | Hono 入口、/health、工作流 REST、WS 占位 | ✅ |
-| apps/web | 三栏占位页 + 健康检查 | ✅ |
+| apps/server | Hono 入口、/health、工作流 REST、WS 事件通道 | ✅ |
+| apps/web | 三栏工作台、状态时间线、产物预览与审批 | ✅ |
 | scripts/dev.js | 一键并行启动 | ✅ |
-| .github/workflows/ci.yml | install → typecheck → build → test | ✅ |
+| .github/workflows/ci.yml | install → `npm run verify`（typecheck → build → test → docs） | ✅ |
 
 ## 关键接口
 
@@ -48,7 +48,7 @@ updated: 2026-08-17
 - `POST /workflows/:id/start` → 开始执行
 - `GET /workflows/:id` → 工作流 + 步骤 + artifact + 决策
 - `POST /workflows/:id/steps/:stepId/decision` → approve / reject
-- `GET /ws` → 426 占位（协议类型已在 shared 定义，真实 WS 通道 M2 接入）
+- `GET /ws` → WebSocket 事件通道，连接即发送 `hello`，事件总线广播 `ServerEvent`
 - `AgentRuntimeProvider.createRuntime(role, systemPrompt)` → M2 接入 pi SDK
 
 ## 模型运行时（M2-2）

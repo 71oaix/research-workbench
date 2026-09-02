@@ -14,7 +14,8 @@
     "dev": "node scripts/dev.js",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "verify": "node scripts/verify-project.mjs"
   },
   "devDependencies": {
     "tsx": "^4.19.0",

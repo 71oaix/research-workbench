@@ -1,7 +1,7 @@
 # Research Workbench（研镜）
 
 > 面向科研人员的透明学术调研智能体工作台
-> 状态：设计阶段（2026-08-05）
+> 状态：MVP 已完成，正在进行工程化收尾（2026-09-03）
 
 ## 一句话
 
@@ -35,6 +35,14 @@ npm run dev
 - 前端：http://localhost:5173
 - 后端健康检查：http://localhost:3000/health
 - 详见 [本地运行手册](docs/guide/runbook.md)
+
+## 工程验证
+
+```bash
+npm run verify
+```
+
+`npm run verify` 是离线质量门，会依次执行类型检查、构建、测试和文档契约检查，不需要 API key 或外部服务。联网真实运行仍按 [本地运行手册](docs/guide/runbook.md) 中标注的手动脚本执行。
 
 ## 文档
 

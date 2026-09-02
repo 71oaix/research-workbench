@@ -8,7 +8,7 @@
 
 - `docs/` — 文档；必须维护 `docs/INDEX.md`；按 `architecture/`、`specification/`、`guide/`、`research/`、`reference/`、`decisions/` 分类（映射规范见 [文档分类体系](docs/guide/02-document-taxonomy.md)）；SDD 任务文档独立于 `issues/`、`plans/`
 - `.github/` — issue / PR 模板与流程配置
-- 代码目录 — 待 M1 骨架确定（前端 / 后端 / 数据）
+- 代码目录 — `apps/web`（前端）、`apps/server`（后端）、`packages/shared`（共享协议）、`packages/data`（SQLite 仓储）；MVP 骨架已建立，后续按 SDD 增量演进
 - `scripts/` — 辅助脚本
 
 ## 技术栈（MVP 定稿）
